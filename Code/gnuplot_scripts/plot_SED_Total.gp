@@ -1,0 +1,31 @@
+reset
+set xlabel '{/Symbol e} [eV]'
+set ylabel '{/Symbol e} L_{/Symbol e} [erg/s]'
+set logscale xy
+set format x '10^{%T}'
+set format y '10^{%T}'
+set xrange [1e-6:1e14]
+set yrange [4e28:2e34]
+set xtics 1e2
+set key noautotitles top left Left spacing 1.35 width -2
+
+# fB = 0.01
+plot 'SEDsyn_final_fB0.01.dat' u 1:3 w l dt 2 lw 2 lc 1 ,\
+'SEDsyn_final_fB0.01.dat' u 1:4 w l dt 3 lw 1 lc rgb 'black' ,\
+'SEDsyn_final_fB0.01.dat' u 1:7 w l dt 1 lw 2 lc 1 t '{/Symbol h}_B = 0.01 ' ,\
+'SEDIC_final_fB0.01.dat' u 1:3 w l dt 2 lw 2 lc 1 ,\
+'SEDIC_final_fB0.01.dat' u 1:4 w l dt 3 lw 1 lc rgb 'black' ,\
+'SEDIC_final_fB0.01.dat' u 1:6 w l dt 1 lw 2 lc 1
+
+# fB = 1.0
+replot 'SEDsyn_final_fB1.0.dat' u 1:3 w l dt 2 lw 2 lc 2 ,\
+'SEDsyn_final_fB1.0.dat' u 1:4 w l dt 3 lw 1 lc rgb 'black' ,\
+'SEDsyn_final_fB1.0.dat' u 1:7 w l dt 1 lw 2 lc 2 t '{/Symbol h}_B = 1.0' ,\
+'SEDIC_final_fB1.0.dat' u 1:3 w l dt 2 lw 2 lc 2 ,\
+'SEDIC_final_fB1.0.dat' u 1:4 w l dt 3 lw 1 lc rgb 'black' ,\
+'SEDIC_final_fB1.0.dat' u 1:6 w l dt 1 lw 2 lc 2
+
+set term postscript color enhanced dl 1.3 lw 1 'Helvetica' 20
+set output 'SED_Total.ps'
+replot
+!./fixbb SED_Total.ps
