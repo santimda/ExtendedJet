@@ -22,10 +22,8 @@ opac_gg.o: opac_gg.f90 globals.o controls.o
 
 opac_ff.o: opac_ff.f90 globals.o controls.o
 
-occultation.o: occultation.f90 globals.o 
-
 fluxes.o: fluxes.f90 globals.o
 
-JetStar.o: JetStar.f90 globals.o controls.o trajectory.o evolution.o edistribution.o synrad.o icrad.o opac_gg.o opac_ff.o occultation.o fluxes.o
+JetStar.o: JetStar.f90 globals.o controls.o trajectory.o evolution.o edistribution.o synrad.o icrad.o opac_gg.o opac_ff.o fluxes.o
 
 

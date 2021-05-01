@@ -8,11 +8,11 @@ contains
 !	Computation of the fluxes at different bands
 !*************************************************************************************************************
   subroutine fluxes_calc (Eph_sy,Lsy_jet,Lsy_CJ,Eph_IC,LIC_jet,LIC_CJ,Flux)
-    real*8, intent(in) :: Eph_sy(NSED_sy),Lsy_jet(NSED_sy),Lsy_CJ(NSED_sy)
-    real*8, intent(in) :: Eph_IC(NSED_IC),LIC_jet(NSED_IC),LIC_CJ(NSED_IC)
-    real*8, intent(out) :: Flux(N_bands)
-    real*8 :: Lsy(NSED_sy),LIC(NSED_IC),Emins(N_bands),Emaxs(N_bands),F_sy(N_bands),F_IC(N_bands)
-    real*8 :: dilution,Ein_sy,Ein_IC,dEph_sy(NSED_sy),dEph_IC(NSED_IC)
+    real(dp), intent(in) :: Eph_sy(NSED_sy),Lsy_jet(NSED_sy),Lsy_CJ(NSED_sy)
+    real(dp), intent(in) :: Eph_IC(NSED_IC),LIC_jet(NSED_IC),LIC_CJ(NSED_IC)
+    real(dp), intent(out) :: Flux(N_bands)
+    real(dp) :: Lsy(NSED_sy),LIC(NSED_IC),Emins(N_bands),Emaxs(N_bands),F_sy(N_bands),F_IC(N_bands)
+    real(dp) :: dilution,Ein_sy,Ein_IC,dEph_sy(NSED_sy),dEph_IC(NSED_IC)
 
 	!Total luminositites
     Lsy = Lsy_jet + Lsy_CJ
@@ -46,9 +46,9 @@ contains
 !*************************************************************************************************************
 !	Integrate the fluxes at a given band
 !*************************************************************************************************************  
-  real*8 function flux_int (N,Eph,dEph,L,Eph_min,Eph_max)
+  real(dp) function flux_int (N,Eph,dEph,L,Eph_min,Eph_max)
     integer, intent(in) :: N
-    real*8, intent(in) :: Eph(N),dEph(N),L(N),Eph_min,Eph_max
+    real(dp), intent(in) :: Eph(N),dEph(N),L(N),Eph_min,Eph_max
     
     flux_int = 0d0
     do i = 1,N

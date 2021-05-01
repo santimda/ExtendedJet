@@ -9,7 +9,7 @@ MODULE trajectory
   !============================================================================
   ! trajectory_calc (START)
   !============================================================================
-  ! This subroutine calculates a vertical jet trajectory. The input is the 'jet' 
+  ! This subroutine calculates a vertical jet trajectory. The input is the '' (jet) 
   ! or 'cj' (counter-jet). 
   !============================================================================
 

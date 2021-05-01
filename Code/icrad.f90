@@ -9,11 +9,11 @@ contains
   !============================================================================
 
   subroutine SEDIC ()
-    real*8 :: Eg_FF(NSED_IC),Eg_int_FF,Eg(NSED_IC),Eg_int
-    real*8 :: E_e(nIn),NE_e(nIn,Ns),NEcut_e(nIn)
-    real*8 :: LIC_FF(NSED_IC),LIC_cut(NSED_IC),LIC1(NSED_IC),LIC2(NSED_IC),LIC(NSED_IC)
-    real*8 :: LIC_bol_FF,LIC_bol_cut_FF
-    real*8 :: dummy
+    real(dp) :: Eg_FF(NSED_IC),Eg_int_FF,Eg(NSED_IC),Eg_int
+    real(dp) :: E_e(nIn),NE_e(nIn,Ns),NEcut_e(nIn)
+    real(dp) :: LIC_FF(NSED_IC),LIC_cut(NSED_IC),LIC1(NSED_IC),LIC2(NSED_IC),LIC(NSED_IC)
+    real(dp) :: LIC_bol_FF,LIC_bol_cut_FF
+    real(dp) :: dummy
     integer :: j_s
     allocate (lenj(Ns),nfFF(Ns),EphMFF(Ns),cwoFF(Ns),Kappa(Ns),delta_star(Ns),delta_obs(Ns))
 
@@ -99,11 +99,11 @@ contains
   !============================================================================
 
   subroutine SEDIC_CJ ()
-    real*8 :: Eg_FF(NSED_IC),Eg_int_FF,Eg(NSED_IC),Eg_int
-    real*8 :: E_e(nIn),NE_e(nIn,Ns),NEcut_e(nIn)
-    real*8 :: LIC_FF(NSED_IC),LIC_cut(NSED_IC),LIC1(NSED_IC),LIC2(NSED_IC),LIC(NSED_IC)
-    real*8 :: LIC_bol_FF,LIC_bol_cut_FF
-    real*8 :: dummy
+    real(dp) :: Eg_FF(NSED_IC),Eg_int_FF,Eg(NSED_IC),Eg_int
+    real(dp) :: E_e(nIn),NE_e(nIn,Ns),NEcut_e(nIn)
+    real(dp) :: LIC_FF(NSED_IC),LIC_cut(NSED_IC),LIC1(NSED_IC),LIC2(NSED_IC),LIC(NSED_IC)
+    real(dp) :: LIC_bol_FF,LIC_bol_cut_FF
+    real(dp) :: dummy
     integer :: j_s
     allocate (lenj(Ns),nfFF(Ns),EphMFF(Ns),cwoFF(Ns),Kappa(Ns),delta_star(Ns),delta_obs(Ns))
 
@@ -231,73 +231,3 @@ subroutine IC_Khang(Ee,Ne,Ef,cang,Eph0,Kapp,L_IC,sum_IC)
   enddo
 
 end subroutine IC_Khang
-
-!--------------------------------------------------------------------------------
-
-SUBROUTINE IC_OLD(Ee,Ne,Ef,cang,Eph0,nf,L_IC,sum_IC)
-  integer, parameter :: dp = kind(1.d0)
-  Real(dp),intent(in) :: Ee(nIn),Ne(nIn),Eph0,Ef(NSED_IC),cang,nf
-  Real(dp),intent(out) :: L_IC(NSED_IC),sum_IC
-  Real(dp) :: Eeint,Eps,Epsint
-  Real(dp) :: dEps,dEe,dP_IC,sum,gamma,PepsIC,cs,sn
-  Real(dp) :: u2,beta,s,ee0,pk,gc,wc,uc,vc,ec,wmax,wmin,csg,csa,ai1,ai2
-  Real(dp) :: dsigmaIC,divis,cte,factor_ang
-  cs = cang
-  sn = sin(acos(cang))
-
-  Eeint = Ee(2)/Ee(1)
-  cte = pi*2.8d-13**2.
-  factor_ang = c*(1.d0-cs)
-
-  !     Calculo IC para distintas energías de Ef
-
-  Epsint = Ef(2)/Ef(1)
-  !     Eph será la energía del fotón incidente, Eps la del fotón emitido y 
-  !     gamma la energía del electrón, todas se usan en unidades de mec2
-  sum_IC = 0.d0
-  do i=1,NSED_IC                 ! Ef
-     Eps = Ef(i)/mec2
-     dEps = Eps*(Epsint-1.d0)
-     sum = 0.d0
-     do j = 1,nIn            ! E
-        gamma = Ee(j)/mec2  ! gm
-        PepsIC = 0.d0
-        u2 = sqrt(1.d0-1./gamma**2.) ! u
-        beta=(1.d0/gamma**2.+u2**2.*sn**2.)/(1.+u2*cs) ! los usa en sigmaIC
-        s=0.d0           ! acá arranca la subrutina para calcular sigmaIC
-        ee0=Eph0/mec2
-        pk=gamma*ee0*beta
-        divis = sqrt(1.d0+2.d0*pk)
-        gc=(gamma+ee0)/divis
-        wc=pk/divis
-        uc=pk/(1.d0+pk)
-        vc=sqrt(ee0**2.+(gamma*u2)**2.+2.d0*gamma*ee0*u2*cs)/(gamma+ee0)
-        ec=(1.d0+pk)/divis
-        wmax=gc*wc*(1.+vc)
-        wmin=wc/gc/(1.+vc)
-        if((Eps > wmax).or.(Eps < wmin)) goto 7777
-        csg=-(1.-gamma/gc/ec)/uc/vc
-        csa= (Eps/gc/wc-1.)/vc
-        ai1=1./sqrt((1+uc-2.d0*uc*csa*csg)/(1.+uc)/ec**2.+&
-             uc**2.*(csa-csg)**2.)
-        ai2=(1.-uc*csa*csg)*ai1**3.
-        s= ( (1.d0/pk**2.-2.*ai1/pk/ec/wc+ai2/(ec*wc)**2.) + & 
-             (2.d0*(1./pk-ai1/ec/wc)+(pk*ai1/ec/wc+ec*wc*(1.-uc*csa*csg)/pk)) )* &
-             (cte/pk**2.*wc/gc/vc)
-7777    continue
-        dsigmaIC=s/mec2
-
-        PepsIC = Ef(i)*nf*factor_ang*dsigmaIC
-        dEe = Ee(j)*(Eeint-1.d0)
-        dP_IC = Ne(j)*PepsIC*dEe
-        sum = dP_IC + sum
-     enddo
-     L_IC(i) = sum     ! Es la P , luego grafico E(j)*LIC(Ej)
-     sum_IC = sum_IC + sum*dEps*mec2
-  enddo
-
-  RETURN
-
-end SUBROUTINE IC_OLD
-
-END MODULE icrad
