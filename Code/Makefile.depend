@@ -1,4 +1,8 @@
-globals.o: globals.f90
+constants.o: constants.f90
+
+system_parameters.o: system_parameters.f90 constants.o
+
+global.o: global.f90 constants.o system_parameters.o
 
 controls.o: controls.f90
 
