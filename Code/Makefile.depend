@@ -14,12 +14,10 @@ losses.o: losses.f90 globals.o
 
 edistribution.o: edistribution.f90 globals.o losses.o
 
-#synrad.o: synrad.f90 globals.o
+synrad.o: synrad.f90 globals.o
 
-#icrad.o: icrad.f90 globals.o
+icrad.o: icrad.f90 globals.o
 
 #fluxes.o: fluxes.f90 globals.o
 
-#JetStar.o: JetStar.f90 globals.o controls.o trajectory.o evolution.o edistribution.o synrad.o icrad.o opac_gg.o opac_ff.o fluxes.o
-
-main.o: main.f90 globals.o controls.o trajectory.o evolution.o losses.o edistribution.o
+main.o: main.f90 globals.o controls.o trajectory.o evolution.o losses.o edistribution.o synrad.o icrad.o

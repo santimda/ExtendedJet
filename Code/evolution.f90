@@ -10,10 +10,10 @@ MODULE evolution
    subroutine Quantities(jet)
 
       character(LEN=*), intent(in) :: jet ! 'cj' for counterjet or '' for jet
-      real(dp) :: B, nfFF
+      real(dp) :: B
       allocate( z(Ns), rj(Ns) )
       allocate( delta_obs(Ns) )
-      allocate( BFF(Ns), vnorm(Ns), VFF(Ns) )
+      allocate( BFF(Ns), vnorm(Ns), VFF(Ns), nfFF(Ns) )
       allocate( EphMFF(Ns), Kappa(Ns), joFF(Ns), sjoFF(Ns) )
 
       write(*,*) '\n Calculating the evolution of quantities along the jet'
@@ -31,11 +31,11 @@ MODULE evolution
          delta_obs(i) = 1d0/(gj*(1d0-Bj*cos(jo)))
 
          !Magnetic field
-         B = B0*(rj(1)/rj(i)) ! AGREGAR OTRO INDICE ACA!
+         B = B0*(rj(1)/rj(i))**1 ! AGREGAR OTRO INDICE ACA!
          BFF(i) = B/gj
 
          !Stellar photon density and energy 
-         nfFF = nf0/delta_obs(i)  !!! CHECK!!!!!
+         nfFF(i) = nf0/delta_obs(i)  !!! CHECK!!!!!
          EphMFF(i) = EphM/delta_obs(i)
 
          !Dilution factor in the FF (Khangulyan 2014)
@@ -56,7 +56,7 @@ MODULE evolution
          VFF(i) = pi*rj(i)**2*dtFF*vj
 
          write(20,*) delta_obs(i), delta_obs(i)**3/gj
-         write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i)
+         write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i)
          write(31,*) z(i)/R_g, (BFF(i)/BFF(1))**2, (vnorm(i)/rj(i))/(vnorm(1)/rj(1))
 
       end do
@@ -69,7 +69,7 @@ MODULE evolution
 
       deallocate( z, rj )
       deallocate( delta_obs )
-      deallocate( BFF, vnorm, VFF ) 
+      deallocate( BFF, vnorm, VFF, nfFF ) 
       deallocate( EphMFF, Kappa, joFF, sjoFF )
 
    end subroutine Quantities

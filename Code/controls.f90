@@ -12,8 +12,8 @@ MODULE controls
     logical, parameter :: NE_calc = yes
     logical, parameter :: NEint_calc = yes
     
-    logical, parameter :: radsyn_calc = no!yes
-    logical, parameter :: radic_calc = no
+    logical, parameter :: radsyn_calc = yes
+    logical, parameter :: radic_calc = yes
     
     !===================================================
 

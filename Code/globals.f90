@@ -24,10 +24,13 @@ MODULE globals
   !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
   !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
 
-  integer, parameter :: Ns = 512       !Number of jet segments
+  integer, parameter :: Ns = 256       !Number of jet segments
   real(dp), parameter :: dl = (zmax-z0)/vj               !Segment advection time for constant velocity
   real(dp), parameter :: dt = dl/vj               !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj             !Advection time in the FF
+
+  integer, parameter :: nNE = 50  !Energy steps (for plotting N(E))
+  integer, parameter :: nIn = 100 !Energy steps (for the energy integrals)
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 
@@ -35,7 +38,7 @@ MODULE globals
   !===SEDs======================================================================================================
 
   real(dp), parameter :: Emin_sy = 1d-6*eV  !Minimum energy for the synchrotron SED in the OF
-  real(dp), parameter :: Emax_sy = 1d10*eV  !Maximum energy for the synchrotron SED in the OF
+  real(dp), parameter :: Emax_sy = 1d8*eV  !Maximum energy for the synchrotron SED in the OF
   integer, parameter :: NSED_sy = 100   !Number of points for the synchrotron SED
 
   real(dp), parameter :: Emin_IC = 1d0*eV   !Minimum energy for the IC SED in the OF
@@ -50,7 +53,7 @@ MODULE globals
   
   real(dp), dimension(:), allocatable :: BFF, vnorm, VFF !Magnetic field, jet expansion velocity, segment volume
    
-  real(dp), dimension(:), allocatable :: Kappa, EphMFF  !Dilution factor and photon energy in the FF
+  real(dp), dimension(:), allocatable :: Kappa, EphMFF, nfFF !Dilution factor, photon energy and number density in the FF
   real(dp), dimension(:), allocatable :: joFF, sjoFF    !Jet-observer angle and sin(jet-observer angle) in the FF
 
   real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*h_bar**3*c**2) !IC constant in Khangulyan 2014

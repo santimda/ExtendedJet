@@ -44,8 +44,6 @@ module system_parameters
    !Particle distribution
    real(dp), parameter :: E1 = EminFF  !Minimum energy considered in the FF
    real(dp), parameter :: E2 = EmaxFF  !Maximum energy considered in the FF
-   integer, parameter :: nNE = 50  !Energy steps (for plotting N(E))
-   integer, parameter :: nIn = 100 !Energy steps (for the energy integrals)
 
    !============================================================================
 

@@ -8,3 +8,5 @@ sort -k3,3n -k1,1n 'NE_cuts.dat' -o 'NE_cuts_int.dat'
 awk -v n=$nNE 'FNR != 1 && (FNR-1) % n == 0{print ""}{print}' 'NE_cuts_int.dat' > 'NE_cuts_ord.dat'
 
 rm 'NE_cuts_int.dat'
+
+echo '   --> NE_cuts.dat sorted by segment number in NE_cuts_ord.dat'
