@@ -28,7 +28,8 @@ module system_parameters
    real(dp), parameter :: R_g = 1.5d13*(M_BH/1.d8) !Gravitational radius (M_BH [Msun])
    real(dp), parameter :: z0 = 10.d0*R_g           !Jet launching height
    real(dp), parameter :: zmax = 10.d4*R_g         !Jet maximum height
-   real(dp), parameter :: nf0 = u_CMB/(kB*T_CMB)   !Target photon density at the jet base
+   real(dp), parameter :: EphM = kB*T_CMB          !Target photon energy in the obs frame
+   real(dp), parameter :: nf0 = u_CMB/EphM         !Target photon number density in the obs frame
    real(dp), parameter :: fB = 1.0d0               !Fraction of magnetic energy
    real(dp), parameter :: B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
 

@@ -9,8 +9,8 @@ MODULE controls
 
     logical, parameter :: jet_calc = yes
     
-    logical, parameter :: NE_calc = no
-    logical, parameter :: NEint_calc = no!yes
+    logical, parameter :: NE_calc = yes
+    logical, parameter :: NEint_calc = yes
     
     logical, parameter :: radsyn_calc = no!yes
     logical, parameter :: radic_calc = no

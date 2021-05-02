@@ -5,15 +5,18 @@ MODULE evolution
    contains
 
    !*************************************************************************************
-   !   Evolution of different quantities from cell to cell (jet)
+   !   Evolution of different quantities from cell to cell
    !*************************************************************************************
    subroutine Quantities(jet)
 
-      character(LEN=*), intent(in) :: jet ! 'cj' or 'jet'
-      real(dp) :: B, nf, joFF
+      character(LEN=*), intent(in) :: jet ! 'cj' for counterjet or '' for jet
+      real(dp) :: B, nfFF
       allocate( z(Ns), rj(Ns) )
       allocate( delta_obs(Ns) )
-      allocate( BFF(Ns), vnorm(Ns), Kappa(Ns), sjoFF(Ns), VFF(Ns) )
+      allocate( BFF(Ns), vnorm(Ns), VFF(Ns) )
+      allocate( EphMFF(Ns), Kappa(Ns), joFF(Ns), sjoFF(Ns) )
+
+      write(*,*) '\n Calculating the evolution of quantities along the jet'
 
       open(10,file='trajectory'//jet//'.dat')
       open(20,file='deltas'//jet//'.dat')
@@ -22,7 +25,7 @@ MODULE evolution
 
       do i = 1, Ns
 
-         read(10,*) z(i),rj(i)
+         read(10,*) z(i), rj(i)
 
          !Doppler factor between the jet and the observer
          delta_obs(i) = 1d0/(gj*(1d0-Bj*cos(jo)))
@@ -31,11 +34,9 @@ MODULE evolution
          B = B0*(rj(1)/rj(i)) ! AGREGAR OTRO INDICE ACA!
          BFF(i) = B/gj
 
-         ! LO QUE SIGUE HACERLO PARA EL CMB ?
-         !Stellar photon density and energy
-         !nf = nf0*(d(1)/d(i))**2
-         !nfFF(i) = nf/delta_star(i)
-         !EphMFF(i) = EphM/delta_star(i)
+         !Stellar photon density and energy 
+         nfFF = nf0/delta_obs(i)  !!! CHECK!!!!!
+         EphMFF(i) = EphM/delta_obs(i)
 
          !Dilution factor in the FF (Khangulyan 2014)
          Kappa(i) = delta_obs(i)**2 ! CHECK, FOR CMB
@@ -48,14 +49,14 @@ MODULE evolution
          endif
 
          !Jet observer angle in the FF
-         joFF = acos( (cos(jo)-Bj)/(1d0-Bj*cos(jo)) )
-         sjoFF(i) = sin(joFF)        !Sinus of joFF
+         joFF(i) = acos( (cos(jo)-Bj)/(1d0-Bj*cos(jo)) )
+         sjoFF(i) = sin(joFF(i))        !Sinus of joFF
 
          !Segment volume in the FF
          VFF(i) = pi*rj(i)**2*dtFF*vj
 
          write(20,*) delta_obs(i), delta_obs(i)**3/gj
-         write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i)
+         write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i)
          write(31,*) z(i)/R_g, (BFF(i)/BFF(1))**2, (vnorm(i)/rj(i))/(vnorm(1)/rj(1))
 
       end do
@@ -65,9 +66,12 @@ MODULE evolution
       close(30)
       close(31)
 
+
       deallocate( z, rj )
-      deallocate( delta_obs, BFF, vnorm, Kappa, sjoFF, VFF )
-      return
+      deallocate( delta_obs )
+      deallocate( BFF, vnorm, VFF ) 
+      deallocate( EphMFF, Kappa, joFF, sjoFF )
+
    end subroutine Quantities
 
 

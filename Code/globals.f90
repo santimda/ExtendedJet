@@ -47,8 +47,11 @@ MODULE globals
   real(dp), dimension(:), allocatable :: z, rj      !Jet position, radius
 
   real(dp), dimension(:), allocatable :: delta_obs  !Doppler factor w.r.t. observer
-  !Magnetic field, jet expansion velocity, segment volume, dilution factor and sin(jet-observer angle) in the FF
-  real(dp), dimension(:), allocatable :: BFF, vnorm, VFF, Kappa, sjoFF
+  
+  real(dp), dimension(:), allocatable :: BFF, vnorm, VFF !Magnetic field, jet expansion velocity, segment volume
+   
+  real(dp), dimension(:), allocatable :: Kappa, EphMFF  !Dilution factor and photon energy in the FF
+  real(dp), dimension(:), allocatable :: joFF, sjoFF    !Jet-observer angle and sin(jet-observer angle) in the FF
 
   real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*h_bar**3*c**2) !IC constant in Khangulyan 2014
   integer, parameter :: N_bands = 5                   !Number of flux bands
