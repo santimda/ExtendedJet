@@ -16,7 +16,7 @@ sed -i "s/Norb = [0-9]*/Norb = 0/" JetStar.f90
 
 for gamma in 1.5 2.0 3.0; do
 	
-	# Set the corresonding value of the jet Lorentz factor in the globals file
+	# Set the corresponding value of the jet Lorentz factor in the globals file
 	sed -i "s/gj = [0.-9.]*/gj = $gamma/" globals.f90	
 
 	echo -e '\n======= Gamma = '$gamma' ======='

@@ -24,6 +24,13 @@ MODULE globals
   !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
   !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
 
+  integer, parameter :: Ns = 512       !Number of jet segments
+  real(dp), parameter :: dl = (zmax-z0)/vj               !Segment advection time for constant velocity
+  real(dp), parameter :: dt = dl/vj               !Segment advection time for constant velocity
+  real(dp), parameter :: dtFF = dt/gj             !Advection time in the FF
+
+  !System-observer vector (unitary)
+  real(dp) :: SO(3) 
 
   !===SEDs======================================================================================================
 
@@ -37,14 +44,13 @@ MODULE globals
 
   !=============================================================================================================
 
-  real(dp), dimension(:), allocatable :: x,y,z,rj,lenj,d    !Jet position, radius, length and distance to star
-  real(dp), dimension(:), allocatable :: jo       !  jet-observer angle
+  real(dp), dimension(:), allocatable :: z, rj      !Jet position, radius
 
-  real(dp), dimension(:), allocatable :: delta_star,delta_obs   !Doppler factors with star and observer
-  real(dp), dimension(:), allocatable :: BFF,nfFF,vnorm,EphMFF, & !Magnetic and photon fields, jet expansion
-  &                    VFF,Kappa        !velocity, mean energy of the stellar photons, segment volume, dilution factor
+  real(dp), dimension(:), allocatable :: delta_obs  !Doppler factor w.r.t. observer
+  !Magnetic field, jet expansion velocity, segment volume, dilution factor and sin(jet-observer angle) in the FF
+  real(dp), dimension(:), allocatable :: BFF, vnorm, VFF, Kappa, sjoFF
 
-  real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*hbar**3*c**2) !IC constant in Khangulyan 2014
+  real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*h_bar**3*c**2) !IC constant in Khangulyan 2014
   integer, parameter :: N_bands = 5                   !Number of flux bands
 
   !===ABSORTION PARAMETERS======================================================================================

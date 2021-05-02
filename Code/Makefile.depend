@@ -2,7 +2,7 @@ constants.o: constants.f90
 
 system_parameters.o: system_parameters.f90 constants.o
 
-global.o: global.f90 constants.o system_parameters.o
+globals.o: globals.f90 constants.o system_parameters.o
 
 controls.o: controls.f90
 
@@ -10,20 +10,16 @@ trajectory.o: trajectory.f90 globals.o
 
 evolution.o: evolution.f90 globals.o
 
-losses.o: losses.f90 globals.o
+#losses.o: losses.f90 globals.o
 
-edistribution.o: edistribution.f90 globals.o losses.o
+#edistribution.o: edistribution.f90 globals.o losses.o
 
-synrad.o: synrad.f90 globals.o
+#synrad.o: synrad.f90 globals.o
 
-icrad.o: icrad.f90 globals.o
+#icrad.o: icrad.f90 globals.o
 
-opac_gg.o: opac_gg.f90 globals.o controls.o
+#fluxes.o: fluxes.f90 globals.o
 
-opac_ff.o: opac_ff.f90 globals.o controls.o
+#JetStar.o: JetStar.f90 globals.o controls.o trajectory.o evolution.o edistribution.o synrad.o icrad.o opac_gg.o opac_ff.o fluxes.o
 
-fluxes.o: fluxes.f90 globals.o
-
-JetStar.o: JetStar.f90 globals.o controls.o trajectory.o evolution.o edistribution.o synrad.o icrad.o opac_gg.o opac_ff.o fluxes.o
-
-
+main.o: main.f90 globals.o controls.o trajectory.o evolution.o
