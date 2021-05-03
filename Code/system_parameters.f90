@@ -32,6 +32,7 @@ module system_parameters
    real(dp), parameter :: nf0 = u_CMB/EphM         !Target photon number density in the obs frame
    real(dp), parameter :: fB = 1.0d0               !Fraction of magnetic energy
    real(dp), parameter :: B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
+   real(dp), parameter :: exp_B = 1.d0             ! B = B0*(z/z0)^exp_B
 
    !===NONTHERMAL PARTICLES======================================================================================
 

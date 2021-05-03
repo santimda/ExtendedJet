@@ -42,7 +42,7 @@ MODULE evolution
          delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*cjo))
 
          !Magnetic field
-         B = B0*(rj(1)/rj(i))**1 ! AGREGAR OTRO INDICE ACA!
+         B = B0*(rj(1)/rj(i))**exp_B
          BFF(i) = B/gj
 
          !Stellar photon density and energy 

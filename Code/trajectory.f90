@@ -16,7 +16,7 @@ MODULE trajectory
   subroutine trajectory_calc(jet)
 
     character(LEN=*), intent(in) :: jet ! 'cj' or 'jet'
-    real(dp) :: dir
+    real(dp) :: dir, tan_theta
     allocate( z(Ns), rj(Ns) )
 
     ! The jet goes upwards, the CJ goes downwards (negative z)
@@ -39,10 +39,14 @@ MODULE trajectory
       stop
     endif
 
-    z(1) = dir*z0
-    do i = 1, Ns
-      rj(i) = z(i)*tan(thetaj)           !Jet radius     
+    tan_theta = tan(thetaj)
+    z(1) = dir*z0               ! jet height
+    rj(1) = abs(z(1))*tan_theta ! jet radius
+
+    !CHECK: SE PUEDE USAR UN PASO NO EQUIESPACIADO?!
+    do i = 1, Ns-1
       z(i+1) = z(i) + dir*vj*dt
+      rj(i+1) = abs(z(i+1))*tan_theta
     enddo
 
     open(10, file='trajectory'//jet//'.dat')
