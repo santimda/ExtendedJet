@@ -28,7 +28,7 @@ contains
     !N(E) of each cut
     open(30,file='NE_intcuts.dat')
     do i = 1,nIn
-        do j = 1,Ns
+        do j = 1, Ns
             read(30,*) E(i),NE(i,j)
         enddo
     enddo
@@ -57,19 +57,19 @@ contains
         dEph = Eph*(Ein-1d0)    !Energy interval
 
         !Loop for the segments
-        do j = 1,Ns
+        do j = 1, Ns
         
             EphFF(j) = Eph/delta_obs(j)     !Photon energy in the FF
             dEphFF(j) = dEph/delta_obs(j)   !Energy interval in the FF
         
-            do i = 1,nIn
+            do i = 1, nIn
                 !N(E) for the segment j
                 NEcut(i) = NE(i,j)
             enddo
 
             !Unabsorbed synchrotron luminosity for each segment
             LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut)
-            Lumcut(j) = delta_obs(j)**2/gj*LumcutFF(j)      !(de)Boosted
+            Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
 
             !Unabsorbed (de)boosted luminosity for Eph
             Lum = Lum + Lumcut(j)

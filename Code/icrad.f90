@@ -71,7 +71,7 @@ contains
        LIC_bol_FF = LIC_bol_FF + LIC_bol_cut_FF
 
        !Unabsorbed boosted luminosity for Eg (DIFFERENT for jet and c-jet)
-       LIC_cut = delta_obs(j_s)**2/gj*LIC_FF ! These are vectors evaluated in E_g(i)
+       LIC_cut = boost(j_s)*LIC_FF ! These are vectors evaluated in E_g(i)
        LIC = LIC + LIC_cut
 
        do i = 1,NSED_IC

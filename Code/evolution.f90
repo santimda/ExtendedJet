@@ -10,7 +10,7 @@ MODULE evolution
    subroutine Quantities(jet)
 
       character(LEN=*), intent(in) :: jet ! 'cj' for counterjet or '' for jet
-      real(dp) :: B, dir, cjo
+      real(dp) :: B, dir, cjo, boost
       allocate( z(Ns), rj(Ns) )
       allocate( delta_obs(Ns) )
       allocate( BFF(Ns), vnorm(Ns), VFF(Ns), nfFF(Ns) )
@@ -66,7 +66,10 @@ MODULE evolution
          !Segment volume in the FF
          VFF(i) = pi*rj(i)**2*dtFF*vj
 
-         write(20,*) delta_obs(i), delta_obs(i)**3/gj ! MEJOR GUARDAR delta^2/gamma? 
+         !boost = delta_obs(i)**2/gj  ! CHECK THIS!
+         boost = delta_obs(i)**3  ! CHECK THIS!
+
+         write(20,*) delta_obs(i), boost
          write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i)
          write(31,*) z(i)/R_g, (BFF(i)/BFF(1))**2, (vnorm(i)/rj(i))/(vnorm(1)/rj(1))
 
