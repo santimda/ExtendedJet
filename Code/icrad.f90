@@ -80,8 +80,8 @@ contains
        write(40,*) 
        
        !Jet contribution of the segments up to given lengths
-       if (z(j) <= 0.01d0*zmax) LIC1 = LIC
-       if (z(j) <= 0.1d0*zmax) LIC2 = LIC
+       if (z(j_s) <= 0.01d0*zmax) LIC1 = LIC
+       if (z(j_s) <= 0.1d0*zmax) LIC2 = LIC
        
     enddo
     !write(*,'(3X,A,ES9.2E2,1X,A)') 'Jet unabsorbed IC luminosity (FF):',LIC_bol_FF,'erg/s'

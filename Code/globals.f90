@@ -24,13 +24,13 @@ MODULE globals
   !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
   !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
 
-  integer, parameter :: Ns = 256       !Number of jet segments
-  real(dp), parameter :: dl = (zmax-z0)/vj               !Segment advection time for constant velocity
-  real(dp), parameter :: dt = dl/vj               !Segment advection time for constant velocity
-  real(dp), parameter :: dtFF = dt/gj             !Advection time in the FF
+  integer, parameter :: Ns = 512       !Number of jet segments
+  real(dp), parameter :: dl = (zmax-z0)/Ns    !Segment length
+  real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
+  real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
 
-  integer, parameter :: nNE = 50  !Energy steps (for plotting N(E))
-  integer, parameter :: nIn = 100 !Energy steps (for the energy integrals)
+  integer, parameter :: nNE = 100  !Energy steps (for plotting N(E))
+  integer, parameter :: nIn = 150 !Energy steps (for the energy integrals)
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 
@@ -39,11 +39,11 @@ MODULE globals
 
   real(dp), parameter :: Emin_sy = 1d-6*eV  !Minimum energy for the synchrotron SED in the OF
   real(dp), parameter :: Emax_sy = 1d8*eV  !Maximum energy for the synchrotron SED in the OF
-  integer, parameter :: NSED_sy = 100   !Number of points for the synchrotron SED
+  integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
 
   real(dp), parameter :: Emin_IC = 1d0*eV   !Minimum energy for the IC SED in the OF
   real(dp), parameter :: Emax_IC = 1d14*eV  !Maximum energy for the IC SED in the OF
-  integer, parameter :: NSED_IC = 100   !Number of points for the IC SED
+  integer, parameter :: NSED_IC = 150   !Number of points for the IC SED
 
   !=============================================================================================================
 
@@ -55,29 +55,10 @@ MODULE globals
    
   real(dp), dimension(:), allocatable :: Kappa, EphMFF, nfFF !Dilution factor, photon energy and number density in the FF
   real(dp), dimension(:), allocatable :: joFF, sjoFF    !Jet-observer angle and sin(jet-observer angle) in the FF
-
+  
+  logical, parameter :: ani = .True., iso = .False. ! To define isotropic or anisotropic IC
   real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*h_bar**3*c**2) !IC constant in Khangulyan 2014
   integer, parameter :: N_bands = 5                   !Number of flux bands
-
-  !===ABSORTION PARAMETERS======================================================================================
-
-  !Gamma-gamma
-  integer, parameter :: mE_gg = NSED_IC, m_ang_gg = 400
-  real(dp), dimension(:,:), allocatable :: tau_gg
-  real(dp), parameter :: Ef_min_gg = Emin_IC
-  real(dp), parameter :: Ef_max_gg = Emax_IC
-  real(dp) :: Ef_gg(mE_gg),Ef_int_gg
-   logical, parameter :: ani = .True., iso = .False. ! To define isotropic or anisotropic IC
-
-  !Free-free
-  integer, parameter :: mE_ff = 200, m_ang_ff = 400
-  real(dp), dimension(:,:), allocatable :: tau_ff
-  real(dp), parameter :: Ef_min_ff = Emin_sy  
-  real(dp), parameter :: Ef_max_ff = h*100d12 ! 100 THz 
-  real(dp), parameter :: mu_w = 1.3d0     ! Leitherer 1995 ?
-  real(dp), parameter :: Zq_w = 1.0d0     ! Z = rms ionic charge ?
-  real(dp), parameter :: gamma_w = 1.0d0    ! Leitherer 1995 ?
-  real(dp), parameter :: filling = 2d-1   ! ..... 20% ?
 
   !=============================================================================================================
 

@@ -70,7 +70,6 @@ contains
             !Unabsorbed synchrotron luminosity for each segment
             LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut)
             Lumcut(j) = delta_obs(j)**2/gj*LumcutFF(j)      !(de)Boosted
-            ! CHEEEEEEEEEEEECK! No es delta_obs**3? 
 
             !Unabsorbed (de)boosted luminosity for Eph
             Lum = Lum + Lumcut(j)
@@ -137,9 +136,9 @@ contains
         if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
 
         !Critical photon energy and power emitted for each particle energy
-        Ec = dsqrt(3d0/2d0) * (qe*h*B*E(i)**2)/(2d0*pi*me**3*c**5)
+        Ec = sqrt(3d0/2d0) * (qe*h*B*E(i)**2)/(2d0*pi*me**3*c**5)
         x = Eph/Ec
-        Psync = 1.85d0*dsqrt(2d0)*qe**3*B/(h*me*c**2) * x**(1d0/3d0)*dexp(-x)
+        Psync = 1.85d0*sqrt(2d0)*qe**3*B/(h*me*c**2) * x**(1d0/3d0)*exp(-x)
 
         !The approximation is only valid for 0.1 < x < 10
         if ((x .lt. 1d-1) .or. (x .gt. 1d1)) Psync = 0d0
