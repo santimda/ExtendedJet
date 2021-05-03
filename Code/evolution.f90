@@ -10,7 +10,7 @@ MODULE evolution
    subroutine Quantities(jet)
 
       character(LEN=*), intent(in) :: jet ! 'cj' for counterjet or '' for jet
-      real(dp) :: B
+      real(dp) :: B, dir, cjo
       allocate( z(Ns), rj(Ns) )
       allocate( delta_obs(Ns) )
       allocate( BFF(Ns), vnorm(Ns), VFF(Ns), nfFF(Ns) )
@@ -23,12 +23,23 @@ MODULE evolution
       open(30,file='quant_FF'//jet//'.dat')
       open(31,file='quant_FF_norm'//jet//'.dat')
 
+      ! The jet goes upwards, the CJ goes downwards (negative v_z)
+      if (jet == '') then
+         dir = 1.d0
+      elseif (jet == 'cj') then
+         dir = -1.d0
+      else
+         write(*,*) 'Invalid jet type'
+         stop
+      endif
+
+      cjo = cos(jo)
       do i = 1, Ns
 
          read(10,*) z(i), rj(i)
 
          !Doppler factor between the jet and the observer
-         delta_obs(i) = 1d0/(gj*(1d0-Bj*cos(jo)))
+         delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*cjo))
 
          !Magnetic field
          B = B0*(rj(1)/rj(i))**1 ! AGREGAR OTRO INDICE ACA!
@@ -55,7 +66,7 @@ MODULE evolution
          !Segment volume in the FF
          VFF(i) = pi*rj(i)**2*dtFF*vj
 
-         write(20,*) delta_obs(i), delta_obs(i)**3/gj
+         write(20,*) delta_obs(i), delta_obs(i)**3/gj ! MEJOR GUARDAR delta^2/gamma? 
          write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i)
          write(31,*) z(i)/R_g, (BFF(i)/BFF(1))**2, (vnorm(i)/rj(i))/(vnorm(1)/rj(1))
 

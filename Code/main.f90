@@ -39,7 +39,7 @@ PROGRAM main
     if (radsyn_calc) call execute_command_line('./SortSEDsyn.sh '//trim(adjustl(numSED))) !Sort SED file
     
     !IC SED     
-    if (radic_calc) call SEDIC()
+    if (radic_calc) call SEDIC(iso)
     
 
 END PROGRAM main

@@ -67,6 +67,7 @@ MODULE globals
   real(dp), parameter :: Ef_min_gg = Emin_IC
   real(dp), parameter :: Ef_max_gg = Emax_IC
   real(dp) :: Ef_gg(mE_gg),Ef_int_gg
+   logical, parameter :: ani = .True., iso = .False. ! To define isotropic or anisotropic IC
 
   !Free-free
   integer, parameter :: mE_ff = 200, m_ang_ff = 400

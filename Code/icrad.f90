@@ -5,16 +5,19 @@ MODULE icrad
 contains
 
   !============================================================================
-  ! computation of the IC SED
+  ! Computation of the IC SED
+  !============================================================================
+  ! It calculates anisotropic IC if aniso=.True., else isotropic. 
   !============================================================================
 
-  subroutine SEDIC ()
-    real(dp) :: Eg_FF(NSED_IC),Eg_int_FF,Eg(NSED_IC),Eg_int
-    real(dp) :: E_e(nIn),NE_e(nIn,Ns),NEcut_e(nIn)
-    real(dp) :: LIC_FF(NSED_IC),LIC_cut(NSED_IC),LIC1(NSED_IC),LIC2(NSED_IC),LIC(NSED_IC)
-    real(dp) :: LIC_bol_FF,LIC_bol_cut_FF
-    real(dp) :: dummy, boost(Ns)
+  subroutine SEDIC(aniso)
+    real(dp) :: Eg_FF(NSED_IC), Eg_int_FF, Eg(NSED_IC), Eg_int
+    real(dp) :: E_e(nIn), NE_e(nIn,Ns), NEcut_e(nIn)
+    real(dp) :: LIC_FF(NSED_IC), LIC_cut(NSED_IC), LIC1(NSED_IC), LIC2(NSED_IC), LIC(NSED_IC)
+    real(dp) :: LIC_bol_FF, LIC_bol_cut_FF
+    real(dp) :: dummy, boost(Ns), cang
     integer :: j_s
+    logical, intent(in) :: aniso 
     allocate( z(Ns), nfFF(Ns), EphMFF(Ns), Kappa(Ns), delta_obs(Ns) )
 
     write(*,*) '\n Calculating the IC SED along the jet'
@@ -39,6 +42,8 @@ contains
     enddo
     close(30)
 
+    cang = cos(jo) ! cosine of interaction angle, almost dummy variable for now
+
     !-------------------------------------------------------------------!
     !                     Inverse Compton                               !
     !-------------------------------------------------------------------!
@@ -51,7 +56,7 @@ contains
     call vector_log( Emin_ic,Emax_ic,Eg_int,Eg )
 
     LIC = 0.d0
-    do j_s = 1,Ns !Loop for the segments
+    do j_s = 1, Ns !Loop for the segments
 
        !Photon energies in the FF such that they all match the same energies in the OF
        call vector_log( Emin_ic/delta_obs(j_s), Emax_ic/delta_obs(j_s), Eg_int_FF, Eg_FF )
@@ -62,8 +67,7 @@ contains
        enddo
               
        !Unabsorbed IC luminosity for each segment in LIC_FF
-       call IC_Khang( E_e, NEcut_e, Eg_FF, 0.5d0, EphMFF(j_s), Kappa(j_s), LIC_FF, LIC_bol_cut_FF )
-       ! IMPORTANT!!! CHANGE "0.5d0" FOR SOMETHING COMPATIBLE WITH ISOTROPIC PHOTON FIELD
+       call IC_Khang( E_e, NEcut_e, Eg_FF, aniso, cang, EphMFF(j_s), Kappa(j_s), LIC_FF, LIC_bol_cut_FF )
        LIC_bol_FF = LIC_bol_FF + LIC_bol_cut_FF
 
        !Unabsorbed boosted luminosity for Eg (DIFFERENT for jet and c-jet)
@@ -100,17 +104,25 @@ contains
 !                                                                           //
 !/////////////////////////////////////////////////////////////////////////////
 
-! IMPORTANT: CHANGE THIS TO ISOTROPIC IC
 
-subroutine IC_Khang(Ee,Ne,Ef,cang,Eph0,Kapp,L_IC,sum_IC)
-  Real*8, intent(in) :: Ee(nIn),Ne(nIn),Ef(NSED_IC),cang,Eph0,Kapp
-  Real*8, intent(out) :: L_IC(NSED_IC),sum_IC
-  Real*8 :: P_eps,dP_eps,dEe,Eint_e
-  Real*8 :: gamma_e(nIn),Eps(NSED_IC),Eps_int,dEps
-  Real*8 :: T_ad,T_ad_ang,cte_Ndot,Ndot,x0,z_IC,t_K,sum
+!============================================================================
+! This subroutine calculates the intrinsic IC emission using Khangulyan+2014
+! formulae for black-body-like photon fields. 
+! It calculates anisotropic IC if aniso=.True., else isotropic. 
+!============================================================================
+
+subroutine IC_Khang(Ee, Ne, Ef, aniso, cang, Eph0, Kapp, L_IC, sum_IC)
+  real(dp), intent(in) :: Ee(nIn), Ne(nIn), Ef(NSED_IC), cang, Eph0, Kapp
+  real(dp), intent(out) :: L_IC(NSED_IC), sum_IC
+  logical, intent(in) :: aniso
+  real(dp) :: P_eps, dP_eps, dEe, Eint_e
+  real(dp) :: gamma_e(nIn), Eps(NSED_IC), Eps_int, dEps
+  real(dp) :: T_ad, T_ad_ang, cte_Ndot, Ndot, x0, z_IC, t_K, sum
 
   T_ad = Eph0/(2.7*mec2)     ! adimensional temperature, Eph0 = 2.7*kT
-  T_ad_ang = T_ad*(1.-cang)  ! anisotropic IC
+  
+  T_ad_ang = T_ad  !  dummy definition so compiler doesn't warn possible uninitialization
+  if (aniso) T_ad_ang = T_ad*(1.-cang) ! anisotropic IC
   
   Eps = Ef/mec2              ! adimensional gamma photon energy
   Eps_int = Eps(2)/Eps(1)
@@ -123,17 +135,23 @@ subroutine IC_Khang(Ee,Ne,Ef,cang,Eph0,Kapp,L_IC,sum_IC)
   do i = 1,NSED_IC                      ! gamma-ray photon energies
      dEps = Eps(i)*(Eps_int-1.d0)
      sum = 0.d0
-     do j = 1,nIn                       ! electron energies
+     do j = 1, nIn                       ! electron energies
         z_IC = Eps(i)/gamma_e(j)
-        if (z_IC < 1d0) then    !
-           t_K = 2d0*gamma_e(j)*T_ad_ang  !anisotropic
-           x0 = z_IC/( (1.-z_IC)*t_K )
-           Ndot = (cte_Ndot/gamma_e(j)**2) * ( (z_IC**2/(2.*(1.-z_IC)))*F_1(x0) + F_2(x0) ) !anisotropic
-           P_eps = Eps(i)*Ndot           ! N^dot = nf*c*dsigmaIC
-           dEe = Ee(j)*(Eint_e-1.d0)
-           dP_eps = Ne(j)*P_eps*dEe
+        if (z_IC < 1d0) then    
+          if (aniso) then                !anisotropic IC
+            t_K = 2d0*gamma_e(j)*T_ad_ang
+            x0 = z_IC/( (1.-z_IC)*t_K )
+            Ndot = (cte_Ndot/gamma_e(j)**2) * ( (z_IC**2/(2.*(1.-z_IC)))*F_1(x0) + F_2(x0) ) 
+          else
+            t_K = 4.*gamma_e(j)*T_ad      !isotropic IC
+            x0 = z_IC/( (1.-z_IC)*t_K )
+            Ndot = (cte_Ndot/gamma_e(j)**2) * ( (z_IC**2/(2.*(1.-z_IC)))*F_3(x0) + F_4(x0) ) 
+          endif
+          P_eps = Eps(i)*Ndot           ! N^dot = nf*c*dsigmaIC
+          dEe = Ee(j)*(Eint_e-1.d0)
+          dP_eps = Ne(j)*P_eps*dEe
         else
-           dP_eps = 0.d0
+          dP_eps = 0.d0
         endif
         sum = dP_eps + sum
      enddo
