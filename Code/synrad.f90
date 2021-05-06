@@ -126,22 +126,24 @@ contains
     real(dp) function SyncLum (B,Eph,E,NE)
     real(dp), intent(in) :: B,Eph,E(nIn),NE(nIn)
     real(dp) :: dE(nIn),Ec,x,Psync
+    real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
+    real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
 
     !Initialization
     SyncLum = 0d0
 
     !Integral by rectangles
-    do i = 1,nIn
+    do i = 1, nIn
 
         if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
 
         !Critical photon energy and power emitted for each particle energy
-        Ec = sqrt(3d0/2d0) * (qe*h*B*E(i)**2)/(2d0*pi*me**3*c**5)
+        Ec = cte_Ec*B*E(i)**2
         x = Eph/Ec
-        Psync = 1.85d0*sqrt(2d0)*qe**3*B/(h*me*c**2) * x**(1d0/3d0)*exp(-x)
+        Psync = cte_sy*B * x**(1d0/3d0)*exp(-x)
 
         !The approximation is only valid for 0.1 < x < 10
-        if ((x .lt. 1d-1) .or. (x .gt. 1d1)) Psync = 0d0
+        if ((x < 1d-1) .or. (x > 1d1)) Psync = 0d0
 
         SyncLum = SyncLum + Psync*NE(i)*dE(i)
 
@@ -159,7 +161,7 @@ contains
     real(dp) :: K,Ecf,Sf,depth,tau,Ap
 
     !Loop for the segments
-    do j = 1,Ns
+    do j = 1, Ns
 
         !Absorption and emission coefficients, and source function, for each segment (Pacholczyck, 1970)
         K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*me*V(j)) * EIntSSA(B(j),Eph(j),E,NE)
@@ -177,10 +179,10 @@ contains
         Ap = V(j)/min(depth,z(j)/gj)
 
         !Luminosity corrected for synchrotron self-absorption
-        if (tau .le. 0.1d0) then
+        if (tau < 0.1d0) then
             LumA(j) = Lum(j)
         else
-            LumA(j) = 4d0*pi*Ap*Sf*(1d0-dexp(-tau))
+            LumA(j) = 4d0*pi*Ap*Sf*(1d0-exp(-tau))
         endif
 
     enddo
@@ -197,7 +199,7 @@ contains
     
     EIntSSA = 0d0   !Initialization
     
-    do i = 1,nIn
+    do i = 1, nIn
 
         if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
 
