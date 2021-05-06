@@ -23,7 +23,7 @@ module system_parameters
    !===SYSTEM PARAMETERS=========================================================================================
 
    real(dp), parameter :: dist = 3d3*kpc           !Distance to the system
-   real(dp), parameter :: jo = 30d0                !Observer's angle with the jet axis 
+   real(dp), parameter :: jo = 20d0*pi/180d0       !Observer's angle with the jet axis (rad)
    real(dp), parameter :: M_BH = 6.d8              !Black hole mass
    real(dp), parameter :: R_g = 1.5d13*(M_BH/1.d8) !Gravitational radius (M_BH [Msun])
    real(dp), parameter :: z0 = 1.d1*R_g           !Jet launching height

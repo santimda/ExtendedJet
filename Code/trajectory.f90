@@ -27,7 +27,7 @@ MODULE trajectory
     endif
 
     !System-observer vector (unitary)
-    SO = (/sin(jo*pi/180d0), sin(jo*pi/180), cos(jo*pi/180d0)/)
+    SO = (/sin(jo), sin(jo), cos(jo)/)
 
     ! The jet goes upwards, the CJ goes downwards (negative z)
     if (jet == '') then
