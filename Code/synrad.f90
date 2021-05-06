@@ -86,7 +86,7 @@ contains
         
         do j = 1, Ns
         
-            LumcutA(j) = delta_obs(j)**2/gj*LumcutAFF(j)    !(de)Boosted
+            LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
             write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
             
             !Absorbed (de)boosted luminosity for Eph
