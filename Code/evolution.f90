@@ -67,7 +67,7 @@ MODULE evolution
          VFF(i) = pi*rj(i)**2*dtFF*vj
 
          !boost = delta_obs(i)**2/gj  ! CHECK THIS!
-         boost = delta_obs(i)**3  ! CHECK THIS!
+         boost = delta_obs(i)**2  ! CHECK THIS! (delta z defined in LF)
 
          write(20,*) delta_obs(i), boost
          write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i)
