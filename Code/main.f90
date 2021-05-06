@@ -37,6 +37,7 @@ PROGRAM main
     !Synchrotron SED
     if (radsyn_calc) call SEDsyn()
     if (radsyn_calc) call execute_command_line('./SortSEDsyn.sh '//trim(adjustl(numSED))) !Sort SED file
+    if (radsyn_calc) call Usyn()
     
     !IC SED     
     if (radic_calc) call SEDIC(iso)

@@ -193,9 +193,10 @@ contains
 !*************************************************************************************************************
 !   Integral for the particle energy in SSA
 !*************************************************************************************************************
-    real(dp) function EintSSA (B,Eph,E,NE)
-    real(dp), intent(in) :: B,Eph,E(nIn),NE(nIn)
-    real(dp) :: dE(nIn),Ec,x,F
+    real(dp) function EintSSA(B,Eph,E,NE)
+    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp) :: dE(nIn), Ec, x, F
+    real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     
     EIntSSA = 0d0   !Initialization
     
@@ -204,9 +205,9 @@ contains
         if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
 
         !Critical photon energy and function to integrate for each particle energy
-        Ec = dsqrt(3d0/2d0) * (qe*h*B*E(i)**2)/(2d0*pi*me**3*c**5)
+        Ec = cte_Ec*B*E(i)**2
         x = Eph/Ec
-        F = NE(i)/E(i)*dexp(-x)*x**(1d0/3d0)*(x + 2d0/3d0)
+        F = NE(i)/E(i)*exp(-x)*x**(1d0/3d0)*(x + 2d0/3d0)
 
         !The approximation is only valid for 0.1 < x < 10
         if (x < 1d-1 .or. x > 1d1) F = 0d0
@@ -217,5 +218,50 @@ contains
 
     return
     end function EintSSA
-    
+
+
+
+    !***************************************************************************************************
+    !  Computation of the synchrotron energy density in each segment
+    !***************************************************************************************************
+    subroutine Usyn()
+        real(dp) :: L_tot(Ns), Lsy(nIn, Ns), Esy(nIn), Esy_step, dEsyn
+        real(dp) :: z(Ns), Bff(Ns), VFF(Ns), dummy
+
+        ! Read relevant quantities at each segment
+        open(10, file='quant_FF.dat')
+        do l = 1, Ns
+            read(10,*) z(l), BFF(l), dummy, dummy, dummy, dummy, VFF(l), dummy
+        enddo
+        close(10)
+
+        ! Read from a file: Esy(i,l), Lsy_unabs(i,l), Lsy_abs(i,l), l
+        open(27, file='SEDsyn_cuts_ord.dat')
+        do l = 1, Ns 
+            do i = 1, nIn
+                read(27,*) Esy(i), dummy, Lsy(i,l), dummy
+            enddo
+        enddo
+        close(27)
+
+        ! Integrate the luminosity of each segment
+        L_tot = 0.d0
+        Esy_step = Esy(2)/Esy(1)
+        open(28, file='U_FF.dat')
+        do l = 1, Ns
+            do i = 1, nIn
+                dEsyn = Esy(i)*(Esy_step-1.d0)
+                L_tot(l) = L_tot(l) + Lsy(i,l) * dEsyn
+            enddo
+            write(28,*) l, z(l), L_tot(l)/VFF(l), BFF(l)**2/(8.d0*pi), (L_tot(l)/VFF(l))/(BFF(l)**2/(8.d0*pi))
+        enddo
+        close(28)
+
+    end subroutine Usyn
+
+
+
+!==============================================================
+
+
 END MODULE synrad
