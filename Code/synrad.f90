@@ -226,14 +226,17 @@ contains
     !***************************************************************************************************
     subroutine Usyn()
         real(dp) :: L_tot(Ns), Lsy(nIn, Ns), Esy(nIn), Esy_step, dEsyn
-        real(dp) :: z(Ns), Bff(Ns), VFF(Ns), dummy
+        real(dp) :: z(Ns), Bff(Ns), r(Ns), VFF(Ns), boost(Ns), dummy, U_sy_FF
 
         ! Read relevant quantities at each segment
         open(10, file='quant_FF.dat')
+        open(20, file='deltas.dat')
         do l = 1, Ns
-            read(10,*) z(l), BFF(l), dummy, dummy, dummy, dummy, VFF(l), dummy
+            read(10,*) z(l), BFF(l), r(l), dummy, dummy, dummy, VFF(l), dummy
+            read(20,*) dummy, boost(l)
         enddo
         close(10)
+        close(20)
 
         ! Read from a file: Esy(i,l), Lsy_unabs(i,l), Lsy_abs(i,l), l
         open(27, file='SEDsyn_cuts_ord.dat')
@@ -253,7 +256,9 @@ contains
                 dEsyn = Esy(i)*(Esy_step-1.d0)
                 L_tot(l) = L_tot(l) + Lsy(i,l) * dEsyn
             enddo
-            write(28,*) l, z(l), L_tot(l)/VFF(l), BFF(l)**2/(8.d0*pi), (L_tot(l)/VFF(l))/(BFF(l)**2/(8.d0*pi))
+            L_tot(l) = L_tot(l)/boost(l) ! We need L_sy_FF, so we unboost
+            U_sy_FF = ( L_tot(l)/VFF(l) ) * ( r(l)/c )
+            write(28,*) l, z(l), U_sy_FF, BFF(l)**2/(8.d0*pi), U_sy_FF/(BFF(l)**2/(8.d0*pi))
         enddo
         close(28)
 
