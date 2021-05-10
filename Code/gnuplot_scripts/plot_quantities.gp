@@ -25,6 +25,7 @@ plot '../quant_FF_norm.dat' u 1:2 t 'U_B/U_{B,0}' w l lw 3 lc 1,\
 	'../quant_FF_norm.dat' u 1:3 t '(v_{/Symbol \136}/r_{j})/(v_{{/Symbol \136},0}/r_{j,0})' w l lw 3 dt 3 lc 2,\
 	'../quant_FF_norm.dat' u 1:4 t 'V_{FF}/V_{0}' w l lw 4 dt 4 lc 3
 	
+#	'../L_inj.dat' u 2:4 t 'L_{SSA,FF}/L_{inj,FF}' w l lw 4 dt 5 lc 5
 #plot './Quant_FF_norm.dat' u 1:5 t 'cos(wo) jet' w l lw 3 lc 2,\
 #	'./Quant_FF_norm.dat' u 1:6 t 'cos(woFF) jet' w l lw 3 lc 2 dt 2,\
 #	'./Quant_FF_normCJ.dat' u 1:5 t 'cos(wo) cjet' w l lw 3 lc 1,\

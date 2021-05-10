@@ -225,7 +225,7 @@ contains
     !  Computation of the synchrotron energy density in each segment
     !***************************************************************************************************
     subroutine Calc_Usyn()
-        real(dp) :: L_tot(Ns), Lsy(nIn, Ns), Esy(nIn), Esy_step, dEsyn
+        real(dp) :: L_tot(Ns), Lun(nIn, Ns), Lsy(nIn, Ns), Esy(nIn), Esy_step, dEsy
         real(dp) :: z(Ns), Bff(Ns), r(Ns), VFF(Ns), boost(Ns), dummy, U_sy_FF
 
         ! Read relevant quantities at each segment
@@ -242,8 +242,10 @@ contains
         open(27, file='SEDsyn_cuts_ord.dat')
         do l = 1, Ns 
             do i = 1, nIn
-                read(27,*) Esy(i), dummy, Lsy(i,l), dummy
-                Lsy(i,l) = Lsy(i,l)/Esy(i)
+                read(27,*) Esy(i), Lun(i,l), Lsy(i,l), dummy
+                ! We need L_sy_FF, so we unboost
+                Lsy(i,l) = Lsy(i,l)/(Esy(i)*boost(l))
+                Lun(i,l) = Lun(i,l)/(Esy(i)*boost(l))
             enddo
         enddo
         close(27)
@@ -254,12 +256,23 @@ contains
         open(28, file='U_FF.dat')
         do l = 1, Ns
             do i = 1, nIn
-                dEsyn = Esy(i)*(Esy_step-1.d0)
-                L_tot(l) = L_tot(l) + Lsy(i,l) * dEsyn
+                dEsy = Esy(i)*(Esy_step-1.d0)
+                L_tot(l) = L_tot(l) + Lsy(i,l) * dEsy
             enddo
-            L_tot(l) = L_tot(l)/boost(l) ! We need L_sy_FF, so we unboost
             U_sy_FF = ( L_tot(l)/VFF(l) ) * ( r(l)/c )
             write(28,*) l, z(l), U_sy_FF, BFF(l)**2/(8.d0*pi), U_sy_FF/(BFF(l)**2/(8.d0*pi))
+        enddo
+        close(28)
+
+        ! Calculate the total absorbed luminosity of each segment
+        L_tot = 0.d0
+        open(28, file='L_inj.dat')
+        do l = 1, Ns
+            do i = 1, nIn
+                dEsy = Esy(i)*(Esy_step-1.d0)
+                L_tot(l) = L_tot(l) + (Lun(i,l) - Lsy(i,l)) * dEsy
+            enddo
+            write(28,*) l, z(l)/R_g, L_tot(l), L_tot(l)/LnTFF
         enddo
         close(28)
 
