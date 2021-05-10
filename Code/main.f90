@@ -8,6 +8,7 @@ PROGRAM main
     use edistribution
     use synrad
     use icrad
+    use map
 !    use fluxes
     
     implicit none
@@ -42,6 +43,10 @@ PROGRAM main
     
     !IC SED     
     if (radic_calc) call SEDIC(iso)
+
+    !Emission map
+    if (map_calc) call map_sy(1.4d0) ! Frequency in GHz at which to calculate the map
+    !if (map_calc) call map_sy_conv() ! Frequency in GHz at which to calculate the map
     
 
 END PROGRAM main
