@@ -224,7 +224,7 @@ contains
     !***************************************************************************************************
     !  Computation of the synchrotron energy density in each segment
     !***************************************************************************************************
-    subroutine Usyn()
+    subroutine Calc_Usyn()
         real(dp) :: L_tot(Ns), Lsy(nIn, Ns), Esy(nIn), Esy_step, dEsyn
         real(dp) :: z(Ns), Bff(Ns), r(Ns), VFF(Ns), boost(Ns), dummy, U_sy_FF
 
@@ -262,8 +262,7 @@ contains
         enddo
         close(28)
 
-    end subroutine Usyn
-
+    end subroutine Calc_Usyn
 
 
 !==============================================================

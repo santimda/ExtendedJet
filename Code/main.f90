@@ -29,15 +29,16 @@ PROGRAM main
 
 
     !Particle distribution
-    if (NE_calc) call Edist()
+    if (NE_calc) call Edist()   ! For plotting only
     if (NE_calc) call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))        !Sort N(E) file
-    if ((radsyn_calc .or. radic_calc) .and. NEint_calc) call Edist_int()
+    if (NEint_calc) call Edist_int()    ! For calculations
+    if (radsyn_calc) call Calc_Ue()
     call Print_tloss(1)
 
     !Synchrotron SED
     if (radsyn_calc) call SEDsyn()
     if (radsyn_calc) call execute_command_line('./SortSEDsyn.sh '//trim(adjustl(numSED))) !Sort SED file
-    if (radsyn_calc) call Usyn()
+    if (radsyn_calc) call Calc_Usyn()
     
     !IC SED     
     if (radic_calc) call SEDIC(iso)

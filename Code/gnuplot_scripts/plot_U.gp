@@ -22,7 +22,8 @@ f(x) = 0
 #set arrow from x1, graph 0.007 to x1, graph 0.993 nohead lc rgb 'grey88' lw 140
 
 plot '../U_FF.dat' u 2:4 t 'U_B' w l lw 3 lc 1,\
-	'../U_FF.dat' u 2:3 t 'U_{sy}' w l lw 3 lc 2  
+	'../U_FF.dat' u 2:3 t 'U_{sy}' w l lw 3 lc 2,\
+	'../U_e.dat' u 2:3 t 'U_{e}' w l lw 3 lc 3    
 	
 #plot './Quant_FF_norm.dat' u 1:5 t 'cos(wo) jet' w l lw 3 lc 2,\
 #	'./Quant_FF_norm.dat' u 1:6 t 'cos(woFF) jet' w l lw 3 lc 2 dt 2,\
