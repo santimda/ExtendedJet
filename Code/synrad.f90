@@ -238,11 +238,12 @@ contains
         close(10)
         close(20)
 
-        ! Read from a file: Esy(i,l), Lsy_unabs(i,l), Lsy_abs(i,l), l
+        ! Read from a file: Esy(i,l), E*Lsy_unabs(i,l), E*Lsy_abs(i,l), l
         open(27, file='SEDsyn_cuts_ord.dat')
         do l = 1, Ns 
             do i = 1, nIn
                 read(27,*) Esy(i), dummy, Lsy(i,l), dummy
+                Lsy(i,l) = Lsy(i,l)/Esy(i)
             enddo
         enddo
         close(27)
