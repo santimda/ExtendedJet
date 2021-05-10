@@ -211,48 +211,6 @@ contains
     end subroutine Setdt
     
 !*************************************************************************************************************
-!   Determination of the total energy in relativistic particles at each position
-!*************************************************************************************************************
-    subroutine Int_EN_j ()
-    real(dp) :: E(nIn),NE(nIn,Ns),dE,E_NT,sumE
-    real(dp) :: x_tr,y_tr,z_tr
-   
-    open(70,file='NE_intcuts.dat')
-    open(80,file='Trajectory.dat')
-    open(90,file='ENT_trajectory.dat')
-    
-    do i = 1,nIn
-        do j = 1,Ns
-            read(70,*) E(i),NE(i,j)
-        enddo
-    enddo
-    
-    close(70)
-   
-    sumE = 0d0
-    do j = 1,Ns
-    
-        read(80,*) x_tr,y_tr,z_tr
-        
-        E_NT = 0d0      !Total energy in NT particles at each segment
-        
-        do i = 1,nIn
-            if (i /= nIn) dE = E(i+1)-E(i)  
-            E_NT = E_NT + E(i)*NE(i,j)*dE
-        enddo
-                
-        write(90,*) j,x_tr,y_tr,z_tr,E_NT
-        
-        sumE = sumE + E_NT      !Total jet energy in NT particles
-        
-    enddo
-   
-    close(80)
-    close(90)
-   
-    end subroutine Int_EN_j
-    
-!*************************************************************************************************************
 !   Determination of the cutoff energy of the particle injection
 !*************************************************************************************************************
     real(dp) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1)
