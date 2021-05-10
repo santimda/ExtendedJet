@@ -24,7 +24,7 @@ contains
     
     Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
     Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
-    write(*,'(X,A,X,F4.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
+    write(*,'(X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
  
     open(20,file='NE_cuts.dat')
     open(30,file='NE_jet.dat')
@@ -298,7 +298,7 @@ contains
     
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
-        Q_E = K*E**(-p) * dexp(-E/Ecut)
+        Q_E = K*E**(-p) * exp(-E/Ecut)
     else
         Q_E = 0d0
     endif
@@ -309,27 +309,75 @@ contains
 !*************************************************************************************************************
 !   Injection normalization
 !*************************************************************************************************************  
-    real(dp) function NormK (Ecut)
+    real(dp) function NormK(Ecut)
     real(dp), intent(in) :: Ecut
-    real(dp) :: E,Ein,dE,QInt
+    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2
+    integer, parameter :: N = 300   !Number of subintervals for the integral
   
-    N = 1000                            !Number of subintervals for the integral
-    Ein = (EmaxFF/EminFF)**(1d0/(N-1))  !Increase factor of the energy
+    Einc = (EmaxFF/EminFF)**(1d0/(N-1))  !Increase factor of the energy
   
     !Initialization
     E = EminFF
     QInt = 0d0
 
-    ! USE TRAPEZOID RULE INSTEAD!!!!!
-    !Integration by the Simpson's rule with variable step size
-    do i = 1,N  
-        dE = E*(Ein-1d0)                    !Energy interval
-        QInt = QInt + E*Q_E(1d0,Ecut,E)*dE  !Integral of E*Q(E)
-        E = E*Ein                           !Increase in the energy        
-    enddo
-  
+    ! The integral is solved with the trapezoid method
+    E = EminFF
+    QInt = 0.d0
+    f1 = E * Q_E(1.d0,Ecut,E)
+    do i = 1, N-1 
+        dE = E*(Einc-1d0)                    !Energy interval
+        E2 = E*Einc
+        f2 = E2 * Q_E(1.d0,Ecut,E2)
+        f = (f1 + f2)/2.d0
+        QInt = QInt + f*dE
+        f1 = f2
+        E = E2
+    end do
     NormK = LnTFF/QInt    !Normalization constant
-  
+
     end function NormK
+
+
+    !*********************************************************************************
+    !  Computation of the electron energy density in each segment (FF)
+    !*********************************************************************************
+
+    subroutine Calc_Ue()
+        real(dp) :: Ue(Ns), Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
+        real(dp) :: z(Ns), VFF(Ns), dummy
+
+        ! Read relevant quantities at each segment
+        open(10, file='quant_FF.dat')
+        do l = 1, Ns
+            read(10,*) z(l), dummy, dummy, dummy, dummy, dummy, VFF(l), dummy
+        enddo
+        close(10)
+
+        ! Read from a file: Ee(i), Ne(i,l)
+        open(70,file='NE_intcuts.dat')
+        do i = 1, nIn
+            do l = 1, Ns
+                read(70,*) Ee(i), Ne(i,l)
+            enddo
+        enddo
+        close(70)
+        
+        ! Integrate the particle energy distribution of each segment
+        Ee_step = Ee(2)/Ee(1)
+        open(28, file='U_e.dat')
+        do l = 1, Ns
+            E_tot = 0.d0
+            do i = 1, nIn
+                dEe = Ee(i)*(Ee_step-1.d0)
+                E_tot = E_tot + Ee(i)*Ne(i,l) * dEe
+            enddo
+            Ue = E_tot/VFF(l) 
+            write(28,*) l, z(l), Ue
+        enddo
+        close(28)
+
+    end subroutine Calc_Ue
+
+!========================================================
 
 END MODULE edistribution
