@@ -33,7 +33,7 @@ PROGRAM main
     if (NE_calc) call Edist()   ! For plotting only
     if (NE_calc) call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))        !Sort N(E) file
     if (NEint_calc) call Edist_int()    ! For calculations
-    if (radsyn_calc) call Calc_Ue()
+    if (NEint_calc) call Calc_Ue()
     call Print_tloss(1)
 
     !Synchrotron SED
