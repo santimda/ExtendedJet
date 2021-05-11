@@ -25,6 +25,10 @@ contains
     Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
     Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
     write(*,'(X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
+    if (Ecut > EmaxFF/3.d0) then
+        write(*,*) 'EmaxFF in globals.f90 is too low!'
+        stop
+    endif
  
     open(20,file='NE_cuts.dat')
     open(30,file='NE_jet.dat')
@@ -85,6 +89,10 @@ contains
     
     Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
     Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
+    if (Ecut > EmaxFF/3.d0) then
+        write(*,*) 'EmaxFF in globals.f90 is too low!'
+        stop
+    endif
  
     open(20,file='NE_intcuts.dat')
     
@@ -221,9 +229,9 @@ contains
     Eacc = facc*qe*BFF1*c
 
     !Initialization
-    lE1 = log10(1d9*eV)  ! log10(Emin [CGS]) ~ 1 GeV
+    lE1 = log10(1d10*eV)  ! log10(Emin [CGS]) ~ 10 GeV
     lE2 = log10(1d14*eV) ! log10(Emax [CGS]) ~ 100 TeV
-    error = 10d0**(-4) ! error < 10^(-4)
+    error = 1.d-4        ! error < 10^(-4)
         
     !Maximum particle energy
     do while (abs(lE2-lE1) > error)
@@ -301,7 +309,7 @@ contains
     !*********************************************************************************
 
     subroutine Calc_Ue()
-        real(dp) :: Ue(Ns), Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
+        real(dp) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
         real(dp) :: z(Ns), VFF(Ns), dummy
 
         ! Read relevant quantities at each segment
