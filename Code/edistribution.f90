@@ -22,9 +22,11 @@ contains
     enddo
     close(10)
     
+    write(*,'(3X,A,ES10.3E2,1X,A)') 'Injected power (FF):',LnTFF,'erg/s'
+
     Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
     Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
-    write(*,'(X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
+    write(*,'(3X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
     if (Ecut > EmaxFF/3.d0) then
         write(*,*) 'EmaxFF in globals.f90 is too low!'
         stop
