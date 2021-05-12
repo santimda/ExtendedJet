@@ -6,7 +6,7 @@ set format x '10^{%T}'
 set format y '10^{%T}'
 #set xrange [1e-6:1e10]
 #set yrange [1e24:1e34]
-set yrange [1e29:]
+set yrange [1e32:]
 set key noautotitles bottom right spacing 1.35 width -2
 
 plot '../SEDsyn_jet.dat' u 1:2 w l dt 2 lw 3 lc 2 t 'z < 0.01 z_{max}' ,\
