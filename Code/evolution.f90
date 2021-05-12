@@ -80,6 +80,7 @@ MODULE evolution
       close(30)
       close(31)
 
+      write(*,*) 'B0_FF[G] = ', BFF(1)
 
       deallocate( z, rj )
       deallocate( delta_obs )

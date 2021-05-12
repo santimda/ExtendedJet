@@ -24,7 +24,7 @@ MODULE globals
   !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
   !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
 
-  integer, parameter :: Ns = 256       !Number of jet segments
+  integer, parameter :: Ns = 512       !Number of jet segments
   real(dp), parameter :: dl = (zmax-z0)/Ns    !Segment length
   real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
