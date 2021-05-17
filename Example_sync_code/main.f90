@@ -12,19 +12,14 @@ PROGRAM main
 
   write(*,*) 'ELECTRONES:'
         
-  if (dist.eqv.yes) then
-     write(*,*) 'Calculo la distribución de electrones NT'
-     call diste_run 
-     write(*,*) '' 
-  endif
+  if (dist) call diste_run 
 
-  if (radsyn.eqv.yes) then
-     write(*,*) 'Calculo la emisión sincrotrón de los electrones'
-     call radsyn_run 
-     write(*,*) '' 
-  endif
+  if (radsyn) call radsyn_run 
 
   !================================================================
+
+  write(*,*) 'B [uG] = ', B*1.d6
+  write(*,*) 'E_max [TeV] = ', Emax_e/eV/1.d12
 
   write(*,*) 'Terminado todo'
   
