@@ -9,8 +9,7 @@ MODULE controls
 
     logical, parameter :: jet_calc = yes
     
-    logical, parameter :: NE_calc = yes    ! For plotting only
-    logical, parameter :: NEint_calc = yes ! For precision in integrals
+    logical, parameter :: NE_calc = yes
     
     logical, parameter :: radsyn_calc = yes
     logical, parameter :: radic_calc = no!yes

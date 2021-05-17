@@ -29,8 +29,7 @@ MODULE globals
   real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
 
-  integer, parameter :: nNE = 100  !Energy steps (for plotting N(E))
-  integer, parameter :: nIn = 150 !Energy steps (for the energy integrals)
+  integer, parameter :: nIn = 150      ! Number of points in the electron energy distribution
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 
