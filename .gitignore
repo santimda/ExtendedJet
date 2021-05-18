@@ -35,3 +35,7 @@ run.x
 # Output files
 *.dat
 *.ps
+
+# Dirs
+.ipynb_checkpoints/
+Code/.ipynb_checkpoints/
