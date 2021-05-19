@@ -22,6 +22,9 @@ contains
     enddo
     close(10)
     
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! ESTA ENERGIA DE CUTOFF DEBERIA CALCULARSE PARA CADA CELDA
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
     Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
     write(*,'(3X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
@@ -33,6 +36,10 @@ contains
     open(20,file='NE_cuts.dat')
     open(30,file='NE_jet.dat')
     
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! E1 y E2 NO HACEN FALTA, SON EminFF y EmaxFF
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     Ein = (E2/E1)**(1d0/(nIn-1))    !Energy increase factor
     EFF = E1                        !Initialization
     
@@ -75,7 +82,7 @@ contains
     real(dp), intent(in) :: Kinj,EFF,Ecut,z(Ns),BFF(Ns),rj(Ns),vnorm(Ns),EphMFF(Ns),Kappa(Ns)
     real(dp), intent(out) :: NE(Ns)
     real(dp) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod
-
+    integer :: NN(Ns)
     !Initialization of the current energy distribution
     NE = 0d0  !Applies to the whole vector
 
@@ -108,7 +115,8 @@ contains
             
             !Increase in the energy
             E0(i) = E0(i) - TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i))*dtpast
-            
+            ! E0(i) = Echar(z(n), z(i), )
+
             !Condition to find the point where the segment i was at the current position of segment j
             if (backD > z(i)-z(j)) then
 
@@ -137,14 +145,19 @@ contains
         
         !Energy distribution for each segment, corrected when tloss' < dt' for a given energy (to avoid 
         !overestimation at high energies due to the 1st segment being too long)
-        NE(i) = Q_E(Kinj,Ecut,E0(i))*dtFF*prod * min(1d0,tlossFF/dtFF)
+        NE(i) = Q_E(Kinj,Ecut,E0(i)) * prod * min(dtFF, tlossFF)
         
         !Correction in N(E) for the first cut when E0 is close to Emax
         if (i == 1 .and. EmaxFF < 2d0*E0(i)) NE(i) = NE(i) * (EmaxFF-E0(i)) * tlossFF/E0(i)     
         
         !if (tlossFF < dtFF .and. E0(i) <= EmaxFF) print *, i,EFF/eV,E0(i)/eV,tlossFF
-        
+        NN(i) = n
     enddo
+
+    !write(*, *)
+    !do i=1,Ns
+    !    write(*,*) i, NN(i), E0(i)/EFF, Echar(z(NN(i)), EFF, z(i))/EFF
+    !enddo
 
     return
     end subroutine CalcNE
@@ -292,6 +305,30 @@ contains
 
     end subroutine Calc_Ue
 
+    !*********************************************************************************
+    !  Analytical function for the characteristic curve
+    !*********************************************************************************
+
+    real(dp) function Echar(z, Efinal, zfinal)
+    real(dp), intent(in) :: z, Efinal, zfinal
+    real(dp) :: A, B, C1, D, xi_final, g_final, xi, f, U0
+
+    U0 = B0**2 / (8.d0*pi*gj**2)
+    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
+    B = 2.d0/3.d0
+    !B = 2.d0/3.d0 / thetaj
+    xi_final = zfinal/z0
+    g_final = Efinal/mec2
+    xi = z/z0
+    f = 2*exp_B
+    D = B + f - 1.d0
+    C1 = xi_final**(-(B+f)) * (xi_final**f * D + A * xi_final * g_final) / (D*g_final)
+
+    Echar = mec2 * (D*xi**f / (C1*xi**(B+f)*D - A*xi))
+  
+    end function Echar
+
+    !dE/dt = 2/3 * s * v/z  g 
 !========================================================
 
 END MODULE edistribution
