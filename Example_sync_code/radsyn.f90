@@ -18,7 +18,8 @@ contains
     implicit none
     ! mEe -> electrons, m_nu -> emitted photons
     real(dp) :: eps(m_nu), dEps, eps_int, gamma_e(mE_e), x
-    real(dp) :: nuc, nuc_max, nu_min, nu_max, sum, sum_sy, cte_Psy, a
+    real(dp) :: nuc, nuc_max, nu_min, nu_max, sum, sum_sy, cte_Psy, a, B_par
+    logical :: parameter_file
     allocate( N_e(mE_e), E_e(mE_e) )
     allocate( nu(m_nu), Lsy(m_nu) )
 
@@ -40,7 +41,15 @@ contains
     close(14) 
     Eint_e = E_e(2)/E_e(1)
     gamma_e = E_e/mec2
-    
+
+    INQUIRE(FILE="parameter.txt", EXIST=parameter_file)
+    if (parameter_file) then 
+      open(10, file="parameter.txt")
+      write(*,*) 'I will use the B para the parameter file'
+      read(10, *) B
+      close(10)
+    endif
+    B_par = B*sqrt(2./3.) ! Assuming isotropy
     !------------------------------------------------------------------------
     !
     !  Radiative calculations start here  
