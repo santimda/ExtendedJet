@@ -11,13 +11,13 @@ contains
   !============================================================================
   ! radsyn_run
   !============================================================================
-  
+
   subroutine radsyn_run(B_new)
     use global
     !$ use omp_lib
     implicit none
     ! mEe -> electrons, m_nu -> emitted photons
-    real(dp), intent(in), optional :: B_new
+    real(dp), intent(in) :: B_new
     real(dp) :: eps(m_nu), dEps, eps_int, gamma_e(mE_e), x
     real(dp) :: nuc, nuc_max, nu_min, nu_max, sum, sum_sy, cte_Psy, a, B_par
     allocate( N_e(mE_e), E_e(mE_e) )
@@ -25,7 +25,10 @@ contains
 
 80  format(A10,X,Es10.2)
  
-     write(*,*) 'Calculo la emisión sincrotrón de los electrones'
+    write(*,*) 'Calculo la emisión sincrotrón de los electrones'
+
+    B = B_new
+    B_par = B*sqrt(2./3.) ! Assuming isotropy
 
     !------------------------------------------------------------------------
     !
@@ -42,8 +45,6 @@ contains
     Eint_e = E_e(2)/E_e(1)
     gamma_e = E_e/mec2
 
-    if (present(B_new)) B = B_new
-    B_par = B*sqrt(2./3.) ! Assuming isotropy
     !------------------------------------------------------------------------
     !
     !  Radiative calculations start here  
