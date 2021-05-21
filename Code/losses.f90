@@ -78,10 +78,10 @@ contains
     
     !Initialization
     EFF = E1
-    Eint = (E2/E1)**(1d0/(nNE-1))
+    Eint = (E2/E1)**(1d0/(nIn-1))
     
     open(20,file='losses.dat')  
-    do i = 1, nNE
+    do i = 1, nIn
     
         !Cooling time for each process for segment segN
         tSyn = EFF/abs(SyncLoss(BFF(segN),EFF))

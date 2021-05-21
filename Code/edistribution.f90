@@ -4,26 +4,27 @@ MODULE edistribution
     implicit none
 
 contains
-
-!*************************************************************************************************************
-!   Creation of a text file E-E²*N(E) for plotting
-!*************************************************************************************************************
-    subroutine Edist()
-    real(dp) :: Kinj,Ecut,Ein,EFF,NE(Ns),NEtot,NE1,NE2
-    real(dp) :: dummy
-    allocate ( z(nS), BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns))
     
-    write(*,*) '\n Calculating the electron distribution along the jet'
+!***************************************************************************************
+!   Creation of a text file with E, N(E) 
+!***************************************************************************************
+    subroutine Edist()
+    real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2
+    real(dp) :: dummy
+    allocate( z(Ns), BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
         
+    write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
+
     open(10,file='quant_FF.dat')
-    do i = 1, Ns
+    do i = 1,Ns
         !Quantities at each segment
         read(10,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), dummy, dummy, EphMFF(i)
     enddo
     close(10)
     
-    write(*,'(3X,A,ES10.3E2,1X,A)') 'Injected power (FF):',LnTFF,'erg/s'
-
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! ESTA ENERGIA DE CUTOFF DEBERIA CALCULARSE PARA CADA CELDA
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
     Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
     write(*,'(3X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
@@ -35,19 +36,23 @@ contains
     open(20,file='NE_cuts.dat')
     open(30,file='NE_jet.dat')
     
-    Ein = (E2/E1)**(1d0/(nNE-1))    !Energy increase factor
-    EFF = E1                        !Initialization
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! E1 y E2 NO HACEN FALTA, SON EminFF y EmaxFF
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do i2 = 1,nNE
-        
-        !Computation of N(E) for each segment   
+    Ein = (E2/E1)**(1d0/(nIn-1))    !Energy increase factor
+    EFF = E1                        !Initialization
+    
+    do i2 = 1, nIn
+    
+        !Computation of N(E) for each segment
         call CalcNE(Kinj,EFF,Ecut,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
         
-        NEtot = 0d0     !Initialization
+        NEtot = 0.d0    ! Initialization
 
-        do j = 1,Ns
+        do j = 1, Ns
 
-            write(20,*) EFF/eV,EFF**2*NE(j),j   !Write E-E²*N(E) for each jet cut
+            write(20,*) EFF, NE(j), j   !E and N(E) for each jet cut
 
             NEtot = NEtot + NE(j)   !Sum for all the jet segments
 
@@ -56,71 +61,19 @@ contains
             if (z(j) <= 0.1d0*zmax) NE2 = NEtot
 
         enddo
-
-        !Write E-E²*N(E) for the whole jet
-        write(30,*) EFF/eV,EFF**2*NE1,EFF**2*NE2,EFF**2*NEtot
-        !write(*,'(4ES13.3E2)') EFF/eV,EFF**2*NE1,EFF**2*NE2,EFF**2*NEtot
+        
+        write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
         
         EFF = EFF*Ein   !Exponential energy increase
-
+        
     enddo
     
     close(20)
     close(30)
     
-88  format (4X,ES9.3E2,5X,ES9.3E2,5X,ES9.3E2,5X,ES9.3E2)
-
     deallocate (z,BFF,rj,vnorm,EphMFF,Kappa)
-
+    
     end subroutine Edist
-    
-!*************************************************************************************************************
-!   Creation of a text file E-N(E) for the integrals
-!*************************************************************************************************************
-    subroutine Edist_int ()
-    real(dp) :: Kinj,Ecut,Ein,EFF,NE(Ns),NEtot
-    real(dp) :: dummy
-    allocate (z(Ns),BFF(Ns),rj(Ns),vnorm(Ns),EphMFF(Ns),Kappa(Ns))
-        
-    open(10,file='quant_FF.dat')
-    do i = 1,Ns
-        !Quantities at each segment
-        read(10,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), dummy, dummy, EphMFF(i)
-    enddo
-    close(10)
-    
-    Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
-    Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
-    if (Ecut > EmaxFF/3.d0) then
-        write(*,*) 'EmaxFF in globals.f90 is too low!'
-        stop
-    endif
- 
-    open(20,file='NE_intcuts.dat')
-    
-    Ein = (E2/E1)**(1d0/(nIn-1))    !Energy increase factor
-    EFF = E1                        !Initialization
-    
-    do i2 = 1,nIn
-    
-        !Computation of N(E) for each segment
-        call CalcNE(Kinj,EFF,Ecut,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
-        
-        do j = 1,Ns
-            write(20,*) EFF,NE(j)   !E and N(E) for each jet cut
-        enddo
-        
-        EFF = EFF*Ein   !Exponential energy increase
-        
-    enddo
-    
-    close(20)
-    
-    write(*,'(X,A)') 'Particle distribution computed'
-    
-    deallocate (z,BFF,rj,vnorm,EphMFF,Kappa)
-    
-    end subroutine Edist_int
     
 !*************************************************************************************************************
 !   Numerical particle distribution by evolving each cut as a 1-zone
@@ -129,12 +82,12 @@ contains
     real(dp), intent(in) :: Kinj,EFF,Ecut,z(Ns),BFF(Ns),rj(Ns),vnorm(Ns),EphMFF(Ns),Kappa(Ns)
     real(dp), intent(out) :: NE(Ns)
     real(dp) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod
-
+    integer :: NN(Ns)
     !Initialization of the current energy distribution
     NE = 0d0  !Applies to the whole vector
 
     !Loop for the injection
-    do i = 1,Ns
+    do i = 1, Ns
 
         !Initial value of the energy for each injection
         E0(i) = EFF
@@ -162,7 +115,8 @@ contains
             
             !Increase in the energy
             E0(i) = E0(i) - TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i))*dtpast
-            
+            ! E0(i) = Echar(z(n), z(i), )
+
             !Condition to find the point where the segment i was at the current position of segment j
             if (backD > z(i)-z(j)) then
 
@@ -191,14 +145,19 @@ contains
         
         !Energy distribution for each segment, corrected when tloss' < dt' for a given energy (to avoid 
         !overestimation at high energies due to the 1st segment being too long)
-        NE(i) = Q_E(Kinj,Ecut,E0(i))*dtFF*prod * min(1d0,tlossFF/dtFF)
+        NE(i) = Q_E(Kinj,Ecut,E0(i)) * prod * min(dtFF, tlossFF)
         
         !Correction in N(E) for the first cut when E0 is close to Emax
         if (i == 1 .and. EmaxFF < 2d0*E0(i)) NE(i) = NE(i) * (EmaxFF-E0(i)) * tlossFF/E0(i)     
         
         !if (tlossFF < dtFF .and. E0(i) <= EmaxFF) print *, i,EFF/eV,E0(i)/eV,tlossFF
-        
+        NN(i) = n
     enddo
+
+    !write(*, *)
+    !do i=1,Ns
+    !    write(*,*) i, NN(i), E0(i)/EFF, Echar(z(NN(i)), EFF, z(i))/EFF
+    !enddo
 
     return
     end subroutine CalcNE
@@ -322,10 +281,10 @@ contains
         close(10)
 
         ! Read from a file: Ee(i), Ne(i,l)
-        open(70,file='NE_intcuts.dat')
+        open(70,file='NE_cuts.dat')
         do i = 1, nIn
             do l = 1, Ns
-                read(70,*) Ee(i), Ne(i,l)
+                read(70,*) Ee(i), Ne(i,l), dummy
             enddo
         enddo
         close(70)
@@ -346,6 +305,30 @@ contains
 
     end subroutine Calc_Ue
 
+    !*********************************************************************************
+    !  Analytical function for the characteristic curve
+    !*********************************************************************************
+
+    real(dp) function Echar(z, Efinal, zfinal)
+    real(dp), intent(in) :: z, Efinal, zfinal
+    real(dp) :: A, B, C1, D, xi_final, g_final, xi, f, U0
+
+    U0 = B0**2 / (8.d0*pi*gj**2)
+    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
+    B = 2.d0/3.d0
+    !B = 2.d0/3.d0 / thetaj
+    xi_final = zfinal/z0
+    g_final = Efinal/mec2
+    xi = z/z0
+    f = 2*exp_B
+    D = B + f - 1.d0
+    C1 = xi_final**(-(B+f)) * (xi_final**f * D + A * xi_final * g_final) / (D*g_final)
+
+    Echar = mec2 * (D*xi**f / (C1*xi**(B+f)*D - A*xi))
+  
+    end function Echar
+
+    !dE/dt = 2/3 * s * v/z  g 
 !========================================================
 
 END MODULE edistribution

@@ -34,10 +34,10 @@ contains
 
 
     !N(E) of each cut
-    open(30,file='NE_intcuts.dat')
-    do i = 1,nIn
-       do j = 1,Ns
-          read(30,*) E_e(i),NE_e(i,j)
+    open(30,file='NE_cuts.dat')
+    do i = 1, nIn
+       do j = 1, Ns
+          read(30,*) E_e(i), NE_e(i,j), dummy
        enddo
     enddo
     close(30)

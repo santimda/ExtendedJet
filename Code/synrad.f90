@@ -12,9 +12,9 @@ contains
     &         L1,L2,Lum,LumFF,LBolFF,LumcutA(Ns),LumcutAFF(Ns),LumA,LumAFF,LBolAFF
     real(dp) :: dummy, boost(Ns)
     allocate ( z(nS), BFF(Ns), rj(Ns), sjoFF(Ns), VFF(Ns), delta_obs(Ns) )
-    
-    write(*,*) '\n Calculating the synchrotron SED along the jet'
-        
+
+    write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points)'
+
     !Quantities at each segment
     open(10,file='quant_FF.dat')
     open(20,file='deltas.dat')
@@ -26,18 +26,16 @@ contains
     close(20)
     
     !N(E) of each cut
-    open(30,file='NE_intcuts.dat')
-    do i = 1,nIn
+    open(30,file='NE_cuts.dat')
+    do i = 1, nIn
         do j = 1, Ns
-            read(30,*) E(i),NE(i,j)
+            read(30,*) E(i), NE(i,j), dummy
         enddo
     enddo
     close(30)
 
     open(40,file='SEDsyn_cuts.dat')
     open(50,file='SEDsyn_jet.dat')
-
-    write(*,'(1X,A,I3,A)') 'Synchrotron SED (',NSED_sy,')'
     
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
