@@ -7,7 +7,6 @@ public
 
 integer, parameter :: dp = kind(1.d0)
 
-!Constantes físicas:
 real(dp), parameter :: pi = acos(-1.d0)
 real(dp), parameter :: eV = 1.602176d-12
 real(dp), parameter :: c = 2.99792458d10
@@ -49,7 +48,7 @@ real(dp), parameter :: d = 1.d3*pc      ! 1 kpc
 
 
 !===================================================
-! emisión
+! emission
 
 real(dp) :: P_Eps, dP_Eps
 integer, parameter :: m_nu = 800  ! frequency resolution for synchrotron photons
