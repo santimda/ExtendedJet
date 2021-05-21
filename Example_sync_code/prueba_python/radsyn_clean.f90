@@ -1,6 +1,6 @@
 subroutine radsyn_run(B_new)
   !============================================================================
-  ! radsyn_run
+  ! calculate synchrotron radiation
   !============================================================================
   use global
   implicit none

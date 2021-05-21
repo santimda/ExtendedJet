@@ -18,8 +18,6 @@ module dist
     real(dp) :: integral, Ka
     allocate( N_e(mE_e),E_e(mE_e) )
 
-    write(*,*) 'Calculo la distribución de electrones NT'
-
     ! Define a logarithmically spaced energy vector
     ! The subroutine vector_log is defined in global.f90
     call vector_log(Emin_e, 10.d0*Emax_e, Eint_e, E_e)
