@@ -125,9 +125,9 @@ contains
     ! mEe -> electrons, m_nu -> emitted photons
     real(dp), intent(in) :: B_new
     real(dp), intent(in) :: E_data(:)
-    real(dp), intent(out) :: S_data(:)
     real(dp) :: gamma_e(mE_e), x
     real(dp) :: nuc, sum, cte_Psy, a, B_par
+    real(dp), intent(out) :: S_data(m_data_max)
     integer :: m_data
     allocate( N_e(mE_e), E_e(mE_e) )
 
@@ -151,6 +151,10 @@ contains
     !  Radiative calculations start here  
     
     m_data = SIZE(E_data)
+    if (m_data > m_data_max) then
+      print*, 'Too many points to fit, make m_data_max larger in global.f90!'
+      stop
+    endif
     allocate( nu(m_data), Lsy(m_data) )
     nu = E_data/h             ! [nu] = Hz 
 
@@ -174,8 +178,12 @@ contains
        
     enddo  ! eps(i),nu(i)
 
+    ! Define the output vector for the first m_data positions
+    S_data = 0.d0
     a = 4.d0*pi*d**2
-    S_data = Lsy / a
+    do i = 1, m_data
+      S_data(i) = Lsy(i)/a
+    enddo
 
     deallocate( nu, Lsy )
     deallocate( N_e, E_e )
