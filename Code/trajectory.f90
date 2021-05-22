@@ -44,9 +44,15 @@ MODULE trajectory
     rj(1) = abs(z(1))*tan_theta ! jet radius
 
     !CHECK: SE PUEDE USAR UN PASO NO EQUIESPACIADO?!
+    !do i = 1, Ns-1
+    !  z(i+1) = z(i) + dir*vj*dt
+    !  rj(i+1) = abs(z(i+1))*tan_theta
+    !enddo
+
     do i = 1, Ns-1
-      z(i+1) = z(i) + dir*vj*dt
-      rj(i+1) = abs(z(i+1))*tan_theta
+      z(i+1) = z(i) * dlogZ
+      !rj(i+1) = abs(z(i+1))*tan_theta
+      rj(i+1) = abs(z(i+1)/z0)**0.6d0 * rj(1)
     enddo
 
     open(10, file='trajectory'//jet//'.dat')

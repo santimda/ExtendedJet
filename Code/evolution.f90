@@ -13,6 +13,8 @@ MODULE evolution
       real(dp) :: B, dir, cjo, boost
       allocate( z(Ns), rj(Ns) )
       allocate( delta_obs(Ns) )
+      allocate( deltaZ(Ns) )
+      allocate( deltatFF(Ns) )
       allocate( BFF(Ns), vnorm(Ns), VFF(Ns), nfFF(Ns) )
       allocate( EphMFF(Ns), Kappa(Ns), joFF(Ns), sjoFF(Ns) )
 
@@ -38,6 +40,13 @@ MODULE evolution
 
          read(10,*) z(i), rj(i)
 
+         if (z(i) < zmax_inj) then
+            Ninj = i
+         endif
+
+         deltaZ(i) = z(i) * (dlogZ-1d0)
+         deltatFF(i) = deltaZ(i) / (vj*gj)
+
          !Doppler factor between the jet and the observer
          delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*cjo))
 
@@ -54,9 +63,9 @@ MODULE evolution
 
          !Velocity perpendicular to the jet propagation
          if (i == 1) then
-            vnorm(i) = vj*tan(thetaj)   !Conical expansion up to zrec (at least)
+            !vnorm(i) = vj*tan(thetaj)   !Conical expansion up to zrec (at least)
          else
-            vnorm(i) = (rj(i)-rj(i-1))/dt
+            vnorm(i) = (rj(i)-rj(i-1))/(deltatFF(i)*gj)
          endif
 
          !Jet observer angle in the FF
@@ -64,7 +73,7 @@ MODULE evolution
          sjoFF(i) = sin(joFF(i))        !Sinus of joFF
 
          !Segment volume in the FF
-         VFF(i) = pi*rj(i)**2*dtFF*vj
+         VFF(i) = pi*rj(i)**2*deltatFF(i)*vj
 
          !boost = delta_obs(i)**2/gj  ! CHECK THIS!
          boost = delta_obs(i)**2  ! CHECK THIS! (delta z defined in LF)
@@ -88,6 +97,5 @@ MODULE evolution
       deallocate( EphMFF, Kappa, joFF, sjoFF )
 
    end subroutine Quantities
-
 
 END MODULE evolution

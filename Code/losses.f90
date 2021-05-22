@@ -10,7 +10,7 @@ contains
     real(dp) function TLosses(BFF, rj, vnorm, EphMFF, Kapp, EFF)
     real(dp), intent(in) :: BFF, rj, vnorm, EphMFF, Kapp, EFF
 
-    TLosses = SyncLoss(BFF,EFF) + ICLoss(EphMFF,Kapp,EFF) + AdLoss(rj,vnorm,EFF)
+    TLosses = SyncLoss(BFF,EFF) + AdLoss(rj, vnorm, EFF)! + ICLoss(EphMFF,Kapp,EFF) + AdLoss(rj,vnorm,EFF)
 
     return
     end function TLosses
@@ -23,7 +23,7 @@ contains
     real(dp) :: Lgamma
 
     !Lorentz factor of the particles in the fluid frame
-    Lgamma = EFF/(me*c**2)
+    Lgamma = EFF/mec2
 
     !Synchrotron losses in erg/s
     SyncLoss = - 1.05804d-15 * BFF**2 * Lgamma**2   !4/9*c*re^2 * B^2 * gamma^2

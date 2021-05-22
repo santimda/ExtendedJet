@@ -170,11 +170,12 @@ contains
         depth = rj(j)/sjo(j)
 
         !Optical depth for SSA
-        tau = K*min(depth,z(j)/gj)
-
+        tau = K*depth / delta_obs(j)
+        !tau = K*min(depth,z(j)/gj)!/delta_obs(j)
         !Estimation of the projected area, perpendicular to the observer's direction, obtained by equating
         !the unabsorbed Lum to its value for optically thin emission: 4*pi*Ap*Sf*tau
-        Ap = V(j)/min(depth,z(j)/gj)
+        !Ap = V(j)/min(depth,z(j)/gj)
+        Ap = V(j)*delta_obs(j)/depth
 
         !Luminosity corrected for synchrotron self-absorption
         if (tau < 0.1d0) then

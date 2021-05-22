@@ -24,20 +24,22 @@ MODULE globals
   !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
   !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
 
-  integer, parameter :: Ns = 512       !Number of jet segments
+  integer, parameter :: Ns = 200       !Number of jet segments
   real(dp), parameter :: dl = (zmax-z0)/Ns    !Segment length
+  real(dp), parameter :: dlogz = (zmax/z0)**(1d0/(Ns-1d0))
   real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
+  real(dp), dimension(:), allocatable :: deltaZ, deltatFF
 
-  integer, parameter :: nIn = 150      ! Number of points in the electron energy distribution
+  integer, parameter :: nIn = 200      ! Number of points in the electron energy distribution
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 
 
   !===SEDs======================================================================================================
 
-  real(dp), parameter :: Emin_sy = 1d-6*eV  !Minimum energy for the synchrotron SED in the OF
-  real(dp), parameter :: Emax_sy = 1d8*eV  !Maximum energy for the synchrotron SED in the OF
+  real(dp), parameter :: Emin_sy = 1d-8*eV  !Minimum energy for the synchrotron SED in the OF
+  real(dp), parameter :: Emax_sy = 1d10*eV  !Maximum energy for the synchrotron SED in the OF
   integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
 
   real(dp), parameter :: Emin_IC = 1d0*eV   !Minimum energy for the IC SED in the OF
@@ -58,6 +60,7 @@ MODULE globals
   logical, parameter :: ani = .True., iso = .False. ! To define isotropic or anisotropic IC
   real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*h_bar**3*c**2) !IC constant in Khangulyan 2014
   integer, parameter :: N_bands = 5                   !Number of flux bands
+  integer :: Ninj
 
   !=============================================================================================================
 
