@@ -31,7 +31,7 @@ MODULE globals
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
   real(dp), dimension(:), allocatable :: deltaZ, deltatFF
 
-  integer, parameter :: nIn = 200      ! Number of points in the electron energy distribution
+  integer, parameter :: nIn = 160      ! Number of points in the electron energy distribution
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 

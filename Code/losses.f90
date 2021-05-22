@@ -77,8 +77,8 @@ contains
     close(10)
     
     !Initialization
-    EFF = E1
-    Eint = (E2/E1)**(1d0/(nIn-1))
+    EFF = EminFF
+    Eint = (EmaxFF/EminFF)**(1d0/(nIn-1))
     
     open(20,file='losses.dat')  
     do i = 1, nIn

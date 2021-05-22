@@ -46,10 +46,6 @@ module system_parameters
    real(dp), parameter :: EmaxFF = 2d14*eV   !Maximum energy in the FF
    real(dp), parameter :: p = 2.2d0            !Power law exponent
 
-   !Particle distribution
-   real(dp), parameter :: E1 = EminFF  !Minimum energy considered in the FF
-   real(dp), parameter :: E2 = EmaxFF  !Maximum energy considered in the FF
-
    !============================================================================
 
    contains
