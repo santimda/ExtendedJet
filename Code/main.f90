@@ -1,14 +1,38 @@
 PROGRAM main
-    
+    use globals
+    use controls
     implicit none
+    real(dp), allocatable :: E_data(:)
+    real(dp) :: S_data(m_data_max)
 
     interface
-    subroutine jet_calc(verbose) 
-      logical, intent(in) :: verbose
-    end subroutine jet_calc
+        subroutine run_jet(verbose) 
+            logical, intent(in) :: verbose
+        end subroutine run_jet
     end interface
 
-    call run_jet(.False.)    
+    interface
+        subroutine sed_model(E_vector, S_vector) 
+            use globals
+            real(dp), intent(in) :: E_vector(:)
+            real(dp), intent(out) :: S_vector(m_data_max)
+        end subroutine sed_model
+    end interface 
+
+    !----------------------------------------------------------------
+    ! Original Fortran program
+
+    if (run_jet_calc) call run_jet(.False.)   
+
+    !----------------------------------------------------------------
+    ! Short version to calculate specific fluxes, used for fitting SEDs
+    
+    if (run_sed_calc) then
+        allocate( E_data(4) )
+        E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8/)
+        call sed_model(E_data, S_data) ! Energies in cgs
+    endif
+
 
 END PROGRAM main
 
@@ -78,5 +102,45 @@ END PROGRAM main
   end subroutine run_jet
 
 
-  !==================================================================
 
+
+  !============================================================================
+  ! sed_model(START)
+  !============================================================================
+  subroutine sed_model(E_data, S_data)
+  !===================================================================
+  ! Subroutine to calculate the synchrotron SED at specific energies
+  ! for the given input parameters (zero now)
+  !===================================================================
+    use controls
+    use globals
+    use trajectory
+    use evolution
+    use losses
+    use edistribution
+    use synrad
+
+    implicit none
+    real(dp), intent(in) :: E_data(:)
+    real(dp), intent(out) :: S_data(m_data_max)
+
+    !Jet trajectories
+    call trajectory_calc('') !'' = jet 
+    !call trajectory_calc('cj')
+    
+    !Evolution of different quantities
+    call Quantities('') !'' = jet 
+    !call Quantities('cj')
+
+    !Particle distribution
+    call Edist()        ! Calculate the particle energy distribution
+
+    !Synchrotron SED at the given values
+    call SEDsyn_data(E_data, S_data)
+
+    write(*,*) 'E_data[eV] =', E_data/eV
+    write(*,*) 'S_data[cgs] =', S_data
+
+  end subroutine sed_model
+
+  !===================================================================

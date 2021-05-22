@@ -32,6 +32,8 @@ MODULE globals
   real(dp), dimension(:), allocatable :: deltaZ, deltatFF
 
   integer, parameter :: nIn = 160      ! Number of points in the electron energy distribution
+  
+  integer, parameter :: m_data_max = 50 ! maximum number of points to fit
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 

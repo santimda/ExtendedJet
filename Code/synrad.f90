@@ -278,6 +278,87 @@ contains
     !============================================================================
 
 
+    !============================================================================
+    ! SEDsyn_data (START)
+    !============================================================================
+    subroutine SEDsyn_data(E_data, S_data)
+    !============================================================================
+    ! This routine calculates the intrinsic synchrotron emission in the fluid frame
+    ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
+    ! of those energies [cgs] (also a vector). The number of points in E_data has
+    ! to be smaller than m_data_max defined in globals.f90.
+    !============================================================================
+    real(dp), intent(in) :: E_data(:)
+    real(dp), intent(out) :: S_data(m_data_max)
+    real(dp), allocatable :: Eph(:), LumA(:)
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
+    real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
+    real(dp) :: dummy, boost(Ns), dil
+    integer :: m_data
+    allocate ( z(nS), BFF(Ns), rj(Ns), sjoFF(Ns), VFF(Ns), delta_obs(Ns) )
+
+    !Quantities at each segment
+    open(10,file='quant_FF.dat')
+    open(20,file='deltas.dat')
+    do i = 1,Ns
+        read(10,*) z(i), BFF(i), rj(i), dummy, dummy, sjoFF(i), VFF(i), dummy
+        read(20,*) delta_obs(i), boost(i)
+    enddo
+    close(10)
+    close(20)
+    
+    !N(E) of each cut
+    open(30,file='NE_cuts.dat')
+    do i = 1, nIn
+        do j = 1, Ns
+            read(30,*) E(i), NE(i,j), dummy
+        enddo
+    enddo
+    close(30)
+
+    m_data = SIZE(E_data)
+    if (m_data > m_data_max) then
+      print*, 'Too many points to fit, make m_data_max larger in global.f90!'
+      stop
+    endif
+    allocate( Eph(m_data), LumA(m_data) )
+    Eph = E_data ! Here we can change units if needed          
+
+    do l = 1, NSED_sy
+        do j = 1, Ns                        !Loop for the jet segments
+            EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
+            do i = 1, nIn
+                NEcut(i) = NE(i,j)          !N(E) for the segment j
+            enddo
+            !Unabsorbed synchrotron luminosity for each segment
+            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut)
+        enddo
+        
+        !Absorbed radiation for each cut
+        call SSA(z,BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
+        
+        LumA(l) = 0d0 ! Total luminosity at each photon energy
+        do j = 1, Ns
+            LumcutA(j) = boost(j)*LumcutAFF(j)  !(de)Boosted
+            LumA(l) = LumA(l) + LumcutA(j)            !Absorbed (de)boosted luminosity for Eph
+        enddo
+    enddo
+
+    ! Define the output vector for the first m_data positions
+    S_data = 0.d0
+    dil = 4.d0*pi*dist**2
+    do l = 1, m_data
+      S_data(l) = LumA(l)/dil
+    enddo
+    
+    deallocate( z, BFF, rj, sjoFF, VFF, delta_obs )
+    
+    end subroutine SEDsyn_data
+    !============================================================================
+    ! SEDsyn (END)
+    !============================================================================
+    
+
 !================================================================================
 
 
