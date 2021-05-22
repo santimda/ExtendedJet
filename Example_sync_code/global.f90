@@ -7,7 +7,6 @@ public
 
 integer, parameter :: dp = kind(1.d0)
 
-!Constantes físicas:
 real(dp), parameter :: pi = acos(-1.d0)
 real(dp), parameter :: eV = 1.602176d-12
 real(dp), parameter :: c = 2.99792458d10
@@ -34,14 +33,14 @@ real(dp), parameter :: mpc2 = 1836.d0*mec2   ! proton rest-mass energy
 !===================================================
 
 real(dp), parameter :: U = 100.d0*eV      ! [U_e_NT] = erg/cm^3
-real(dp), parameter :: B = 100.d-6        ! B = 100 uG
-real(dp), parameter :: B_par = B*sqrt(2./3.) ! Assuming isotropy
+real(dp) :: B = 100.d-6        ! B = 100 uG
+!real(dp) :: B_par = B*sqrt(2./3.) ! Assuming isotropy
 real(dp), parameter :: p = 2.d0           ! Injection spectral index
 real(dp), parameter :: R = 0.1*pc         ! Hot-spot size
 real(dp), parameter :: Vol = (4.d0/3.d0)*pi*R**3 ! Assume spherical region 
 real(dp), dimension(:), allocatable :: E_e, N_e, Q_e
 real(dp), parameter :: Emin_e = 1.d8*eV   ! 100 MeV
-real(dp), parameter :: Emax_e = 1.d13*eV  ! 10 TeV
+real(dp) :: Emax_e = 1.d13*eV  ! 10 TeV
 real(dp) :: Eint_e,dE_e
 integer, parameter :: mE_e = 400          ! Energy resolution for electrons
 integer :: i,j,l
@@ -49,12 +48,13 @@ real(dp), parameter :: d = 1.d3*pc      ! 1 kpc
 
 
 !===================================================
-! emisión
+! emission
 
 real(dp) :: P_Eps, dP_Eps
 integer, parameter :: m_nu = 800  ! frequency resolution for synchrotron photons
 real(dp), dimension(:), allocatable :: nu, Lsy
 
+integer, parameter :: m_data_max = 50 ! maximum number of points to fit
 
 !===================================================
 
