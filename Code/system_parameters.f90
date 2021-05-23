@@ -15,7 +15,7 @@ module system_parameters
    real(dp), parameter :: M_BH = 6.5d9             !Black hole mass [Msun]
    real(dp), parameter :: L_Edd = 1.25d38*M_BH     !Eddington luminosity
    real(dp), parameter :: R_g = 1.477d5*M_BH       !Gravitational radius (M_BH [Msun])
-   real(dp), parameter :: z0 = 4*R_g               !Jet launching height
+   real(dp), parameter :: z0 = 4.d0*R_g               !Jet launching height
    real(dp), parameter :: zmax = 6.5d2*R_g         !Jet maximum height
    real(dp), parameter :: zmax_inj = 5.d1*R_g       !Jet maximum cell of injection
    real(dp), parameter :: EphM = kB*T_CMB          !Target photon energy in the obs frame

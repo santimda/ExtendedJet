@@ -17,23 +17,18 @@ MODULE globals
 
   !===========================================================
   ! Simulation grid/vectors size
+  integer, parameter :: Ns = 200        !Number of jet segments
+  integer, parameter :: nIn = 140       ! Number of points in the electron energy distribution
+  integer, parameter :: m_data_max = 50 ! maximum number of points to fit
+  integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
+  integer, parameter :: NSED_IC = 150   !Number of points for the IC SED
 
-  !integer, parameter :: m_theta = 200 ! angular resolution in the CD/shock
-  !integer, parameter :: mE_e = 256    ! energy resolution for electrons
-  !integer, parameter :: mE_p = 200    ! energy resolution for protons < mE_f 
-  !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
-  !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
-
-  integer, parameter :: Ns = 300       !Number of jet segments
   real(dp), parameter :: dl = (zmax-z0)/Ns    !Segment length
   real(dp), parameter :: dlogz = (zmax/z0)**(1d0/(Ns-1d0))
+  real(dp), parameter :: log_zmax_zinj_z0 = log(zmax_inj/z0)
   real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
   real(dp), dimension(:), allocatable :: deltaZ, deltatFF
-
-  integer, parameter :: nIn = 260      ! Number of points in the electron energy distribution
-  
-  integer, parameter :: m_data_max = 50 ! maximum number of points to fit
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 
@@ -41,12 +36,10 @@ MODULE globals
   !===SEDs======================================================================================================
 
   real(dp), parameter :: Emin_sy = 1d-8*eV  !Minimum energy for the synchrotron SED in the OF
-  real(dp), parameter :: Emax_sy = 1d10*eV  !Maximum energy for the synchrotron SED in the OF
-  integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
+  real(dp), parameter :: Emax_sy = 2d10*eV  !Maximum energy for the synchrotron SED in the OF
 
   real(dp), parameter :: Emin_IC = 1d0*eV   !Minimum energy for the IC SED in the OF
   real(dp), parameter :: Emax_IC = 1d14*eV  !Maximum energy for the IC SED in the OF
-  integer, parameter :: NSED_IC = 150   !Number of points for the IC SED
 
   !=============================================================================================================
 

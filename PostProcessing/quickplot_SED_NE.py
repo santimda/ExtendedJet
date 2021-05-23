@@ -40,8 +40,9 @@ ax.loglog(nu,tot_abs, label='Total (Abs)', color=colors[1])
 # Plot individual curves for different Z
 nu = synsed_ord[:,0]
 zec = synsed_ord[:,2]
-nu = np.reshape(nu,(512,150))
-zec = np.reshape(zec,(512,150))
+# THESE VALUES OF Ns and nIN SHOULD BE READ FROM THE globals.f90 FILE OR FROM SEDsyn_cuts_ord...
+nu = np.reshape(nu,(200,150))
+zec = np.reshape(zec,(200,150))
 colormap, sm = pltutils.color_from_cmap('viridis',len(nu), vmin=int(zmin), vmax=int(zmax))
 for i in range(len(nu)):
     ax.loglog(nu[i],zec[i], color=colormap[i])

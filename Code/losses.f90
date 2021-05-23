@@ -39,7 +39,6 @@ contains
     real(dp) :: TFF, t_iso, Eiso_ct
     
     TFF = EphMFF/(2.7d0*mec2)   !Dimensionless stellar temperature in the FF (EphMFF = 2.7*kB*TFF)
-    
     t_iso = 4d0*TFF*(EFF/mec2)
     Eiso_ct = cte_IC_K*Kapp*TFF**2
     
@@ -65,14 +64,15 @@ contains
     !**********************************************************************************************
     subroutine Print_tloss(segN)
     integer, intent(in) :: segN
-    real(dp) :: EFF, Eint, tSyn, tIC, tAd, tTot, tacc, tdiff
-    real(dp) :: dummy
-    allocate(BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
-    
+    real(dp) :: EFF, Eint, tSyn, tIC, tAd, tTot, tacc, tdiff, tcell, tconv
+    real(dp) :: dummy, zj(Ns)
+    character(3) :: num_seg
+    allocate( BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
+
     !Quantities at each segment
     open(10,file='quant_FF.dat')
     do i = 1, Ns
-        read(10,*) dummy, BFF(i), rj(i), vnorm(i), Kappa(i), dummy, dummy, EphMFF(i)
+        read(10,*) zj(i), BFF(i), rj(i), vnorm(i), Kappa(i), dummy, dummy, EphMFF(i)
     enddo
     close(10)
     
@@ -80,9 +80,16 @@ contains
     EFF = EminFF
     Eint = (EmaxFF/EminFF)**(1d0/(nIn-1))
     
-    open(20,file='losses.dat')  
+    write(num_seg,'(I3)') segN
+    open(20,file='losses_'//trim(adjustl(num_seg))//'.dat')  
+    if (segN==Ns) then
+        tcell = (zj(segN) - zj(segN-1))/vj/gj
+    else   
+        tcell = (zj(segN+1) - zj(segN))/vj/gj
+    endif
+    tconv = zj(segN)/vj/gj
+
     do i = 1, nIn
-    
         !Cooling time for each process for segment segN
         tSyn = EFF/abs(SyncLoss(BFF(segN),EFF))
         tIC = EFF/abs(ICLoss(EphMFF(segN),Kappa(segN),EFF))
@@ -90,11 +97,9 @@ contains
         tTot = EFF/abs(TLosses(BFF(segN),rj(segN),vnorm(segN),EphMFF(segN),Kappa(segN),EFF))
         tacc = EFF/(facc*BFF(segN)*qe*c)                    !Acceleration timescale
         tdiff = 3d0*qe*BFF(segN)*rj(segN)**2/(2d0*c*EFF)    !Diffusion timescale
-        
-        write(20,*) EFF/eV, tSyn, tIC, tAd, tTot, dtFF, tacc, tdiff
+        write(20,*) EFF/eV, tSyn, tIC, tAd, tTot, tcell, tacc, tdiff, tconv
                     
-        EFF = EFF*Eint  !Energy increase
-            
+        EFF = EFF*Eint  !Energy increase   
     enddo
     close(20)
 

@@ -1,4 +1,4 @@
-DEBUG  = N
+DEBUG  = Y
 
 FC     = gfortran -fopenmp
 FFLAGS = -ffree-line-length-none -fbackslash

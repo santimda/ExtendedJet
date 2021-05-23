@@ -20,23 +20,21 @@ contains
     allocate( z(Ns), BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
         
     open(10,file='quant_FF.dat')
+    open(11,file='Emax_FF.dat')
     do i = 1,Ns
         !Quantities at each segment
         read(10,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), dummy, dummy, EphMFF(i)
+        Ecut = CutE(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i))   !Cutoff energy for Q(E) in the FF
+        if (Ecut > EmaxFF/3.d0) then
+            write(*,*) 'EmaxFF in globals.f90 is too low!'
+            stop
+        else
+            write(11,*) i, z(i), Ecut/eV
+        endif
     enddo
     close(10)
+    close(11)
     
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! ESTA ENERGIA DE CUTOFF DEBERIA CALCULARSE PARA CADA CELDA
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
-    Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
-    !write(*,'(3X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
-    if (Ecut > EmaxFF/3.d0) then
-        write(*,*) 'EmaxFF in globals.f90 is too low!'
-        stop
-    endif
- 
     open(20,file='NE_cuts.dat')
     open(30,file='NE_jet.dat')
     
@@ -57,6 +55,11 @@ contains
     !    EFF = EFF * Ein
     !enddo
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! ESTA ENERGIA DE CUTOFF DEBERIA CALCULARSE PARA CADA CELDA
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
+    !Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
     ! do i2 = 1, nIn
     !     !Computation of N(E) for each segment
     !     call CalcNE(Kinj,EFF,Ecut,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
@@ -89,7 +92,7 @@ contains
         !!$OMP PARALLEL SHARED(NEmatrix)
         !!$OMP DO
         do i2 = 1, nIn
-            write(*,*) i2
+            !write(*,*) i2
             call CalcNE_analytical(EFF, i2, z, NEmatrix)
             EFF = EFF*Ein   !Exponential energy increase
         enddo
@@ -283,7 +286,7 @@ contains
         integer :: jj, izz
         !Initialization of the current energy distribution
 
-    do izz=1, Ns
+    do izz = 1, Ns
         zm = zMin(EFF, z(izz))
         zz = min(z(izz), zmax_inj)
         jj = max(min(izz, Ninj) - 1, 1)
@@ -294,7 +297,7 @@ contains
             BB = BFF_fun(zz)
             rr = r_fun(zz)
             vlat = v_lat(zz)
-            tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+            tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
             dttFF = max(min(0.1 * tlossFF, deltatFF(jj)), 1d-10)
             sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante(zz/z(izz), z(izz)/z0, EFF/mec2)
             zz = zz - vj*gj*dttFF
@@ -359,7 +362,7 @@ contains
                 BB = BFF_fun(zp)
                 rr = r_fun(zp)
                 vlat = v_lat(zp)
-                tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+                tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
                 dttFF = min(zp, (min(z(izz), zmax_inj)-zp)) / (vj*gj)
                 dttFF = max(min(0.1 * tlossFF, dttFF), 1d-10)
                 sum = sum + dQ_Edz(ee, zp, BB, rr, vlat) * dttFF * factorIntegrante(zp/z(izz), z(izz)/z0, Evec(i2)/mec2)
@@ -459,7 +462,7 @@ contains
     real(dp), intent(in) :: E, zz, BB, rr, vlat
     real(dp) :: Ecut, Kinj
     Ecut = CutE(BB, rr, vlat, 1d0, 1d0)   !Cutoff energy for Q(E) in the FF
-    Kinj = NormKz(Ecut) / (zz * log(zmax_inj/z0))         !Normalization constant for Q(E)
+    Kinj = NormKz(Ecut) / (zz * log_zmax_zinj_z0)         !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
         dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut)
