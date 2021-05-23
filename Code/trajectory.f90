@@ -43,7 +43,7 @@ MODULE trajectory
 
     do i = 1, Ns-1
       z(i+1) = z(i) * dlogZ
-      rj(i+1) = abs(z(i+1)/z0)**0.6d0 * rj(1)
+      rj(i+1) = abs(z(i+1)/z0)**geomIndex * rj(1)
     enddo
 
     open(10, file='trajectory'//jet//'.dat')

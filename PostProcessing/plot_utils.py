@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # My colors
-iar_aut = ['peru','maroon','darkgreen','indigo'] # otoño en el IAR
+iar_aut = ['peru','maroon','darkgreen','indigo', 'plum'] # otoño en el IAR
 
 # My plot config
 def luc_std_plot(ax=None):

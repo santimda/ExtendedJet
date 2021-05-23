@@ -17,23 +17,18 @@ MODULE globals
 
   !===========================================================
   ! Simulation grid/vectors size
+  integer, parameter :: Ns = 200        !Number of jet segments
+  integer, parameter :: nIn = 140       ! Number of points in the electron energy distribution
+  integer, parameter :: m_data_max = 50 ! maximum number of points to fit
+  integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
+  integer, parameter :: NSED_IC = 150   !Number of points for the IC SED
 
-  !integer, parameter :: m_theta = 200 ! angular resolution in the CD/shock
-  !integer, parameter :: mE_e = 256    ! energy resolution for electrons
-  !integer, parameter :: mE_p = 200    ! energy resolution for protons < mE_f 
-  !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
-  !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
-
-  integer, parameter :: Ns = 200       !Number of jet segments
   real(dp), parameter :: dl = (zmax-z0)/Ns    !Segment length
   real(dp), parameter :: dlogz = (zmax/z0)**(1d0/(Ns-1d0))
+  real(dp), parameter :: log_zmax_zinj_z0 = log(zmax_inj/z0)
   real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
   real(dp), dimension(:), allocatable :: deltaZ, deltatFF
-
-  integer, parameter :: nIn = 160      ! Number of points in the electron energy distribution
-  
-  integer, parameter :: m_data_max = 50 ! maximum number of points to fit
 
   !System-observer vector (unitary)
   real(dp) :: SO(3) 
@@ -41,12 +36,10 @@ MODULE globals
   !===SEDs======================================================================================================
 
   real(dp), parameter :: Emin_sy = 1d-8*eV  !Minimum energy for the synchrotron SED in the OF
-  real(dp), parameter :: Emax_sy = 1d10*eV  !Maximum energy for the synchrotron SED in the OF
-  integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
+  real(dp), parameter :: Emax_sy = 2d10*eV  !Maximum energy for the synchrotron SED in the OF
 
   real(dp), parameter :: Emin_IC = 1d0*eV   !Minimum energy for the IC SED in the OF
   real(dp), parameter :: Emax_IC = 1d14*eV  !Maximum energy for the IC SED in the OF
-  integer, parameter :: NSED_IC = 150   !Number of points for the IC SED
 
   !=============================================================================================================
 
@@ -237,15 +230,16 @@ MODULE globals
   end Function sigma_pp
 
 
-  subroutine locate(xx, n, x, j)
-    integer, intent(in) :: n
-    real(dp), intent(in) :: x, xx(n)
-    integer, intent(out) :: j
+  !============================================================================
+  ! Logarithmic interpolation
+  integer function locate(xx, x)
+    real(dp), intent(in) :: x, xx(:)
     ! Given an array xx(1:n) , and given a value x , returns a value j such that x is between
     ! xx(j) and xx(j+1) . xx(1:n) must be monotonic, either increasing or decreasing. j=0
     ! or j=n is returned to indicate that x is out of range.
     integer :: jl, jm, ju
 
+    n = SIZE(xx) ! x and v have to have the same size
     jl = 0                            ! Initialize lower
     ju = n+1                          ! and upper limits.
     
@@ -265,19 +259,17 @@ MODULE globals
     else
       j = jl
     endif
-    
-    return
-    end subroutine
+    locate = j
+    end function locate
 
   !============================================================================
   ! Logarithmic interpolation
-  real(dp) function Interpol1d(xp, x, v, nn)
-  integer, intent(in) :: nn
-  real(dp), intent(in) :: xp, v(n), x(n)
-  integer :: j_x
+  real(dp) function Interpol1d(xp, x, v)
+  real(dp), intent(in) :: xp, v(:), x(:)
+  integer :: j_x, n
   real(dp) :: slope
-
-  call locate(x, nn, xp, j_x)
+  n = SIZE(v) ! x and v have to have the same size
+  j_x = locate(x, xp)
   if (j_x == 0) then
     slope = (v(2) - v(1)) / (x(2) - x(1))
     Interpol1d = max(v(1) + slope * (xp - x(1)), 0d0)
@@ -295,6 +287,8 @@ MODULE globals
   endif
 
   return
-  end function
+  end function Interpol1d
 
+  !============================================================================
+  
 END MODULE globals

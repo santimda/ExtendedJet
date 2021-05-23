@@ -82,6 +82,8 @@ END PROGRAM main
         call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
         call Calc_Ue()      ! Calculate energy densities
         call Print_tloss(1)
+        call Print_tloss(Ns/3)
+        call Print_tloss(Ns)
     endif
 
     !Synchrotron SED
