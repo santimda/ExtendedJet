@@ -338,7 +338,7 @@ contains
             zp = z(izz-1)
             if (zm < zp) then
                 ee_prev = Echar(zp, Evec(i2), z(izz))
-                Ne_prev = Interpol1d(ee_prev, Evec, NEprev_vec, nIn)
+                Ne_prev = Interpol1d(ee_prev, Evec, NEprev_vec)
             else
                 Ne_prev = 0d0
                 zp = zm

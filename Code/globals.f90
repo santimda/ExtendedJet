@@ -237,15 +237,16 @@ MODULE globals
   end Function sigma_pp
 
 
-  subroutine locate(xx, n, x, j)
-    integer, intent(in) :: n
-    real(dp), intent(in) :: x, xx(n)
-    integer, intent(out) :: j
+  !============================================================================
+  ! Logarithmic interpolation
+  integer function locate(xx, x)
+    real(dp), intent(in) :: x, xx(:)
     ! Given an array xx(1:n) , and given a value x , returns a value j such that x is between
     ! xx(j) and xx(j+1) . xx(1:n) must be monotonic, either increasing or decreasing. j=0
     ! or j=n is returned to indicate that x is out of range.
     integer :: jl, jm, ju
 
+    n = SIZE(xx) ! x and v have to have the same size
     jl = 0                            ! Initialize lower
     ju = n+1                          ! and upper limits.
     
@@ -265,19 +266,17 @@ MODULE globals
     else
       j = jl
     endif
-    
-    return
-    end subroutine
+    locate = j
+    end function locate
 
   !============================================================================
   ! Logarithmic interpolation
-  real(dp) function Interpol1d(xp, x, v, nn)
-  integer, intent(in) :: nn
+  real(dp) function Interpol1d(xp, x, v)
   real(dp), intent(in) :: xp, v(:), x(:)
-  integer :: j_x
+  integer :: j_x, n
   real(dp) :: slope
-  n = SIZE(v)
-  call locate(x, nn, xp, j_x)
+  n = SIZE(v) ! x and v have to have the same size
+  j_x = locate(x, xp)
   if (j_x == 0) then
     slope = (v(2) - v(1)) / (x(2) - x(1))
     Interpol1d = max(v(1) + slope * (xp - x(1)), 0d0)
@@ -295,6 +294,6 @@ MODULE globals
   endif
 
   return
-  end function
+  end function Interpol1d
 
 END MODULE globals
