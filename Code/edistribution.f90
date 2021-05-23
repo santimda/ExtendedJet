@@ -40,10 +40,6 @@ contains
     open(20,file='NE_cuts.dat')
     open(30,file='NE_jet.dat')
     
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! E1 y E2 NO HACEN FALTA, SON EminFF y EmaxFF
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     Ein = (EmaxFF/EminFF)**(1d0/(nIn-1))    !Energy increase factor
     EFF = EminFF                        !Initialization
 
@@ -87,7 +83,7 @@ contains
     !     enddo
     ! enddo
     !write(*,*) dummy
-    if (.false.) then
+    if (.true.) then
         NEmatrix = 0d0
 
         !!$OMP PARALLEL SHARED(NEmatrix)
@@ -400,7 +396,7 @@ contains
     !Injected power (erg/s)
     Eacc = facc*qe*BFF1*c
     !Initialization
-    lE1 = log10(1d10*eV)  ! log10(Emin [CGS]) ~ 10 GeV
+    lE1 = log10(1d9*eV)  ! log10(Emin [CGS]) ~ 1 GeV
     lE2 = log10(1d14*eV) ! log10(Emax [CGS]) ~ 100 TeV
     error = 1.d-4        ! error < 10^(-4)
     !Maximum particle energy

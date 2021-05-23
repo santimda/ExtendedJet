@@ -24,14 +24,14 @@ MODULE globals
   !integer, parameter :: mE_f = 300    ! it is the same for br, p-p and IC
   !real(dp), parameter :: f_Ny = 0.6d0 ! Nyquist frequency for convolved maps
 
-  integer, parameter :: Ns = 200       !Number of jet segments
+  integer, parameter :: Ns = 300       !Number of jet segments
   real(dp), parameter :: dl = (zmax-z0)/Ns    !Segment length
   real(dp), parameter :: dlogz = (zmax/z0)**(1d0/(Ns-1d0))
   real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
   real(dp), dimension(:), allocatable :: deltaZ, deltatFF
 
-  integer, parameter :: nIn = 160      ! Number of points in the electron energy distribution
+  integer, parameter :: nIn = 260      ! Number of points in the electron energy distribution
   
   integer, parameter :: m_data_max = 50 ! maximum number of points to fit
 
@@ -296,4 +296,6 @@ MODULE globals
   return
   end function Interpol1d
 
+  !============================================================================
+  
 END MODULE globals
