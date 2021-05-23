@@ -60,7 +60,7 @@ contains
 
        !Photon energies in the FF such that they all match the same energies in the OF
        call vector_log( Emin_ic/delta_obs(j_s), Emax_ic/delta_obs(j_s), Eg_int_FF, Eg_FF )
-       !!!!!!!!!!!!!!!!!!!!!!Por qué no Eg_FF = Eg/delta y ya está?!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       !!!!!!!!!!!!!!!!!!!!!!Por qu no Eg_FF = Eg/delta y ya esta?!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
        do i = 1,nIn
           NEcut_e(i) = NE_e(i,j_s)

@@ -4,16 +4,18 @@ MODULE synrad
 
 contains
 
-    !***************************************************************************************************
-    !   Computation of the synchrotron SED (jet)
-    !***************************************************************************************************
+    !============================================================================
+    ! SEDsyn (START)
+    !============================================================================
     subroutine SEDsyn()
-    real(dp) :: E(nIn),NE(nIn,Ns),NEcut(nIn),Ein,Eph,dEph,EphFF(Ns),dEphFF(Ns),Lumcut(Ns),LumcutFF(Ns), &
-    &         L1,L2,Lum,LumFF,LBolFF,LumcutA(Ns),LumcutAFF(Ns),LumA,LumAFF,LBolAFF
+    !============================================================================
+    ! This subroutine calculates the synchrotron SED 
+    !============================================================================
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
+    real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, Lum, LumFF, LBolFF
+    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
     real(dp) :: dummy, boost(Ns)
     allocate ( z(nS), BFF(Ns), rj(Ns), sjoFF(Ns), VFF(Ns), delta_obs(Ns) )
-
-    write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points)'
 
     !Quantities at each segment
     open(10,file='quant_FF.dat')
@@ -107,8 +109,8 @@ contains
 
     enddo
     
-    write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
-    write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
+    !write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
+    !write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
 
     close(40)
     close(50)
@@ -116,44 +118,43 @@ contains
     deallocate( z, BFF, rj, sjoFF, VFF, delta_obs )
     
     end subroutine SEDsyn
+    !============================================================================
+    ! SEDsyn (END)
+    !============================================================================
     
 
-    !*************************************************************************************************************
+    !************************************************************************************
     !   Synchrotron luminosity per photon energy unit
-    !*************************************************************************************************************
-    real(dp) function SyncLum (B,Eph,E,NE)
-    real(dp), intent(in) :: B,Eph,E(nIn),NE(nIn)
-    real(dp) :: dE(nIn),Ec,x,Psync
+    !************************************************************************************
+    real(dp) function SyncLum(B,Eph,E,NE)
+    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp) :: dE, Ec, x, Psync, E_step
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
-
     !Initialization
     SyncLum = 0d0
-
     !Integral by rectangles
+    E_step = E(2)/E(1)
     do i = 1, nIn
-
-        if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
-
+        dE = E(i)*(E_step - 1.d0)     !Energy interval
         !Critical photon energy and power emitted for each particle energy
         Ec = cte_Ec*B*E(i)**2
         x = Eph/Ec
         Psync = cte_sy*B * x**(1d0/3d0)*exp(-x)
-
         !The approximation is only valid for 0.1 < x < 10
         if ((x < 1d-1) .or. (x > 1d1)) Psync = 0d0
-
-        SyncLum = SyncLum + Psync*NE(i)*dE(i)
-
+        SyncLum = SyncLum + Psync*NE(i)*dE
     enddo
-
-    return
     end function SyncLum
     
-    !*************************************************************************************************************
-    !   Luminosity corrected for synchrotron self-absorption
-    !*************************************************************************************************************
+
+    !============================================================================
+    ! SSA (start)
+    !============================================================================
     subroutine SSA (z,B,rj,sjo,V,Eph,E,NE,Lum,LumA)
+    !============================================================================
+    ! Luminosity corrected for synchrotron self-absorption
+    !============================================================================
     real(dp), intent(in) :: z(Ns),B(Ns),rj(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn),Lum(Ns)
     real(dp), intent(out) :: LumA(Ns)
     real(dp) :: K,Ecf,Sf,depth,tau,Ap
@@ -162,9 +163,9 @@ contains
     do j = 1, Ns
 
         !Absorption and emission coefficients, and source function, for each segment (Pacholczyck, 1970)
-        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*me*V(j)) * EIntSSA(B(j),Eph(j),E,NE)
+        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*me*V(j)) * EintSSA(B(j),Eph(j),E,NE)
         Ecf = Lum(j)/(4d0*pi*V(j))      !Per stereoradian
-        Sf = Ecf/K
+        Sf = Ecf/max(K,1.d-30) !!!! CHECK !!!!
 
         !Length that photons in the observer's direction must travel inside the segment (in the FF)
         depth = rj(j)/sjo(j)
@@ -178,53 +179,51 @@ contains
         Ap = V(j)*delta_obs(j)/depth
 
         !Luminosity corrected for synchrotron self-absorption
-        if (tau < 0.1d0) then
+        if (tau < 0.01d0) then  !!!! CHECK !!!!
             LumA(j) = Lum(j)
         else
             LumA(j) = 4d0*pi*Ap*Sf*(1d0-exp(-tau))
         endif
-
+        !print*, tau, Lum(j), 4d0*pi*Ap*Sf*(1d0-exp(-tau))
     enddo
 
     return
     end subroutine SSA
+    !============================================================================
+    ! SSA (END)
+    !============================================================================
 
-!*************************************************************************************************************
-!   Integral for the particle energy in SSA
-!*************************************************************************************************************
+
+    !************************************************************************************
+    !   Integral for the particle energy in SSA
+    !************************************************************************************
     real(dp) function EintSSA(B,Eph,E,NE)
     real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
-    real(dp) :: dE(nIn), Ec, x, F
+    real(dp) :: dE, Ec, x, F, E_step
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
-    
     EIntSSA = 0d0   !Initialization
-    
+    E_step = E(2)/E(1)
     do i = 1, nIn
-
-        if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
-
+        dE = E(i)*(E_step - 1.d0)     !Energy interval
         !Critical photon energy and function to integrate for each particle energy
         Ec = cte_Ec*B*E(i)**2
         x = Eph/Ec
         F = NE(i)/E(i)*exp(-x)*x**(1d0/3d0)*(x + 2d0/3d0)
-
         !The approximation is only valid for 0.1 < x < 10
-        if (x < 1d-1 .or. x > 1d1) F = 0d0
-
-        EintSSA = EintSSA + F*dE(i)
-
+        if (x < 1d-3 .or. x > 1d1) F = 0d0 !!!!CHECK THIS!!!!, troublesome in first cell?
+        EintSSA = EintSSA + F*dE
     enddo
-
-    return
     end function EintSSA
 
 
-
-    !***************************************************************************************************
-    !  Computation of the synchrotron energy density in each segment
-    !***************************************************************************************************
+    !============================================================================
+    ! SEDsyn (END)
+    !============================================================================
     subroutine Calc_Usyn()
-        real(dp) :: L_tot(Ns), Lun(nIn, Ns), Lsy(nIn, Ns), Esy(nIn), Esy_step, dEsy
+    !============================================================================
+    ! Computation of the synchrotron energy density in each segment
+    !============================================================================
+        real(dp) :: L_tot(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns), Esy(NSED_sy), Esy_step, dEsy
         real(dp) :: z(Ns), Bff(Ns), r(Ns), VFF(Ns), boost(Ns), dummy, U_sy_FF
 
         ! Read relevant quantities at each segment
@@ -240,7 +239,7 @@ contains
         ! Read from a file: Esy(i,l), E*Lsy_unabs(i,l), E*Lsy_abs(i,l), l
         open(27, file='SEDsyn_cuts_ord.dat')
         do l = 1, Ns 
-            do i = 1, nIn
+            do i = 1, NSED_sy
                 read(27,*) Esy(i), Lun(i,l), Lsy(i,l), dummy
                 ! We need L_sy_FF, so we unboost
                 Lsy(i,l) = Lsy(i,l)/(Esy(i)*boost(l))
@@ -254,7 +253,7 @@ contains
         Esy_step = Esy(2)/Esy(1)
         open(28, file='U_FF.dat')
         do l = 1, Ns
-            do i = 1, nIn
+            do i = 1, NSED_sy
                 dEsy = Esy(i)*(Esy_step-1.d0)
                 L_tot(l) = L_tot(l) + Lsy(i,l) * dEsy
             enddo
@@ -267,7 +266,7 @@ contains
         L_tot = 0.d0
         open(28, file='L_inj.dat')
         do l = 1, Ns
-            do i = 1, nIn
+            do i = 1, NSED_sy
                 dEsy = Esy(i)*(Esy_step-1.d0)
                 L_tot(l) = L_tot(l) + (Lun(i,l) - Lsy(i,l)) * dEsy
             enddo
@@ -276,9 +275,93 @@ contains
         close(28)
 
     end subroutine Calc_Usyn
+    !============================================================================
+    ! Calc_Usyn (END)
+    !============================================================================
 
 
-!==============================================================
+    !============================================================================
+    ! SEDsyn_data (START)
+    !============================================================================
+    subroutine SEDsyn_data(E_data, S_data)
+    !============================================================================
+    ! This routine calculates the intrinsic synchrotron emission in the fluid frame
+    ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
+    ! of those energies [cgs] (also a vector). The number of points in E_data has
+    ! to be smaller than m_data_max defined in globals.f90.
+    !============================================================================
+    real(dp), intent(in) :: E_data(:)
+    real(dp), intent(out) :: S_data(m_data_max)
+    real(dp), allocatable :: Eph(:), LumA(:)
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
+    real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
+    real(dp) :: dummy, boost(Ns), dil
+    integer :: m_data
+    allocate ( z(nS), BFF(Ns), rj(Ns), sjoFF(Ns), VFF(Ns), delta_obs(Ns) )
+
+    !Quantities at each segment
+    open(10,file='quant_FF.dat')
+    open(20,file='deltas.dat')
+    do i = 1,Ns
+        read(10,*) z(i), BFF(i), rj(i), dummy, dummy, sjoFF(i), VFF(i), dummy
+        read(20,*) delta_obs(i), boost(i)
+    enddo
+    close(10)
+    close(20)
+    
+    !N(E) of each cut
+    open(30,file='NE_cuts.dat')
+    do i = 1, nIn
+        do j = 1, Ns
+            read(30,*) E(i), NE(i,j), dummy
+        enddo
+    enddo
+    close(30)
+
+    m_data = SIZE(E_data)
+    if (m_data > m_data_max) then
+      print*, 'Too many points to fit, make m_data_max larger in global.f90!'
+      stop
+    endif
+    allocate( Eph(m_data), LumA(m_data) )
+    Eph = E_data ! Here we can change units if needed          
+
+    do l = 1, NSED_sy
+        do j = 1, Ns                        !Loop for the jet segments
+            EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
+            do i = 1, nIn
+                NEcut(i) = NE(i,j)          !N(E) for the segment j
+            enddo
+            !Unabsorbed synchrotron luminosity for each segment
+            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut)
+        enddo
+        
+        !Absorbed radiation for each cut
+        call SSA(z,BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
+        
+        LumA(l) = 0d0 ! Total luminosity at each photon energy
+        do j = 1, Ns
+            LumcutA(j) = boost(j)*LumcutAFF(j)  !(de)Boosted
+            LumA(l) = LumA(l) + LumcutA(j)            !Absorbed (de)boosted luminosity for Eph
+        enddo
+    enddo
+
+    ! Define the output vector for the first m_data positions
+    S_data = 0.d0
+    dil = 4.d0*pi*dist**2
+    do l = 1, m_data
+      S_data(l) = LumA(l)/dil
+    enddo
+    
+    deallocate( z, BFF, rj, sjoFF, VFF, delta_obs )
+    
+    end subroutine SEDsyn_data
+    !============================================================================
+    ! SEDsyn (END)
+    !============================================================================
+    
+
+!================================================================================
 
 
 END MODULE synrad

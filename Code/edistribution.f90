@@ -5,10 +5,13 @@ MODULE edistribution
 
 contains
     
-!***************************************************************************************
-!   Creation of a text file with E, N(E) 
-!***************************************************************************************
+   !============================================================================
+   ! Edist (START)
+   !============================================================================
     subroutine Edist()
+   !============================================================================
+   ! This subroutine calculates the electron energy distribution at each segment
+   !============================================================================
     real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2
     real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
     real(dp) :: dummy
@@ -16,8 +19,6 @@ contains
     integer :: izz
     allocate( z(Ns), BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
         
-    write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
-
     open(10,file='quant_FF.dat')
     do i = 1,Ns
         !Quantities at each segment
@@ -30,7 +31,7 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     Ecut = CutE(BFF(1),rj(1),vnorm(1),EphMFF(1),Kappa(1))   !Cutoff energy for Q(E) in the FF
     Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
-    write(*,'(3X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
+    !write(*,'(3X,A,X,F5.2,X,A)') 'Ecutoff =',Ecut/eV/1d12,'TeV'
     if (Ecut > EmaxFF/3.d0) then
         write(*,*) 'EmaxFF in globals.f90 is too low!'
         stop
@@ -61,30 +62,22 @@ contains
     !enddo
 
     ! do i2 = 1, nIn
-    
     !     !Computation of N(E) for each segment
     !     call CalcNE(Kinj,EFF,Ecut,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
     !     !call CalcNE_analytical(EFF, z, BFF, rj, vnorm, EphMFF, Kappa, NE)
     !     NEtot = 0.d0    ! Initialization
-
     !     do j = 1, Ns
 
     !         write(20,*) EFF, NE(j), j   !E and N(E) for each jet cut
-
     !         NEtot = NEtot + NE(j)   !Sum for all the jet segments
-
     !         NEE(j) = NEE(j) + NE(j) * EFF * (Ein-1d0)
 
     !         !Contribution of the segments up to given lengths
     !         if (z(j) <= 0.01d0*zmax) NE1 = NEtot
     !         if (z(j) <= 0.1d0*zmax) NE2 = NEtot
-
     !     enddo
-        
     !     write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
-        
     !     EFF = EFF*Ein   !Exponential energy increase
-        
     ! enddo
 
     ! dummy = 0d0
@@ -117,8 +110,8 @@ contains
                 NEE(izz) = NEE(izz) + NEmatrix(i2, izz) * EFF * (Ein-1d0)
 
                 !Contribution of the segments up to given lengths
-                if (z(j) <= 0.01d0*zmax) NE1 = NEtot
-                if (z(j) <= 0.1d0*zmax) NE2 = NEtot
+                if (z(izz) <= 0.01d0*zmax) NE1 = NEtot
+                if (z(izz) <= 0.1d0*zmax) NE2 = NEtot
             enddo
             write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
             EFF = EFF*Ein   !Exponential energy increase
@@ -166,11 +159,19 @@ contains
     deallocate (z,BFF,rj,vnorm,EphMFF,Kappa)
     
     end subroutine Edist
-    
-!*************************************************************************************************************
-!   Numerical particle distribution by evolving each cut as a 1-zone
-!*************************************************************************************************************
+   !============================================================================
+   ! Edist (END)
+   !============================================================================
+
+
+   !============================================================================
+   ! CalcNE (START)
+   !============================================================================
     subroutine CalcNE (Kinj,EFF,Ecut,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
+   !============================================================================
+   ! Calculate the numerical particle distribution by evolving each cut as a 
+   ! 1-zone
+   !============================================================================
     real(dp), intent(in) :: Kinj,EFF,Ecut,z(Ns),BFF(Ns),rj(Ns),vnorm(Ns),EphMFF(Ns),Kappa(Ns)
     real(dp), intent(out) :: NE(Ns)
     real(dp) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod,BB,ee,zz,de,zm, dttFF
@@ -203,7 +204,7 @@ contains
             if (backD > (z(i)-z(n))) n = n - 1
             
             !Selection of the adequate time steps for each position (dtpast already in the FF)
-            call Setdt(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i),dtpast)
+            dtpast = Setdt(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i))
             
             !Increase in the energy
             E0(i) = E0(i) - TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i))*dtpast
@@ -267,15 +268,18 @@ contains
 
     return
     end subroutine CalcNE
+    !============================================================================
+    ! CalcNE (END)
+    !============================================================================
   
     
-!*************************************************************************************************************
-!   Numerical particle distribution by analytical methods
-!*************************************************************************************************************
-    !subroutine CalcNE_analytical(EFF,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
+    !============================================================================
+    ! CalcNE_analytical (START)
+    !============================================================================
     subroutine CalcNE_analytical(EFF, i2, z, NEmatrix)
-        !real(dp), intent(in) :: EFF,z(Ns),BFF(Ns),rj(Ns),vnorm(Ns),EphMFF(Ns),Kappa(Ns)
-        !real(dp), intent(out) :: NE(Ns)
+    !============================================================================
+    ! Calculate the electron energy distribution by analytical methods
+    !============================================================================
         integer, intent(in) :: i2
         real(dp), intent(in) :: EFF, z(Ns)
         real(dp), intent(inout) :: NEmatrix(nIn, Ns)
@@ -304,6 +308,9 @@ contains
 
     return
     end subroutine CalcNE_analytical
+    !============================================================================
+    ! CalcNE_analytical (END)
+    !============================================================================
 
 
     !*************************************************************************************************************
@@ -375,33 +382,27 @@ contains
 !*************************************************************************************************************
     subroutine Setdt (B,rj,vnorm,Eph,Kappa,E,dtpast)
     real(dp), intent(in) :: B,rj,vnorm,Eph,Kappa,E
-    real(dp), intent(out) :: dtpast
     real(dp) :: tloss
-
     !Characteristic time for losses
-    tloss = dabs(E/TLosses(B,rj,vnorm,Eph,Kappa,E))
-
+    tloss = abs(E/TLosses(B,rj,vnorm,Eph,Kappa,E))
     !Set dt according to the characterstic losses and injection times
-    dtpast = 0.1d0 * min(tloss,dtFF)
-
+    Setdt = 0.1d0 * min(tloss,dtFF)
     return
-    end subroutine Setdt
+    end function Setdt
     
-!*************************************************************************************************************
-!   Determination of the cutoff energy of the particle injection
-!*************************************************************************************************************
+
+    !************************************************************************************
+    !   Determination of the cutoff energy of the particle injection
+    !************************************************************************************
     real(dp) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1)
     real(dp), intent(in) :: BFF1,rj1,vnorm1,Eph1,Kappa1
     real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,error,check
-
     !Injected power (erg/s)
     Eacc = facc*qe*BFF1*c
-
     !Initialization
     lE1 = log10(1d10*eV)  ! log10(Emin [CGS]) ~ 10 GeV
     lE2 = log10(1d14*eV) ! log10(Emax [CGS]) ~ 100 TeV
     error = 1.d-4        ! error < 10^(-4)
-        
     !Maximum particle energy
     do while (abs(lE2-lE1) > error)
         lEmid = (lE1+lE2)/2d0
@@ -416,53 +417,48 @@ contains
         endif
     enddo
     Emax1 = 10d0**(lE2)
-
     !Maximum energy that particles can get before diffusing away of the injection point
     Emax2 = rj1*sqrt(3d0*qe*BFF1*Eacc/(2d0*c))
-
     !Ecut obtained by the minimum of the values above
     CutE = min(Emax1,Emax2)
-
     end function CutE
-    
-!*************************************************************************************************************
-!   Injection function
-!*************************************************************************************************************
+
+
+    !************************************************************************************
+    !   Injection function (only one injection cell)
+    !************************************************************************************
     real(dp) function Q_E (K,Ecut,E)
     real(dp), intent(in) :: K,Ecut,E
-    
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
         Q_E = K*E**(-p) * exp(-E/Ecut)
     else
         Q_E = 0d0
     endif
-
-    return
     end function Q_E
+    
 
-!*************************************************************************************************************
-!   Injection function
-!*************************************************************************************************************
+    !************************************************************************************
+    !   Injection function (for multiple injection cells?)
+    !************************************************************************************
     real(dp) function Q_Ez (E, iz)
     real(dp), intent(in) :: E
     integer, intent(in) :: iz
     real(dp) :: Ecut, Kinj
-    Ecut = CutE(BFF(iz),rj(iz),vnorm(iz),EphMFF(iz),Kappa(iz))   !Cutoff energy for Q(E) in the FF
-    Kinj = NormKz(Ecut)                                      !Normalization constant for Q(E)
+    Ecut = CutE(BFF(iz),rj(iz),vnorm(iz),EphMFF(iz),Kappa(iz))!Cutoff energy for Q(E) in the FF
+    Kinj = NormKz(Ecut)                                       !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
         Q_Ez = Kinj*E**(-p) * exp(-E/Ecut)
     else
         Q_Ez = 0d0
     endif
-
-    return
     end function Q_Ez
   
-!*************************************************************************************************************
-!   Injection function
-!*************************************************************************************************************
+
+    !************************************************************************************
+    !   Injection function (for multiple injection cells)
+    !************************************************************************************
     real(dp) function dQ_Edz(E, zz, BB, rr, vlat)
     real(dp), intent(in) :: E, zz, BB, rr, vlat
     real(dp) :: Ecut, Kinj
@@ -474,27 +470,21 @@ contains
     else
         dQ_Edz = 0d0
     endif
-
-    return
     end function dQ_Edz
 
-!*************************************************************************************************************
-!   Injection normalization
-!*************************************************************************************************************  
+
+    !************************************************************************************
+    !   Injection normalization (only one injection cell)
+    !************************************************************************************  
     real(dp) function NormK(Ecut)
     real(dp), intent(in) :: Ecut
     real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2
     integer, parameter :: N = 300   !Number of subintervals for the integral
-  
     Einc = (EmaxFF/EminFF)**(1d0/(N-1))  !Increase factor of the energy
-  
     !Initialization
     E = EminFF
-    QInt = 0d0
-
-    ! The integral is solved with the trapezoid method
-    E = EminFF
     QInt = 0.d0
+    ! The integral is solved with the trapezoid method
     f1 = E * Q_E(1.d0,Ecut,E)
     do i = 1, N-1 
         dE = E*(Einc-1d0)                    !Energy interval
@@ -506,27 +496,22 @@ contains
         E = E2
     end do
     NormK = LnTFF/QInt    !Normalization constant
-
+    return
     end function NormK
 
 
-!*************************************************************************************************************
-!   Injection normalization
-!*************************************************************************************************************  
+    !************************************************************************************
+    !   Injection normalization
+    !************************************************************************************  
     real(dp) function NormKz(Ecut)
     real(dp), intent(in) :: Ecut
     real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2
     integer, parameter :: N = 300   !Number of subintervals for the integral
-  
     Einc = (EmaxFF/EminFF)**(1d0/(N-1))  !Increase factor of the energy
-  
     !Initialization
     E = EminFF
-    QInt = 0d0
-
-    ! The integral is solved with the trapezoid method
-    E = EminFF
     QInt = 0.d0
+    ! The integral is solved with the trapezoid method
     f1 = E * Q_E(1.d0,Ecut,E)
     do i = 1, N-1 
         dE = E*(Einc-1d0)                    !Energy interval
@@ -539,13 +524,17 @@ contains
     end do
     NormKz = LnTFF/QInt   !Normalization constant
 
+    return
     end function NormKz
 
-    !*********************************************************************************
-    !  Computation of the electron energy density in each segment (FF)
-    !*********************************************************************************
 
+    !============================================================================
+    ! Calc_Ue (START)
+    !============================================================================
     subroutine Calc_Ue()
+    !============================================================================
+    ! Computation of the electron energy density in each segment (FF)
+    !============================================================================
         real(dp) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
         real(dp) :: z(Ns), VFF(Ns), dummy
 
@@ -580,11 +569,14 @@ contains
         close(28)
 
     end subroutine Calc_Ue
+    !============================================================================
+    ! Calc_Ue (END)
+    !============================================================================
+
 
     !*********************************************************************************
     !  Minimum z for a given characteristic curve ending at (zf, Ef)
     !*********************************************************************************
-
     real(dp) function zMin(E, z)
     real(dp), intent(in) :: E, z
     real(dp) :: A, B, D, xi_f, g_f, f, U0
@@ -602,10 +594,10 @@ contains
 
     end function
 
+
     !*********************************************************************************
     !  Analytical function for the characteristic curve
     !*********************************************************************************
-
     real(dp) function Echar(z, Efinal, zfinal)
     real(dp), intent(in) :: z, Efinal, zfinal
     real(dp) :: A, B, C1, D, xi_final, g_final, xi, f, U0
@@ -627,9 +619,8 @@ contains
 
 
     !*********************************************************************************
-    !  Factor integrante
+    !  Integrating factor 
     !*********************************************************************************
-
     real(dp) function factorIntegrante(xp, xi_f, g_f)
     real(dp), intent(in) :: xp, g_f, xi_f
     real(dp) :: A, B, aux, D, f, U0, C1
@@ -652,6 +643,7 @@ contains
 
     end function
 
-!========================================================
+
+!=======================================================================================
 
 END MODULE edistribution

@@ -4,11 +4,14 @@ MODULE evolution
 
    contains
 
-   !*************************************************************************************
-   !   Evolution of different quantities from cell to cell
-   !*************************************************************************************
+   !============================================================================
+   ! Quantities (START)
+   !============================================================================
    subroutine Quantities(jet)
-
+   !============================================================================
+   ! This subroutine calculates the evolution of different quantities 
+   ! from cell to cell
+   !============================================================================
       character(LEN=*), intent(in) :: jet ! 'cj' for counterjet or '' for jet
       real(dp) :: B, dir, cjo, boost
       allocate( z(Ns), rj(Ns) )
@@ -17,8 +20,6 @@ MODULE evolution
       allocate( deltatFF(Ns) )
       allocate( BFF(Ns), vnorm(Ns), VFF(Ns), nfFF(Ns) )
       allocate( EphMFF(Ns), Kappa(Ns), joFF(Ns), sjoFF(Ns) )
-
-      write(*,*) '\n Calculating the evolution of quantities along the jet'
 
       open(10,file='trajectory'//jet//'.dat')
       open(20,file='deltas'//jet//'.dat')
@@ -61,7 +62,7 @@ MODULE evolution
 
          !Velocity perpendicular to the jet propagation
          if (i == 1) then
-            !vnorm(i) = vj*tan(thetaj)   !Conical expansion up to zrec (at least)
+            vnorm(i) = vj*tan(thetaj)   !Conical expansion???
          else
             vnorm(i) = (rj(i)-rj(i-1))/(deltatFF(i)*gj)
          endif
@@ -87,13 +88,14 @@ MODULE evolution
       close(30)
       close(31)
 
-      write(*,*) 'B0_FF[G] = ', BFF(1)
-
       deallocate( z, rj )
       deallocate( delta_obs )
       deallocate( BFF, vnorm, VFF, nfFF ) 
       deallocate( EphMFF, Kappa, joFF, sjoFF )
 
    end subroutine Quantities
+   !============================================================================
+   ! Quantities (END)
+   !============================================================================
 
 END MODULE evolution
