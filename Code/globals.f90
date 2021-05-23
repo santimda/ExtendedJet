@@ -235,7 +235,64 @@ MODULE globals
   end Function sigma_pp
 
 
-  !============================================================================
+  subroutine locate(xx, n, x, j)
+    integer, intent(in) :: n
+    real(dp), intent(in) :: x, xx(n)
+    integer, intent(out) :: j
+    ! Given an array xx(1:n) , and given a value x , returns a value j such that x is between
+    ! xx(j) and xx(j+1) . xx(1:n) must be monotonic, either increasing or decreasing. j=0
+    ! or j=n is returned to indicate that x is out of range.
+    integer :: jl, jm, ju
 
+    jl = 0                            ! Initialize lower
+    ju = n+1                          ! and upper limits.
+    
+    do while (ju-jl > 1)
+      jm = (ju + jl)/2
+      if ((xx(n) >= xx(1)) .eqv. (x >= xx(jm))) then
+        jl = jm
+      else
+        ju = jm
+      endif
+    enddo
+    
+    if (x == xx(1)) then
+      j = 1
+    else if (x == xx(n)) then
+      j = n-1
+    else
+      j = jl
+    endif
+    
+    return
+    end subroutine
+
+  !============================================================================
+  ! Logarithmic interpolation
+  real(dp) function Interpol1d(xp, x, v, nn)
+  integer, intent(in) :: nn
+  real(dp), intent(in) :: xp, v(n), x(n)
+  integer :: j_x
+  real(dp) :: slope
+
+  call locate(x, nn, xp, j_x)
+  if (j_x == 0) then
+    slope = (v(2) - v(1)) / (x(2) - x(1))
+    Interpol1d = max(v(1) + slope * (xp - x(1)), 0d0)
+  else if (j_x == n) then
+    slope = (v(n) - v(n-1)) / (x(n) - x(n-1))
+    Interpol1d = max(v(n) + slope * (xp - x(n)), 0d0)
+  else
+    if (v(j_x) > 0d0 .and. v(j_x + 1) > 0d0) then
+      slope = log(v(j_x+1)/v(j_x))/log(x(j_x+1)/x(j_x))
+      Interpol1d = v(j_x) * (xp/x(j_x))**slope
+    else
+      slope = (v(j_x+1) - v(j_x)) / (x(j_x+1) - x(j_x))
+      Interpol1d = v(j_x) + slope * (xp - x(j_x))
+    endif
+  endif
+
+  return
+  end function
 
 END MODULE globals

@@ -10,9 +10,10 @@ contains
 !***************************************************************************************
     subroutine Edist()
     real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2
-    real(dp) :: NEmatrix(Ns, nIn)
+    real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
     real(dp) :: dummy
     real(dp) :: NEE(Ns)
+    integer :: izz
     allocate( z(Ns), BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
         
     write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
@@ -44,9 +45,14 @@ contains
 
     Ein = (E2/E1)**(1d0/(nIn-1))    !Energy increase factor
     EFF = E1                        !Initialization
-    
-    do j = 1,Ns
-        NEE(j) = 0d0
+
+    Evec(1) = E1
+    do i2 = 2,nIn
+        Evec(i2) = Evec(i2-1) * Ein
+    enddo
+
+    do izz = 1,Ns
+        NEE(izz) = 0d0
     enddo
 
     !do i2 = 1, nIn
@@ -81,30 +87,79 @@ contains
         
     ! enddo
 
-    NEmatrix = 0d0
+    ! dummy = 0d0
+    ! do j=1,Ns
+    !     do i2=1,nIn
+    !         dummy = dummy + dQ_Edz(Evec(i2), z(j), BFF(j), rj(j), vnorm(j))*deltaZ(j)*Evec(i2)**2*(Ein-1d0)
+    !     enddo
+    ! enddo
+    !write(*,*) dummy
+    if (.true.) then
+        NEmatrix = 0d0
 
-    do i2 = 1, nIn
-        call CalcNE_analytical(EFF, i2, z, NEmatrix)
-        EFF = EFF*Ein   !Exponential energy increase
-    enddo
-
-    EFF = E1                        !Initialization
-    do i2 = 1, nIn
-        NEtot = 0.d0    ! Initialization
-        do j = 1, Ns
-
-            write(20,*) EFF, NEmatrix(i2, j), j   !E and N(E) for each jet cut
-            NEtot = NEtot + NEmatrix(i2, j)   !Sum for all the jet segments
-            NEE(j) = NEE(j) + NEmatrix(i2, j) * EFF * (Ein-1d0)
-
-            !Contribution of the segments up to given lengths
-            if (z(j) <= 0.01d0*zmax) NE1 = NEtot
-            if (z(j) <= 0.1d0*zmax) NE2 = NEtot
+        !!$OMP PARALLEL SHARED(NEmatrix)
+        !!$OMP DO
+        do i2 = 1, nIn
+            write(*,*) i2
+            call CalcNE_analytical(EFF, i2, z, NEmatrix)
+            EFF = EFF*Ein   !Exponential energy increase
         enddo
-        write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
-        EFF = EFF*Ein   !Exponential energy increase
-    enddo
-    
+        !!$OMP END DO
+        !!$OMP END PARALLEL
+
+        EFF = E1                        !Initialization
+        do i2 = 1, nIn
+            NEtot = 0.d0    ! Initialization
+            do izz = 1, Ns
+
+                write(20,*) EFF, NEmatrix(i2, izz), izz   !E and N(E) for each jet cut
+                NEtot = NEtot + NEmatrix(i2, izz)   !Sum for all the jet segments
+                NEE(izz) = NEE(izz) + NEmatrix(i2, izz) * EFF * (Ein-1d0)
+
+                !Contribution of the segments up to given lengths
+                if (z(j) <= 0.01d0*zmax) NE1 = NEtot
+                if (z(j) <= 0.1d0*zmax) NE2 = NEtot
+            enddo
+            write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
+            EFF = EFF*Ein   !Exponential energy increase
+        enddo
+
+    else
+  
+        open(40, file="NEmat.dat")
+        open(41, file="NEmat2.dat")
+        NEmat = 0d0
+        do izz = 2, Ns
+            call CalcNE_analytical2(z, izz, Evec, NEmat)
+            ! if (izz < 50 .and. z(izz) > zMin(1000*mec2, z(50))) then
+            !     write(40, *) z(izz)/z0, factorIntegrante(z(izz)/z(50), z(50)/z0, 1000d0)
+            ! endif
+            ! if (izz < 49 .and. z(izz) > zMin(Echar(z(49), 1000*mec2, z(50)), z(49))) then
+            !     write(41, *) z(izz)/z0, factorIntegrante(z(izz)/z(49), z(49)/z0  , Echar(z(49), 1000d0*mec2, z(50))/mec2) * &
+            !                             factorIntegrante(z(49)/z(50), z(50)/z0, 1000d0)
+            ! endif
+        enddo
+        close(40)
+        close(41)
+
+        EFF = E1                        !Initialization
+        do i2 = 1, nIn
+            NEtot = 0.d0    ! Initialization
+            do izz = 1, Ns
+
+                write(20,*) EFF, NEmat(izz, i2), izz   !E and N(E) for each jet cut
+                NEtot = NEtot + NEmat(izz, i2)   !Sum for all the jet segments
+                NEE(izz) = NEE(izz) + NEmat(izz, i2) * EFF * (Ein-1d0)
+
+                !Contribution of the segments up to given lengths
+                if (z(izz) <= 0.01d0*zmax) NE1 = NEtot
+                if (z(izz) <= 0.1d0*zmax) NE2 = NEtot
+            enddo
+            write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
+            EFF = EFF*Ein   !Exponential energy increase
+        enddo
+    endif
+
     close(20)
     close(30)
     
@@ -230,22 +285,11 @@ contains
 
     do izz=1, Ns
         zm = zMin(EFF, z(izz))
-        ! do jj=1,min(izz, Ninj)
-        !     if (zm < z(jj)) then
-        !         ee = Echar(z(jj), EFF, z(izz))
-        !         tlossFF = ee/abs(TLosses(BFF(jj),rj(jj),vnorm(jj),EphMFF(jj),Kappa(jj),ee))
-        !         NE(izz) = NE(izz) + Q_Ez(ee, jj) * deltaZ(izz)/deltaZ(jj) * min(deltatFF(jj), tlossFF)  * &
-        !                     factorIntegrante(z(jj)/z(izz), z(izz)/z0, EFF/mec2)
-        !     endif
-        ! enddo
-        ! write(*,*) izz, NE(izz)
         zz = min(z(izz), zmax_inj)
         jj = max(min(izz, Ninj) - 1, 1)
         sum = 0d0
         do while (zz > max(z0, zm))
-            if (zz < z(jj)) then
-               jj = max(jj - 1, 1)
-            endif
+            if (zz < z(jj)) jj = max(jj - 1, 1)
             ee = Echar(zz, EFF, z(izz))
             BB = BFF_fun(zz)
             rr = r_fun(zz)
@@ -261,6 +305,70 @@ contains
     return
     end subroutine CalcNE_analytical
 
+
+    !*************************************************************************************************************
+!   Numerical particle distribution by analytical methods
+!*************************************************************************************************************
+    !subroutine CalcNE_analytical(EFF,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
+    subroutine CalcNE_analytical2(z, izz, Evec, NEmat)
+        real(dp), intent(in) :: z(Ns), Evec(nIn)
+        integer, intent(in) :: izz
+        real(dp), intent(inout) :: NEmat(Ns, nIn)
+        real(dp) :: NEprev_vec(nIn)
+        real(dp) :: tlossFF, sum, ee, zp, zm, dttFF, BB, rr, vlat, ee_prev, Ne_prev
+        integer :: jj, count1, count2
+        !Initialization of the current energy distribution
+
+        do i2=1, nIn
+            NEprev_vec(i2) = NEmat(izz-1, i2) / deltaZ(izz-1)
+        enddo
+        write(*,*) izz
+
+        count1 = 0
+        count2 = 0
+        do i2=1, nIn
+            zm = zMin(Evec(i2), z(izz))
+            zp = z(izz-1)
+            if (zm < zp) then
+                ee_prev = Echar(zp, Evec(i2), z(izz))
+                Ne_prev = Interpol1d(ee_prev, Evec, NEprev_vec, nIn)
+            else
+                Ne_prev = 0d0
+                zp = zm
+            endif
+            sum = 0d0
+            !Ne_prev =0d0
+            ! zp = max(zm, z0)
+            ! do while (zp < min(z(izz-1), zmax_inj))
+            !     ee = Echar(zp, Evec(i2), z(izz))
+            !     BB = BFF_fun(zp)
+            !     rr = r_fun(zp)
+            !     vlat = v_lat(zp)
+            !     tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+            !     dttFF = min(zp, 1.00001d0*(min(z(izz), zmax_inj)-zp)) / (vj*gj)
+            !     !dttFF = max(min(0.1 * tlossFF, dttFF), 1d-10)
+            !     sum = sum + dQ_Edz(ee, zp, BB, rr, vlat) * dttFF * factorIntegrante(zp/z(izz), z(izz)/z0, Evec(i2)/mec2)
+            !     zp = zp + vj*gj*dttFF
+            ! enddo
+
+            do while (zp < min(z(izz), zmax_inj))
+                ee = Echar(zp, Evec(i2), z(izz))
+                BB = BFF_fun(zp)
+                rr = r_fun(zp)
+                vlat = v_lat(zp)
+                tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+                dttFF = min(zp, (min(z(izz), zmax_inj)-zp)) / (vj*gj)
+                dttFF = max(min(0.1 * tlossFF, dttFF), 1d-10)
+                sum = sum + dQ_Edz(ee, zp, BB, rr, vlat) * dttFF * factorIntegrante(zp/z(izz), z(izz)/z0, Evec(i2)/mec2)
+                zp = zp + vj*gj*dttFF
+            enddo
+           ! write(*,*) factorIntegrante(z(izz-1)/z(izz), z(izz)/z0, Evec(i2)/mec2) * factorIntegrante(1.1*max(z0, zMin(ee_prev, z(izz-1)))/z(izz-1), z(izz-1)/z0, ee_prev/mec2), &
+            !factorIntegrante(max(z0, zMin(ee_prev, z(izz-1)))*1.1/z(izz), z(izz)/z0, Evec(i2)/mec2)
+            NEmat(izz, i2) = deltaZ(izz) * (sum + Ne_prev * factorIntegrante(z(izz-1)/z(izz), z(izz)/z0, Evec(i2)/mec2))
+        enddo
+
+        return
+    end subroutine CalcNE_analytical2
 
 !*************************************************************************************************************
 !   Setting of an appropriate time step for the N(E) computation
@@ -359,7 +467,7 @@ contains
     real(dp), intent(in) :: E, zz, BB, rr, vlat
     real(dp) :: Ecut, Kinj
     Ecut = CutE(BB, rr, vlat, 1d0, 1d0)   !Cutoff energy for Q(E) in the FF
-    Kinj = NormKz(Ecut) * log(zmax_inj/z0) / zz            !Normalization constant for Q(E)
+    Kinj = NormKz(Ecut) / (zz * log(zmax_inj/z0))         !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
         dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut)
@@ -429,7 +537,7 @@ contains
         f1 = f2
         E = E2
     end do
-    NormKz = LnTFF/QInt  / Ninj  !Normalization constant
+    NormKz = LnTFF/QInt   !Normalization constant
 
     end function NormKz
 
@@ -534,7 +642,7 @@ contains
     D = B + f - 1.d0
     
     C1 = xi_f**(-(B+f)) * (xi_f**f*D + A*xi_f*g_f) / g_f
-    factorIntegrante = xp**(-B) * ( (C1-A*xi_f**(-D)) / (C1-A*xi_f**(-D)*xp**-D) )**2
+    factorIntegrante = xp**(-B) * ( (C1-A*xi_f**(-D)) / (C1-A*xi_f**(-D)*xp**(-D)) )**2
     !factorIntegrante = Echar(zp, Ef, zf) / Ef
 !    if (xp < 1d0) then
 !        factorIntegrante = aux * xp**(1d0-B) / ( (1d0 + aux) * xp**D - 1d0 )

@@ -40,11 +40,9 @@ MODULE evolution
 
          read(10,*) z(i), rj(i)
 
-         if (z(i) < zmax_inj) then
-            Ninj = i
-         endif
+         if (z(i) < zmax_inj) Ninj = i
 
-         deltaZ(i) = z(i) * (dlogZ-1d0)
+         deltaZ(i) = z(i) * (sqrt(dlogZ)-1d0/sqrt(dlogZ))
          deltatFF(i) = deltaZ(i) / (vj*gj)
 
          !Doppler factor between the jet and the observer
