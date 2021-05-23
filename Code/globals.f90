@@ -273,10 +273,10 @@ MODULE globals
   ! Logarithmic interpolation
   real(dp) function Interpol1d(xp, x, v, nn)
   integer, intent(in) :: nn
-  real(dp), intent(in) :: xp, v(n), x(n)
+  real(dp), intent(in) :: xp, v(:), x(:)
   integer :: j_x
   real(dp) :: slope
-
+  n = SIZE(v)
   call locate(x, nn, xp, j_x)
   if (j_x == 0) then
     slope = (v(2) - v(1)) / (x(2) - x(1))
