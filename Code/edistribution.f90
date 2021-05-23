@@ -44,10 +44,10 @@ contains
     ! E1 y E2 NO HACEN FALTA, SON EminFF y EmaxFF
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    Ein = (E2/E1)**(1d0/(nIn-1))    !Energy increase factor
-    EFF = E1                        !Initialization
+    Ein = (EmaxFF/EminFF)**(1d0/(nIn-1))    !Energy increase factor
+    EFF = EminFF                        !Initialization
 
-    Evec(1) = E1
+    Evec(1) = EminFF
     do i2 = 2,nIn
         Evec(i2) = Evec(i2-1) * Ein
     enddo
@@ -87,7 +87,7 @@ contains
     !     enddo
     ! enddo
     !write(*,*) dummy
-    if (.true.) then
+    if (.false.) then
         NEmatrix = 0d0
 
         !!$OMP PARALLEL SHARED(NEmatrix)
@@ -100,7 +100,7 @@ contains
         !!$OMP END DO
         !!$OMP END PARALLEL
 
-        EFF = E1                        !Initialization
+        EFF = EminFF                        !Initialization
         do i2 = 1, nIn
             NEtot = 0.d0    ! Initialization
             do izz = 1, Ns
@@ -135,7 +135,7 @@ contains
         close(40)
         close(41)
 
-        EFF = E1                        !Initialization
+        EFF = EminFF                        !Initialization
         do i2 = 1, nIn
             NEtot = 0.d0    ! Initialization
             do izz = 1, Ns
@@ -380,7 +380,7 @@ contains
 !*************************************************************************************************************
 !   Setting of an appropriate time step for the N(E) computation
 !*************************************************************************************************************
-    subroutine Setdt (B,rj,vnorm,Eph,Kappa,E,dtpast)
+    real(dp) function Setdt(B,rj,vnorm,Eph,Kappa,E)
     real(dp), intent(in) :: B,rj,vnorm,Eph,Kappa,E
     real(dp) :: tloss
     !Characteristic time for losses
@@ -388,7 +388,7 @@ contains
     !Set dt according to the characterstic losses and injection times
     Setdt = 0.1d0 * min(tloss,dtFF)
     return
-    end function Setdt
+    end function
     
 
     !************************************************************************************
