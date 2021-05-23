@@ -127,22 +127,23 @@ contains
     !   Synchrotron luminosity per photon energy unit
     !************************************************************************************
     real(dp) function SyncLum(B,Eph,E,NE)
-    real(dp), intent(in) :: B,Eph,E(nIn),NE(nIn)
-    real(dp) :: dE(nIn),Ec,x,Psync
+    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp) :: dE, Ec, x, Psync, E_step
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
     !Initialization
     SyncLum = 0d0
     !Integral by rectangles
+    E_step = E(2)/E(1)
     do i = 1, nIn
-        if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
+        dE = E(i)*(E_step - 1.d0)     !Energy interval
         !Critical photon energy and power emitted for each particle energy
         Ec = cte_Ec*B*E(i)**2
         x = Eph/Ec
         Psync = cte_sy*B * x**(1d0/3d0)*exp(-x)
         !The approximation is only valid for 0.1 < x < 10
         if ((x < 1d-1) .or. (x > 1d1)) Psync = 0d0
-        SyncLum = SyncLum + Psync*NE(i)*dE(i)
+        SyncLum = SyncLum + Psync*NE(i)*dE
     enddo
     end function SyncLum
     
@@ -162,9 +163,9 @@ contains
     do j = 1, Ns
 
         !Absorption and emission coefficients, and source function, for each segment (Pacholczyck, 1970)
-        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*me*V(j)) * EIntSSA(B(j),Eph(j),E,NE)
+        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*me*V(j)) * EintSSA(B(j),Eph(j),E,NE)
         Ecf = Lum(j)/(4d0*pi*V(j))      !Per stereoradian
-        Sf = Ecf/K
+        Sf = Ecf/max(K,1.d-30) !!!! CHECK !!!!
 
         !Length that photons in the observer's direction must travel inside the segment (in the FF)
         depth = rj(j)/sjo(j)
@@ -178,12 +179,12 @@ contains
         Ap = V(j)*delta_obs(j)/depth
 
         !Luminosity corrected for synchrotron self-absorption
-        if (tau < 0.1d0) then
+        if (tau < 0.01d0) then  !!!! CHECK !!!!
             LumA(j) = Lum(j)
         else
             LumA(j) = 4d0*pi*Ap*Sf*(1d0-exp(-tau))
         endif
-
+        !print*, tau, Lum(j), 4d0*pi*Ap*Sf*(1d0-exp(-tau))
     enddo
 
     return
@@ -198,18 +199,19 @@ contains
     !************************************************************************************
     real(dp) function EintSSA(B,Eph,E,NE)
     real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
-    real(dp) :: dE(nIn), Ec, x, F
+    real(dp) :: dE, Ec, x, F, E_step
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     EIntSSA = 0d0   !Initialization
+    E_step = E(2)/E(1)
     do i = 1, nIn
-        if (i /= nIn) dE(i) = E(i+1) - E(i)     !Energy interval
+        dE = E(i)*(E_step - 1.d0)     !Energy interval
         !Critical photon energy and function to integrate for each particle energy
         Ec = cte_Ec*B*E(i)**2
         x = Eph/Ec
         F = NE(i)/E(i)*exp(-x)*x**(1d0/3d0)*(x + 2d0/3d0)
         !The approximation is only valid for 0.1 < x < 10
-        if (x < 1d-1 .or. x > 1d1) F = 0d0
-        EintSSA = EintSSA + F*dE(i)
+        if (x < 1d-3 .or. x > 1d1) F = 0d0 !!!!CHECK THIS!!!!, troublesome in first cell?
+        EintSSA = EintSSA + F*dE
     enddo
     end function EintSSA
 

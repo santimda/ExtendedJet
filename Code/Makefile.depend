@@ -18,8 +18,6 @@ synrad.o: synrad.f90 globals.o
 
 icrad.o: icrad.f90 globals.o
 
-map.o: map.f90 globals.o
-
 #fluxes.o: fluxes.f90 globals.o
 
-main.o: main.f90 globals.o controls.o trajectory.o evolution.o losses.o edistribution.o synrad.o icrad.o map.o
+main.o: main.f90 globals.o controls.o trajectory.o evolution.o losses.o edistribution.o synrad.o icrad.o 

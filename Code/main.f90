@@ -4,6 +4,7 @@ PROGRAM main
     implicit none
     real(dp), allocatable :: E_data(:)
     real(dp) :: S_data(m_data_max)
+    logical, parameter :: verbose = .True.
 
     interface
         subroutine run_jet(verbose) 
@@ -22,7 +23,7 @@ PROGRAM main
     !----------------------------------------------------------------
     ! Original Fortran program
 
-    if (run_jet_calc) call run_jet(.False.)   
+    if (run_jet_calc) call run_jet(verbose)   
 
     !----------------------------------------------------------------
     ! Short version to calculate specific fluxes, used for fitting SEDs
@@ -48,15 +49,14 @@ END PROGRAM main
     use edistribution
     use synrad
     use icrad
-    use map
 !    use fluxes
     
     implicit none
     logical, intent(in) :: verbose
-    real(dp) :: EphSy(NSED_sy), Lsy(NSED_sy), Lsy_CJ(NSED_sy)
-    real(dp) :: EphIC(NSED_IC), LIC(NSED_IC), LIC_CJ(NSED_IC)
-    real(dp) :: Flux(N_bands)
-    character(3) :: gammaj,incli,numNE,numSED
+    !real(dp) :: EphSy(NSED_sy), Lsy(NSED_sy), Lsy_CJ(NSED_sy)
+    !real(dp) :: EphIC(NSED_IC), LIC(NSED_IC), LIC_CJ(NSED_IC)
+    !real(dp) :: Flux(N_bands)
+    character(3) :: numNE, numSED
 
     write(numNE,'(I3)') nIn         !Number of points for the N(E) distribution
     write(numSED,'(I3)') NSED_sy    !Number of points for the synchrotron SED
@@ -95,9 +95,6 @@ END PROGRAM main
     !IC SED     
     if (radic_calc) call SEDIC(iso)     ! Calculate the IC-CMB SED
 
-    !Emission map
-    if (map_calc) call map_sy(1.4d0) ! Frequency in GHz at which to calculate the map
-    !if (map_calc) call map_sy_conv() ! Frequency in GHz at which to calculate the map
     
   end subroutine run_jet
 
