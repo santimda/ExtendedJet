@@ -297,9 +297,10 @@ contains
             BB = BFF_fun(zz)
             rr = r_fun(zz)
             vlat = v_lat(zz)
-            tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
-            dttFF = max(min(0.1 * tlossFF, deltatFF(jj)), 1d-10)
+            tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+            dttFF = max(min(0.001 * tlossFF, deltatFF(jj)), 1d-10)
             sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante(zz/z(izz), z(izz)/z0, EFF/mec2)
+            !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, EFF/mec2)
             zz = zz - vj*gj*dttFF
         enddo
         NEmatrix(i2, izz) = sum * deltaZ(izz)
@@ -366,11 +367,13 @@ contains
                 dttFF = min(zp, (min(z(izz), zmax_inj)-zp)) / (vj*gj)
                 dttFF = max(min(0.1 * tlossFF, dttFF), 1d-10)
                 sum = sum + dQ_Edz(ee, zp, BB, rr, vlat) * dttFF * factorIntegrante(zp/z(izz), z(izz)/z0, Evec(i2)/mec2)
+                !sum = sum + dQ_Edz(ee, zp, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zp/z0, Evec(i2)/mec2)
                 zp = zp + vj*gj*dttFF
             enddo
            ! write(*,*) factorIntegrante(z(izz-1)/z(izz), z(izz)/z0, Evec(i2)/mec2) * factorIntegrante(1.1*max(z0, zMin(ee_prev, z(izz-1)))/z(izz-1), z(izz-1)/z0, ee_prev/mec2), &
             !factorIntegrante(max(z0, zMin(ee_prev, z(izz-1)))*1.1/z(izz), z(izz)/z0, Evec(i2)/mec2)
             NEmat(izz, i2) = deltaZ(izz) * (sum + Ne_prev * factorIntegrante(z(izz-1)/z(izz), z(izz)/z0, Evec(i2)/mec2))
+            !NEmat(izz, i2) = deltaZ(izz) * (sum + Ne_prev * factorIntegrante2(z(izz)/z0, z(izz-1)/z0, Evec(i2)/mec2))
         enddo
 
         return
@@ -465,7 +468,7 @@ contains
     Kinj = NormKz(Ecut) / (zz * log_zmax_zinj_z0)         !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
-        dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut)
+        dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut) * exp(-4d0*mec2/E)
     else
         dQ_Edz = 0d0
     endif
@@ -567,6 +570,7 @@ contains
         enddo
         close(28)
 
+    return
     end subroutine Calc_Ue
     !============================================================================
     ! Calc_Ue (END)
@@ -591,6 +595,7 @@ contains
 
     zMin = (1d0 + D/(A*g_f))**(-1d0/D) * z
 
+    return
     end function
 
 
@@ -614,6 +619,7 @@ contains
 
     Echar = mec2 * (D*xi**f / (C1*D*xi**(B+f) - A*xi))
   
+    return
     end function Echar
 
 
@@ -640,8 +646,26 @@ contains
 !        factorIntegrante = 0d0
 !    endif
 
+    return
     end function
 
+    real(dp) function factorIntegrante2(xm, xp, ym)
+    real(dp), intent(in) :: xm, ym, xp
+    real(dp) :: A, B, aux, D, f, U0, C1, g
+
+    U0 = (B0/gj)**2 / (8.d0*pi)
+    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
+    B = 2.d0/3.d0 * geomIndex
+    f = 2d0*exp_B
+    D = B + f - 1.d0
+
+    C1 = (xm**(-B - f)*(-xm**f + B*xm**f + f*xm**f + A*xm*ym))/(D*ym)
+    D = B - 1d0 + f
+    g = B + f
+    factorIntegrante2 = (C1*D - A*xm**(1d0-g)) / (C1*D - A*xp**(1d0-g))
+
+    return
+    end function
 
 !=======================================================================================
 
