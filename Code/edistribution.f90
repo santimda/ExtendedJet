@@ -14,16 +14,12 @@ contains
    !============================================================================
     real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2
     real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
-    real(dp) :: dummy
     real(dp) :: NEE(Ns)
     integer :: izz
-    allocate( z(Ns), BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
         
-    open(10,file='quant_FF.dat')
     open(11,file='Emax_FF.dat')
     do i = 1,Ns
         !Quantities at each segment
-        read(10,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), dummy, dummy, EphMFF(i)
         Ecut = CutE(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i))   !Cutoff energy for Q(E) in the FF
         if (Ecut > EmaxFF/3.d0) then
             write(*,*) 'EmaxFF in globals.f90 is too low!'
@@ -32,19 +28,13 @@ contains
             write(11,*) i, z(i), Ecut/eV
         endif
     enddo
-    close(10)
     close(11)
     
     open(20,file='NE_cuts.dat')
     open(30,file='NE_jet.dat')
     
-    Ein = (EmaxFF/EminFF)**(1d0/(nIn-1))    !Energy increase factor
-    EFF = EminFF                        !Initialization
-
-    Evec(1) = EminFF
-    do i2 = 2,nIn
-        Evec(i2) = Evec(i2-1) * Ein
-    enddo
+    ! Calculate logarithmically-spaced energy vector
+    call vector_log( EminFF, EmaxFF, Ein, Evec ) 
 
     do izz = 1,Ns
         NEE(izz) = 0d0
@@ -62,7 +52,7 @@ contains
     !Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
     ! do i2 = 1, nIn
     !     !Computation of N(E) for each segment
-    !     call CalcNE(Kinj,EFF,Ecut,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
+    !     call CalcNE(Kinj,EFF,Ecut,z,NE)
     !     !call CalcNE_analytical(EFF, z, BFF, rj, vnorm, EphMFF, Kappa, NE)
     !     NEtot = 0.d0    ! Initialization
     !     do j = 1, Ns
@@ -122,7 +112,7 @@ contains
         open(41, file="NEmat2.dat")
         NEmat = 0d0
         do izz = 2, Ns
-            call CalcNE_analytical2(z, izz, Evec, NEmat)
+            call CalcNE_analytical2(izz, Evec, NEmat)
             ! if (izz < 50 .and. z(izz) > zMin(1000*mec2, z(50))) then
             !     write(40, *) z(izz)/z0, factorIntegrante(z(izz)/z(50), z(50)/z0, 1000d0)
             ! endif
@@ -155,8 +145,6 @@ contains
     close(20)
     close(30)
     
-    deallocate (z,BFF,rj,vnorm,EphMFF,Kappa)
-    
     end subroutine Edist
    !============================================================================
    ! Edist (END)
@@ -166,12 +154,12 @@ contains
    !============================================================================
    ! CalcNE (START)
    !============================================================================
-    subroutine CalcNE (Kinj,EFF,Ecut,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
+    subroutine CalcNE (Kinj,EFF,Ecut,z,NE)
    !============================================================================
    ! Calculate the numerical particle distribution by evolving each cut as a 
    ! 1-zone
    !============================================================================
-    real(dp), intent(in) :: Kinj,EFF,Ecut,z(Ns),BFF(Ns),rj(Ns),vnorm(Ns),EphMFF(Ns),Kappa(Ns)
+    real(dp), intent(in) :: Kinj,EFF,Ecut,z(Ns)
     real(dp), intent(out) :: NE(Ns)
     real(dp) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod,BB,ee,zz,de,zm, dttFF
     integer :: NN(Ns), jj, izz
@@ -291,13 +279,14 @@ contains
             zz = min(z(izz), zmax_inj)
             jj = max(min(izz, Ninj) - 1, 1)
             sum = 0d0
-            do while (zz > max(z0, zm))
+            do while (zz >= max(z0, zm))
+                !print*,'jj=',jj
                 if (zz < z(jj)) jj = max(jj - 1, 1)
                 ee = Echar(zz, EFF, z(izz))
                 BB = BFF_fun(zz)
                 rr = r_fun(zz)
                 vlat = v_lat(zz)
-                tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+                tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
                 dttFF = max(min(0.01 * tlossFF, deltatFF(jj)), 1d-10)
                 sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante(zz/z(izz), z(izz)/z0, EFF/mec2)
                 !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, EFF/mec2)
@@ -305,8 +294,7 @@ contains
             enddo
             NEmatrix(i2, izz) = sum * deltaZ(izz)
         enddo
-
-    return
+   
     end subroutine CalcNE_analytical
     !============================================================================
     ! CalcNE_analytical (END)
@@ -314,11 +302,11 @@ contains
 
 
     !*************************************************************************************************************
-!   Numerical particle distribution by analytical methods
-!*************************************************************************************************************
+    !   Numerical particle distribution by analytical methods
+    !*************************************************************************************************************
     !subroutine CalcNE_analytical(EFF,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
-    subroutine CalcNE_analytical2(z, izz, Evec, NEmat)
-        real(dp), intent(in) :: z(Ns), Evec(nIn)
+    subroutine CalcNE_analytical2(izz, Evec, NEmat)
+        real(dp), intent(in) :: Evec(nIn)
         integer, intent(in) :: izz
         real(dp), intent(inout) :: NEmat(Ns, nIn)
         real(dp) :: NEprev_vec(nIn)
@@ -379,14 +367,14 @@ contains
         return
     end subroutine CalcNE_analytical2
 
-!*************************************************************************************************************
-!   Setting of an appropriate time step for the N(E) computation
-!*************************************************************************************************************
-    real(dp) function Setdt(B,rj,vnorm,Eph,Kappa,E)
-    real(dp), intent(in) :: B,rj,vnorm,Eph,Kappa,E
+    !*************************************************************************************************************
+    !   Setting of an appropriate time step for the N(E) computation
+    !*************************************************************************************************************
+    real(dp) function Setdt(B,r_j,v_norm,Eph,Kapp,E)
+    real(dp), intent(in) :: B,r_j,v_norm,Eph,Kapp,E
     real(dp) :: tloss
     !Characteristic time for losses
-    tloss = abs(E/TLosses(B,rj,vnorm,Eph,Kappa,E))
+    tloss = abs(E/TLosses(B,r_j,v_norm,Eph,Kapp,E))
     !Set dt according to the characterstic losses and injection times
     Setdt = 0.1d0 * min(tloss,dtFF)
     return
@@ -538,14 +526,6 @@ contains
     ! Computation of the electron energy density in each segment (FF)
     !============================================================================
         real(dp) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
-        real(dp) :: z(Ns), VFF(Ns), dummy
-
-        ! Read relevant quantities at each segment
-        open(10, file='quant_FF.dat')
-        do l = 1, Ns
-            read(10,*) z(l), dummy, dummy, dummy, dummy, dummy, VFF(l), dummy
-        enddo
-        close(10)
 
         ! Read from a file: Ee(i), Ne(i,l)
         open(70,file='NE_cuts.dat')
@@ -555,7 +535,6 @@ contains
             enddo
         enddo
         close(70)
-        
         ! Integrate the particle energy distribution of each segment
         Ee_step = Ee(2)/Ee(1)
         open(28, file='U_e.dat')
@@ -570,7 +549,7 @@ contains
         enddo
         close(28)
 
-    return
+        return
     end subroutine Calc_Ue
     !============================================================================
     ! Calc_Ue (END)
@@ -580,20 +559,20 @@ contains
     !*********************************************************************************
     !  Minimum z for a given characteristic curve ending at (zf, Ef)
     !*********************************************************************************
-    real(dp) function zMin(E, z)
-    real(dp), intent(in) :: E, z
+    real(dp) function zMin(E, z_)
+    real(dp), intent(in) :: E, z_
     real(dp) :: A, B, D, xi_f, g_f, f, U0
 
     U0 = (B0/gj)**2 / (8.d0*pi)
     A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
     B = 2.d0/3.d0 * geomIndex
     !B = 2.d0/3.d0 / thetaj
-    xi_f = z/z0
+    xi_f = z_/z0
     g_f = E/mec2
     f = 2*exp_B
     D = B + f - 1.d0
 
-    zMin = (1d0 + D/(A*g_f))**(-1d0/D) * z
+    zMin = (1d0 + D/(A*g_f))**(-1d0/D) * z_
 
     return
     end function
@@ -602,8 +581,8 @@ contains
     !*********************************************************************************
     !  Analytical function for the characteristic curve
     !*********************************************************************************
-    real(dp) function Echar(z, Efinal, zfinal)
-    real(dp), intent(in) :: z, Efinal, zfinal
+    real(dp) function Echar(z_, Efinal, zfinal)
+    real(dp), intent(in) :: z_, Efinal, zfinal
     real(dp) :: A, B, C1, D, xi_final, g_final, xi, f, U0
 
     U0 = (B0/gj)**2 / (8.d0*pi)
@@ -612,7 +591,7 @@ contains
     !B = 2.d0/3.d0 / thetaj
     xi_final = zfinal/z0
     g_final = Efinal/mec2
-    xi = z/z0
+    xi = z_/z0
     f = 2*exp_B
     D = B + f - 1.d0
     C1 = xi_final**(-(B+f)) * (xi_final**f * D + A * xi_final * g_final) / (D*g_final)
@@ -642,6 +621,8 @@ contains
 
     return
     end function
+
+    !----------------------------------------------------------------------------------
 
     real(dp) function factorIntegrante2(xm, xp, ym)
     real(dp), intent(in) :: xm, ym, xp

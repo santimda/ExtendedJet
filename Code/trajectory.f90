@@ -12,19 +12,15 @@ MODULE trajectory
   subroutine trajectory_calc(jet)
   !============================================================================
   ! This subroutine calculates a vertical jet trajectory. 
-  ! The input is the '' (jet) or 'cj' (counter-jet). 
+  ! The input is the '' (jet) or 'CJ' (counter-jet). 
   !============================================================================
-    character(LEN=*), intent(in) :: jet ! 'cj' or 'jet'
+    character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp) :: dir, tan_theta
-    allocate( z(Ns), rj(Ns) )
-
-    !System-observer vector (unitary)
-    SO = (/sin(jo), sin(jo), cos(jo)/)
 
     ! The jet goes upwards, the CJ goes downwards (negative z)
     if (jet == '') then
       dir = 1.d0
-    elseif (jet == 'cj') then
+    elseif (jet == 'CJ') then
       dir = -1.d0
     else
       write(*,*) 'Invalid jet type'
@@ -51,8 +47,6 @@ MODULE trajectory
       write(10,*) z(i), rj(i)
     enddo
     close(10)
-
-    deallocate( z, rj )
 
   end subroutine trajectory_calc
   !============================================================================

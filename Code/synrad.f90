@@ -7,24 +7,23 @@ contains
     !============================================================================
     ! SEDsyn (START)
     !============================================================================
-    subroutine SEDsyn()
+    subroutine SEDsyn(jet)
     !============================================================================
     ! This subroutine calculates the synchrotron SED 
+    ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
+    character(LEN=*), intent(in) :: jet ! 'CJ' or 'jet'
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
-    real(dp) :: dummy, boost(Ns)
-    allocate ( z(nS), BFF(Ns), rj(Ns), sjoFF(Ns), VFF(Ns), delta_obs(Ns) )
+    real(dp) :: boost(Ns)
+    allocate ( delta_obs(Ns) )
 
     !Quantities at each segment
-    open(10,file='quant_FF.dat')
-    open(20,file='deltas.dat')
+    open(20,file='deltas'//jet//'.dat')
     do i = 1,Ns
-        read(10,*) z(i), BFF(i), rj(i), dummy, dummy, sjoFF(i), VFF(i), dummy
         read(20,*) delta_obs(i), boost(i)
     enddo
-    close(10)
     close(20)
     
     !N(E) of each cut
@@ -36,8 +35,8 @@ contains
     enddo
     close(30)
 
-    open(40,file='SEDsyn_cuts.dat')
-    open(50,file='SEDsyn_jet.dat')
+    open(40,file='SEDsyn_cuts'//jet//'.dat')
+    open(50,file='SEDsyn_jet'//jet//'.dat')
     
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
@@ -82,7 +81,7 @@ contains
         LBolFF = LBolFF + LumFF
                 
         !Absorbed radiation for each cut
-        call SSA(z,BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
+        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
         
         do j = 1, Ns
         
@@ -119,7 +118,7 @@ contains
     close(40)
     close(50)
     
-    deallocate( z, BFF, rj, sjoFF, VFF, delta_obs )
+    deallocate( delta_obs )
     
     end subroutine SEDsyn
     !============================================================================
@@ -155,11 +154,11 @@ contains
     !============================================================================
     ! SSA (start)
     !============================================================================
-    subroutine SSA (z,B,rj,sjo,V,Eph,E,NE,Lum,LumA)
+    subroutine SSA (B,r_j,sjo,V,Eph,E,NE,Lum,LumA)
     !============================================================================
     ! Luminosity corrected for synchrotron self-absorption
     !============================================================================
-    real(dp), intent(in) :: z(Ns),B(Ns),rj(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn),Lum(Ns)
+    real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn),Lum(Ns)
     real(dp), intent(out) :: LumA(Ns)
     real(dp) :: K,Ecf,Sf,depth,tau,Ap
 
@@ -172,7 +171,7 @@ contains
         Sf = Ecf/max(K,1.d-30) !!!! CHECK !!!!
 
         !Length that photons in the observer's direction must travel inside the segment (in the FF)
-        depth = rj(j)/sjo(j)
+        depth = r_j(j)/sjo(j)
 
         !Optical depth for SSA
         tau = K*depth / delta_obs(j)
@@ -223,25 +222,25 @@ contains
     !============================================================================
     ! SEDsyn (END)
     !============================================================================
-    subroutine Calc_Usyn()
+    subroutine Calc_Usyn(jet)
     !============================================================================
     ! Computation of the synchrotron energy density in each segment
+    ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
-        real(dp) :: L_tot(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns), Esy(NSED_sy), Esy_step, dEsy
-        real(dp) :: z(Ns), Bff(Ns), r(Ns), VFF(Ns), boost(Ns), dummy, U_sy_FF
+        character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet 
+        real(dp) :: L_tot(Ns), L_abs(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns)
+        real(dp) :: Esy(NSED_sy), Esy_step, dEsy
+        real(dp) :: boost(Ns), U_sy_FF
 
         ! Read relevant quantities at each segment
-        open(10, file='quant_FF.dat')
-        open(20, file='deltas.dat')
+        open(20, file='deltas'//jet//'.dat')
         do l = 1, Ns
-            read(10,*) z(l), BFF(l), r(l), dummy, dummy, dummy, VFF(l), dummy
             read(20,*) dummy, boost(l)
         enddo
-        close(10)
         close(20)
 
         ! Read from a file: Esy(i,l), E*Lsy_unabs(i,l), E*Lsy_abs(i,l), l
-        open(27, file='SEDsyn_cuts_ord.dat')
+        open(27, file='SEDsyn_cuts_ord'//jet//'.dat')
         do l = 1, Ns 
             do i = 1, NSED_sy
                 read(27,*) Esy(i), Lun(i,l), Lsy(i,l), dummy
@@ -253,30 +252,24 @@ contains
         close(27)
 
         ! Integrate the luminosity of each segment
+        ! Also calculate the total absorbed luminosity of each segment
         L_tot = 0.d0
+        L_abs = 0.d0
         Esy_step = Esy(2)/Esy(1)
-        open(28, file='U_FF.dat')
+        open(28, file='U_FF'//jet//'.dat')
+        open(29, file='L_inj'//jet//'.dat')
         do l = 1, Ns
             do i = 1, NSED_sy
                 dEsy = Esy(i)*(Esy_step-1.d0)
                 L_tot(l) = L_tot(l) + Lsy(i,l) * dEsy
+                L_abs(l) = L_abs(l) + (Lun(i,l) - Lsy(i,l)) * dEsy
             enddo
-            U_sy_FF = ( L_tot(l)/VFF(l) ) * ( r(l)/c )
+            U_sy_FF = ( L_tot(l)/VFF(l) ) * ( rj(l)/c ) !!! CHECK IF <t> = r/c, deltaz/c, or what
             write(28,*) l, z(l), U_sy_FF, BFF(l)**2/(8.d0*pi), U_sy_FF/(BFF(l)**2/(8.d0*pi))
+            write(29,*) l, z(l)/R_g, L_tot(l), L_tot(l)/LnTFF
         enddo
         close(28)
-
-        ! Calculate the total absorbed luminosity of each segment
-        L_tot = 0.d0
-        open(28, file='L_inj.dat')
-        do l = 1, Ns
-            do i = 1, NSED_sy
-                dEsy = Esy(i)*(Esy_step-1.d0)
-                L_tot(l) = L_tot(l) + (Lun(i,l) - Lsy(i,l)) * dEsy
-            enddo
-            write(28,*) l, z(l)/R_g, L_tot(l), L_tot(l)/LnTFF
-        enddo
-        close(28)
+        close(29)
 
     end subroutine Calc_Usyn
     !============================================================================
@@ -287,30 +280,29 @@ contains
     !============================================================================
     ! SEDsyn_data (START)
     !============================================================================
-    subroutine SEDsyn_data(E_data, S_data)
+    subroutine SEDsyn_data(E_data, S_data, jet)
     !============================================================================
     ! This routine calculates the intrinsic synchrotron emission in the fluid frame
     ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
     ! of those energies [cgs] (also a vector). The number of points in E_data has
     ! to be smaller than m_data_max defined in globals.f90.
+    ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
+    character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp), allocatable :: Eph(:), LumA(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
     real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
-    real(dp) :: dummy, boost(Ns), dil
+    real(dp) :: boost(Ns), dil
     integer :: m_data
-    allocate ( z(nS), BFF(Ns), rj(Ns), sjoFF(Ns), VFF(Ns), delta_obs(Ns) )
+    allocate( delta_obs(Ns) )
 
     !Quantities at each segment
-    open(10,file='quant_FF.dat')
-    open(20,file='deltas.dat')
+    open(20,file='deltas'//jet//'.dat')
     do i = 1,Ns
-        read(10,*) z(i), BFF(i), rj(i), dummy, dummy, sjoFF(i), VFF(i), dummy
         read(20,*) delta_obs(i), boost(i)
     enddo
-    close(10)
     close(20)
     
     !N(E) of each cut
@@ -330,7 +322,7 @@ contains
     allocate( Eph(m_data), LumA(m_data) )
     Eph = E_data ! Here we can change units if needed          
 
-    do l = 1, NSED_sy
+    do l = 1, m_data
         do j = 1, Ns                        !Loop for the jet segments
             EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
             do i = 1, nIn
@@ -341,7 +333,7 @@ contains
         enddo
         
         !Absorbed radiation for each cut
-        call SSA(z,BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
+        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
         do j = 1, Ns
@@ -357,7 +349,8 @@ contains
       S_data(l) = LumA(l)/dil
     enddo
     
-    deallocate( z, BFF, rj, sjoFF, VFF, delta_obs )
+    deallocate( Eph, LumA )
+    deallocate( delta_obs )
     
     end subroutine SEDsyn_data
     !============================================================================

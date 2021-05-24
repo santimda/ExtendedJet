@@ -10,18 +10,14 @@ MODULE evolution
    subroutine Quantities(jet)
    !============================================================================
    ! This subroutine calculates the evolution of different quantities 
-   ! from cell to cell
+   ! from cell to cell. 
+   ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
-      character(LEN=*), intent(in) :: jet ! 'cj' for counterjet or '' for jet
-      real(dp) :: B, dir, cjo, boost
-      allocate( z(Ns), rj(Ns) )
+      character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
+      real(dp) :: B, dir, CJo, boost 
+      allocate( joFF(Ns) )
       allocate( delta_obs(Ns) )
-      allocate( deltaZ(Ns) )
-      allocate( deltatFF(Ns) )
-      allocate( BFF(Ns), vnorm(Ns), VFF(Ns), nfFF(Ns) )
-      allocate( EphMFF(Ns), Kappa(Ns), joFF(Ns), sjoFF(Ns) )
 
-      open(10,file='trajectory'//jet//'.dat')
       open(20,file='deltas'//jet//'.dat')
       open(30,file='quant_FF'//jet//'.dat')
       open(31,file='quant_FF_norm'//jet//'.dat')
@@ -29,25 +25,23 @@ MODULE evolution
       ! The jet goes upwards, the CJ goes downwards (negative v_z)
       if (jet == '') then
          dir = 1.d0
-      elseif (jet == 'cj') then
+      elseif (jet == 'CJ') then
          dir = -1.d0
       else
          write(*,*) 'Invalid jet type'
          stop
       endif
 
-      cjo = cos(jo)
+      CJo = cos(jo)
       do i = 1, Ns
 
-         read(10,*) z(i), rj(i)
+         if (abs(z(i)) < zmax_inj) Ninj = i
 
-         if (z(i) < zmax_inj) Ninj = i
-
-         deltaZ(i) = z(i) * (sqrt(dlogZ)-1d0/sqrt(dlogZ))
+         deltaZ(i) = abs(z(i)) * (sqrt(dlogZ)-1d0/sqrt(dlogZ)) ! Added abs value for CJ
          deltatFF(i) = deltaZ(i) / (vj*gj)
 
          !Doppler factor between the jet and the observer
-         delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*cjo))
+         delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*CJo))
 
          !Magnetic field
          B = B0*(rj(1)/rj(i))**exp_B
@@ -78,20 +72,17 @@ MODULE evolution
          boost = delta_obs(i)**2  ! CHECK THIS! (delta z defined in LF)
 
          write(20,*) delta_obs(i), boost
-         write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i)
+         write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
          write(31,*) z(i)/R_g, (BFF(i)/BFF(1))**2, (vnorm(i)/rj(i))/(vnorm(1)/rj(1)), VFF(i)/VFF(1)
 
       end do
 
-      close(10)
       close(20)
       close(30)
       close(31)
 
-      deallocate( z, rj )
       deallocate( delta_obs )
-      deallocate( BFF, vnorm, VFF, nfFF ) 
-      deallocate( EphMFF, Kappa, joFF, sjoFF )
+      deallocate( joFF )
 
    end subroutine Quantities
    !============================================================================

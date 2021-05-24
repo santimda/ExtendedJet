@@ -7,10 +7,10 @@ contains
     !**********************************************************************************************
     !   Total losses
     !**********************************************************************************************
-    real(dp) function TLosses(BFF, rj, vnorm, EphMFF, Kapp, EFF)
-    real(dp), intent(in) :: BFF, rj, vnorm, EphMFF, Kapp, EFF
+    real(dp) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF)
+    real(dp), intent(in) :: B_FF, rj, v_norm, Eph_MFF, Kapp, EFF
 
-    TLosses = SyncLoss(BFF,EFF) + AdLoss(rj, vnorm, EFF)! + ICLoss(EphMFF,Kapp,EFF) + AdLoss(rj,vnorm,EFF)
+    TLosses = SyncLoss(B_FF,EFF) + AdLoss(rj, v_norm, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
 
     return
     end function TLosses
@@ -18,15 +18,15 @@ contains
     !**********************************************************************************************
     !   Synchrotron losses
     !**********************************************************************************************
-    real(dp) function SyncLoss(BFF, EFF)
-    real(dp), intent(in) :: BFF, EFF
+    real(dp) function SyncLoss(B_FF, EFF)
+    real(dp), intent(in) :: B_FF, EFF
     real(dp) :: Lgamma
 
     !Lorentz factor of the particles in the fluid frame
     Lgamma = EFF/mec2
 
     !Synchrotron losses in erg/s
-    SyncLoss = - 1.05804d-15 * BFF**2 * Lgamma**2   !4/9*c*re^2 * B^2 * gamma^2
+    SyncLoss = - 1.05804d-15 * B_FF**2 * Lgamma**2   !4/9*c*re^2 * B^2 * gamma^2
 
     return
     end function SyncLoss
@@ -34,11 +34,11 @@ contains
     !**********************************************************************************************
     !   Inverse Compton losses (Eq. (36) in Khangulyan 2014)                    
     !**********************************************************************************************
-    real(dp) function ICLoss(EphMFF, Kapp, EFF)
-    real(dp), intent(in) :: EphMFF, Kapp, EFF
+    real(dp) function ICLoss(Eph_MFF, Kapp, EFF)
+    real(dp), intent(in) :: Eph_MFF, Kapp, EFF
     real(dp) :: TFF, t_iso, Eiso_ct
-    
-    TFF = EphMFF/(2.7d0*mec2)   !Dimensionless stellar temperature in the FF (EphMFF = 2.7*kB*TFF)
+
+    TFF = Eph_MFF/(2.7d0*mec2)   !Dimensionless stellar temperature in the FF (EphMFF = 2.7*kB*TFF)
     t_iso = 4d0*TFF*(EFF/mec2)
     Eiso_ct = cte_IC_K*Kapp*TFF**2
     
@@ -51,11 +51,11 @@ contains
     !**********************************************************************************************
     !   Adiabatic losses
     !**********************************************************************************************
-    real(dp) function AdLoss(rj, vnorm, EFF)
-    real(dp), intent(in) :: rj, vnorm, EFF
+    real(dp) function AdLoss(r_j, v_norm, EFF)
+    real(dp), intent(in) :: r_j, v_norm, EFF
 
     !Adiabatic losses
-    AdLoss = - 2d0/3d0 * vnorm/rj * EFF * gj    !E/t = E'/t' = ct
+    AdLoss = - 2d0/3d0 * v_norm/r_j * EFF * gj    !E/t = E'/t' = ct
 
     end function AdLoss
         
@@ -65,16 +65,7 @@ contains
     subroutine Print_tloss(segN)
     integer, intent(in) :: segN
     real(dp) :: EFF, Eint, tSyn, tIC, tAd, tTot, tacc, tdiff, tcell, tconv
-    real(dp) :: dummy, zj(Ns)
     character(3) :: num_seg
-    allocate( BFF(Ns), rj(Ns), vnorm(Ns), EphMFF(Ns), Kappa(Ns) )
-
-    !Quantities at each segment
-    open(10,file='quant_FF.dat')
-    do i = 1, Ns
-        read(10,*) zj(i), BFF(i), rj(i), vnorm(i), Kappa(i), dummy, dummy, EphMFF(i)
-    enddo
-    close(10)
     
     !Initialization
     EFF = EminFF
@@ -83,11 +74,11 @@ contains
     write(num_seg,'(I3)') segN
     open(20,file='losses_'//trim(adjustl(num_seg))//'.dat')  
     if (segN==Ns) then
-        tcell = (zj(segN) - zj(segN-1))/vj/gj
+        tcell = (z(segN) - z(segN-1))/vj/gj
     else   
-        tcell = (zj(segN+1) - zj(segN))/vj/gj
+        tcell = (z(segN+1) - z(segN))/vj/gj
     endif
-    tconv = zj(segN)/vj/gj
+    tconv = z(segN)/vj/gj
 
     do i = 1, nIn
         !Cooling time for each process for segment segN
@@ -102,8 +93,6 @@ contains
         EFF = EFF*Eint  !Energy increase   
     enddo
     close(20)
-
-    deallocate( BFF, rj, vnorm, EphMFF, Kappa )
 
     end subroutine Print_tloss
 

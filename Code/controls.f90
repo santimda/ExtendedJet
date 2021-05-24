@@ -10,6 +10,9 @@ MODULE controls
     logical, parameter :: run_jet_calc = yes
     logical, parameter :: run_sed_calc = no!yes
 
+    logical, parameter :: JET_ = yes
+    logical, parameter :: CJ_ = yes
+
     logical, parameter :: jet_calc = yes
     logical, parameter :: NE_calc = yes
     logical, parameter :: radsyn_calc = yes

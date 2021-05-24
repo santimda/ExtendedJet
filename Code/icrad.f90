@@ -18,15 +18,13 @@ contains
     real(dp) :: dummy, boost(Ns), cang
     integer :: j_s
     logical, intent(in) :: aniso 
-    allocate( z(Ns), nfFF(Ns), EphMFF(Ns), Kappa(Ns), delta_obs(Ns) )
+    allocate( delta_obs(Ns) )
 
     write(*,*) '\n Calculating the IC SED along the jet'
         
     !Quantities at each segment
-    open(10,file='quant_FF.dat')
     open(20,file='deltas.dat')
     do i = 1, Ns
-      read(10,*) z(i), dummy, dummy, dummy, Kappa(i), dummy, dummy, EphMFF(i), nfFF(i)
       read(20,*) delta_obs(i), boost(i)
     enddo
     close(10)
@@ -93,7 +91,7 @@ contains
     close(40)
     close(50)
     
-    deallocate( z, EphMFF, nfFF, Kappa, delta_obs )
+    deallocate( delta_obs )
 
   END subroutine SEDIC
   

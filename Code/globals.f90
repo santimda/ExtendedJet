@@ -17,8 +17,8 @@ MODULE globals
 
   !===========================================================
   ! Simulation grid/vectors size
-  integer, parameter :: Ns = 200        !Number of jet segments
-  integer, parameter :: nIn = 150       ! Number of points in the electron energy distribution
+  integer, parameter :: Ns = 130        !Number of jet segments
+  integer, parameter :: nIn = 100       ! Number of points in the electron energy distribution
   integer, parameter :: m_data_max = 50 ! maximum number of points to fit
   integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
   integer, parameter :: NSED_IC = 150   !Number of points for the IC SED
@@ -56,6 +56,8 @@ MODULE globals
   real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*h_bar**3*c**2) !IC constant in Khangulyan 2014
   integer, parameter :: N_bands = 5                   !Number of flux bands
   integer :: Ninj
+
+  real(dp) :: dummy 
 
   !=============================================================================================================
 
