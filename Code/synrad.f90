@@ -12,7 +12,7 @@ contains
     ! This subroutine calculates the synchrotron SED 
     !============================================================================
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
-    real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, Lum, LumFF, LBolFF
+    real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
     real(dp) :: dummy, boost(Ns)
     allocate ( z(nS), BFF(Ns), rj(Ns), sjoFF(Ns), VFF(Ns), delta_obs(Ns) )
@@ -95,12 +95,16 @@ contains
             LumAFF = LumAFF + LumcutAFF(j)*dEphFF(j)
             
             !Jet and c-jet contribution of the segments up to given lengths
-            if (z(j) <= 0.01d0*zmax) L1 = LumA
-            if (z(j) <= 0.1d0*zmax) L2 = LumA
+            if (z(j) <= 7.3*R_g) L1 = LumA
+            if (z(j) <= 2.6d1*R_g) L2 = LumA
+            if (z(j) <= 6.5d1*R_g) L3 = LumA
+            if (z(j) <= 1.95d2*R_g) L4 = LumA
+            if (z(j) <= 6.5d2*R_g) L5 = LumA
+            if (z(j) <= 3d5*R_g) L6 = LumA
             
         enddo
 
-        write(50,*) Eph/eV, Eph*L1, Eph*L2, Eph*Lum, Eph*LumA
+        write(50,*) Eph/eV, Eph*L1, Eph*L2, Eph*L3, Eph*L4, Eph*L5, Eph*L6, Eph*Lum, Eph*LumA
         
         !Absorbed bolometric luminosity
         LBolAFF = LBolAFF + LumAFF

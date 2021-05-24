@@ -18,7 +18,7 @@ MODULE globals
   !===========================================================
   ! Simulation grid/vectors size
   integer, parameter :: Ns = 200        !Number of jet segments
-  integer, parameter :: nIn = 140       ! Number of points in the electron energy distribution
+  integer, parameter :: nIn = 150       ! Number of points in the electron energy distribution
   integer, parameter :: m_data_max = 50 ! maximum number of points to fit
   integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
   integer, parameter :: NSED_IC = 150   !Number of points for the IC SED

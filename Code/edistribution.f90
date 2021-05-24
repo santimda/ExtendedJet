@@ -298,7 +298,7 @@ contains
                 rr = r_fun(zz)
                 vlat = v_lat(zz)
                 tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
-                dttFF = max(min(0.001 * tlossFF, deltatFF(jj)), 1d-10)
+                dttFF = max(min(0.01 * tlossFF, deltatFF(jj)), 1d-10)
                 sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante(zz/z(izz), z(izz)/z0, EFF/mec2)
                 !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, EFF/mec2)
                 zz = zz - vj*gj*dttFF
@@ -468,7 +468,7 @@ contains
     Kinj = NormKz(Ecut) / (zz * log_zmax_zinj_z0)         !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
-        dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut) * exp(-4d0*mec2/E)
+        dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut)
     else
         dQ_Edz = 0d0
     endif

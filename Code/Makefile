@@ -1,4 +1,4 @@
-DEBUG  = Y
+DEBUG  = N
 
 FC     = gfortran -fopenmp
 FFLAGS = -ffree-line-length-none -fbackslash
@@ -7,7 +7,7 @@ LIBS   = -llapack -lblas
 ifeq ($(DEBUG), Y)
   FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow
 else
-  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
+  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O2 -march=native -ffast-math -funroll-loops 
 #  FFLAGS += -Wall -Wno-tabs -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
 #  FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -Werror -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops -ffree-line-length-none -fbackslash
 endif
