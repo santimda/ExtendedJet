@@ -52,7 +52,7 @@ contains
     !Kinj = NormK(Ecut)                                      !Normalization constant for Q(E)
     ! do i2 = 1, nIn
     !     !Computation of N(E) for each segment
-    !     call CalcNE(Kinj,EFF,Ecut,z,NE)
+    !     call CalcNE(Kinj,EFF,Ecut,NE)
     !     !call CalcNE_analytical(EFF, z, BFF, rj, vnorm, EphMFF, Kappa, NE)
     !     NEtot = 0.d0    ! Initialization
     !     do j = 1, Ns
@@ -83,7 +83,7 @@ contains
         ! !$OMP DO
         do i2 = 1, nIn
             write(*,*) i2
-            call CalcNE_analytical(Evec(i2), i2, z, NEmatrix)
+            call CalcNE_analytical(Evec(i2), i2, NEmatrix)
             EFF = EFF*Ein   !Exponential energy increase
         enddo
         ! !$OMP END DO
@@ -154,12 +154,12 @@ contains
    !============================================================================
    ! CalcNE (START)
    !============================================================================
-    subroutine CalcNE (Kinj,EFF,Ecut,z,NE)
+    subroutine CalcNE(Kinj,EFF,Ecut,NE)
    !============================================================================
    ! Calculate the numerical particle distribution by evolving each cut as a 
    ! 1-zone
    !============================================================================
-    real(dp), intent(in) :: Kinj,EFF,Ecut,z(Ns)
+    real(dp), intent(in) :: Kinj,EFF,Ecut
     real(dp), intent(out) :: NE(Ns)
     real(dp) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod,BB,ee,zz,de,zm, dttFF
     integer :: NN(Ns), jj, izz
@@ -263,12 +263,12 @@ contains
     !============================================================================
     ! CalcNE_analytical (START)
     !============================================================================
-    subroutine CalcNE_analytical(EFF, i2, z, NEmatrix)
+    subroutine CalcNE_analytical(EFF, i2, NEmatrix)
     !============================================================================
     ! Calculate the electron energy distribution by analytical methods
     !============================================================================
         integer, intent(in) :: i2
-        real(dp), intent(in) :: EFF, z(Ns)
+        real(dp), intent(in) :: EFF
         real(dp), intent(inout) :: NEmatrix(nIn, Ns)
         real(dp) :: tlossFF, sum, ee, zz, zm, dttFF, BB, rr, vlat
         integer :: jj, izz
