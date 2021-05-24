@@ -89,15 +89,15 @@ contains
     if (.true.) then
         NEmatrix = 0d0
 
-        !!$OMP PARALLEL SHARED(NEmatrix)
-        !!$OMP DO
+        ! !$OMP PARALLEL SHARED(NEmatrix, z) DEFAULT(Private)
+        ! !$OMP DO
         do i2 = 1, nIn
-            !write(*,*) i2
-            call CalcNE_analytical(EFF, i2, z, NEmatrix)
+            write(*,*) i2
+            call CalcNE_analytical(Evec(i2), i2, z, NEmatrix)
             EFF = EFF*Ein   !Exponential energy increase
         enddo
-        !!$OMP END DO
-        !!$OMP END PARALLEL
+        ! !$OMP END DO
+        ! !$OMP END PARALLEL
 
         EFF = EminFF                        !Initialization
         do i2 = 1, nIn
@@ -286,25 +286,25 @@ contains
         integer :: jj, izz
         !Initialization of the current energy distribution
 
-    do izz = 1, Ns
-        zm = zMin(EFF, z(izz))
-        zz = min(z(izz), zmax_inj)
-        jj = max(min(izz, Ninj) - 1, 1)
-        sum = 0d0
-        do while (zz > max(z0, zm))
-            if (zz < z(jj)) jj = max(jj - 1, 1)
-            ee = Echar(zz, EFF, z(izz))
-            BB = BFF_fun(zz)
-            rr = r_fun(zz)
-            vlat = v_lat(zz)
-            tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
-            dttFF = max(min(0.001 * tlossFF, deltatFF(jj)), 1d-10)
-            sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante(zz/z(izz), z(izz)/z0, EFF/mec2)
-            !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, EFF/mec2)
-            zz = zz - vj*gj*dttFF
+        do izz = 1, Ns
+            zm = zMin(EFF, z(izz))
+            zz = min(z(izz), zmax_inj)
+            jj = max(min(izz, Ninj) - 1, 1)
+            sum = 0d0
+            do while (zz > max(z0, zm))
+                if (zz < z(jj)) jj = max(jj - 1, 1)
+                ee = Echar(zz, EFF, z(izz))
+                BB = BFF_fun(zz)
+                rr = r_fun(zz)
+                vlat = v_lat(zz)
+                tlossFF = ee/dabs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+                dttFF = max(min(0.001 * tlossFF, deltatFF(jj)), 1d-10)
+                sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante(zz/z(izz), z(izz)/z0, EFF/mec2)
+                !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, EFF/mec2)
+                zz = zz - vj*gj*dttFF
+            enddo
+            NEmatrix(i2, izz) = sum * deltaZ(izz)
         enddo
-        NEmatrix(i2, izz) = sum * deltaZ(izz)
-    enddo
 
     return
     end subroutine CalcNE_analytical
@@ -639,12 +639,6 @@ contains
     
     C1 = xi_f**(-(B+f)) * (xi_f**f*D + A*xi_f*g_f) / g_f
     factorIntegrante = xp**(-B) * ( (C1-A*xi_f**(-D)) / (C1-A*xi_f**(-D)*xp**(-D)) )**2
-    !factorIntegrante = Echar(zp, Ef, zf) / Ef
-!    if (xp < 1d0) then
-!        factorIntegrante = aux * xp**(1d0-B) / ( (1d0 + aux) * xp**D - 1d0 )
-!    else
-!        factorIntegrante = 0d0
-!    endif
 
     return
     end function
