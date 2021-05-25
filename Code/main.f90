@@ -173,7 +173,7 @@ END PROGRAM main
     real(kind(1.d0)) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .True.
 
-
+    S_data = 0.d0 ! Initialize
     ! Calculate everything for the jet first
     if (JET_) then  
         call initialize_allocate
@@ -190,7 +190,8 @@ END PROGRAM main
         !Synchrotron SED at the given values
         call SEDsyn_data(E_data, S_data_J, '')   
         
-        call initialize_deallocate   
+        call initialize_deallocate 
+        S_data = S_data_J
     endif 
 
 
@@ -211,11 +212,10 @@ END PROGRAM main
 
         !Synchrotron SED at the given values
         call SEDsyn_data(E_data, S_data_CJ, 'CJ')
+        S_data = S_data + S_data_CJ
         
         call initialize_deallocate 
     endif
-  
-    S_data = S_data_J + S_data_CJ
 
     if (verbose) then
         write(*,*) 'E_data[eV] =', E_data/eV
