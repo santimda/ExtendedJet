@@ -171,7 +171,7 @@ END PROGRAM main
     real(kind(1.d0)), intent(in) :: E_data(:)
     real(kind(1.d0)), intent(out) :: S_data(m_data_max)
     real(kind(1.d0)) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
-    logical, parameter :: verbose = .False.
+    logical, parameter :: verbose = .True.
 
 
     ! Calculate everything for the jet first
