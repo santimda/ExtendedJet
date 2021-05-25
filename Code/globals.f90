@@ -92,6 +92,7 @@ MODULE globals
   SUBROUTINE integrate(N,H,FI,S)
     ! Subroutine for integration over f(x) with the Simpson rule.
     ! FI: integrand f(x); H: interval; S: integral.
+    integer, parameter :: dp = kind(1.d0)
     integer, intent(in) :: N
     real(dp), intent(in) :: H,FI(N)
     real(dp), intent(out) :: S
@@ -120,6 +121,7 @@ MODULE globals
   ! For the energy losses (dE/dt) 
   !----------------------------------------------------------------------------
   real(dp) function F_ani(u)  !Anisotropic IC (eq. 35)
+  integer, parameter :: dp = kind(1.d0)
   real(dp), intent(in) :: u
   real(dp), parameter :: c_ani = 6.13d0
 
@@ -129,6 +131,7 @@ MODULE globals
   end function F_ani
   !----------------------------------------------------------------------------
   real(dp) function F_iso(u)  !Isotropic IC (eqs. 38,20)
+  integer, parameter :: dp = kind(1.d0)
   real(dp), intent(in) :: u
   real(dp) :: g_u
   real(dp), parameter :: c_iso = 5.68d0
@@ -143,6 +146,7 @@ MODULE globals
   ! For the interaction rate per energy unit (dN/dEdt) 
   !----------------------------------------------------------------------------   
   real(dp) function F_1(x0)  !Anisotropic IC (eqs. 18-20)
+  integer, parameter :: dp = kind(1.d0)
   real(dp), intent(in) :: x0
   real(dp) :: g
 
@@ -153,6 +157,7 @@ MODULE globals
   end function F_1
   !----------------------------------------------------------------------------
   real(dp) function F_2(x0)  !Anisotropic IC (eqs. 18-20)
+  integer, parameter :: dp = kind(1.d0)
   real(dp), intent(in) :: x0
   real(dp) :: g
 
@@ -163,6 +168,7 @@ MODULE globals
   end function F_2
   !----------------------------------------------------------------------------  
   real(dp) function F_3(x0)  !Isotropic IC (eqs. 24,25,20)
+  integer, parameter :: dp = kind(1.d0)
   real(dp), intent(in) :: x0
   real(dp) :: g
   real(dp), parameter :: c_3 = 0.319d0
@@ -174,6 +180,7 @@ MODULE globals
   end function F_3
   !----------------------------------------------------------------------------
   real(dp) function F_4(x0)  !Isotropic IC (eqs. 24,25,20)
+  integer, parameter :: dp = kind(1.d0)
   real(dp), intent(in) :: x0
   real(dp) :: g
   real(dp), parameter :: c_4 = 6.62d0
@@ -186,17 +193,18 @@ MODULE globals
 
   !======================================================================================
 
-  real(dp) function nBB(Epho,T)
-  use constants
-  real(dp), intent(in) :: Epho,T
-  nBB = 2d0*pi/((h*c)**3)*(Epho**2/(exp(Epho/(kB*T))-1d0))
-  return
-  end function nBB
+  !real(dp) function nBB(Epho,T)
+  !use constants
+  !real(dp), intent(in) :: Epho,T
+  !nBB = 2d0*pi/((h*c)**3)*(Epho**2/(exp(Epho/(kB*T))-1d0))
+  !return
+  !end function nBB
 
   !====================================================================================
 
   SUBROUTINE versorresta(V1,V2,N,versor)
     ! subroutine to calculate the versor: (V1-V2)/|V1-V2|
+    integer, parameter :: dp = kind(1.d0)
     integer, intent(in) :: N
     real(dp), intent(in) :: V1,V2
     real(dp), intent(out) :: versor
@@ -220,6 +228,7 @@ MODULE globals
   ! p-p cross section
 
   Function sigma_pp(L1,Ep)
+    integer, parameter :: dp = kind(1.d0)
     real(dp), intent(in) :: L1, Ep
     real(dp) :: sigma_pp
     if (Ep < E_th) then !E_th= 1.22 GeV
@@ -235,6 +244,7 @@ MODULE globals
   !============================================================================
   ! Logarithmic interpolation
   integer function locate(xx, x)
+    integer, parameter :: dp = kind(1.d0)
     real(dp), intent(in) :: x, xx(:)
     ! Given an array xx(1:n) , and given a value x , returns a value j such that x is between
     ! xx(j) and xx(j+1) . xx(1:n) must be monotonic, either increasing or decreasing. j=0
@@ -267,6 +277,7 @@ MODULE globals
   !============================================================================
   ! Logarithmic interpolation
   real(dp) function Interpol1d(xp, x, v)
+  integer, parameter :: dp = kind(1.d0)
   real(dp), intent(in) :: xp, v(:), x(:)
   integer :: j_x, n
   real(dp) :: slope

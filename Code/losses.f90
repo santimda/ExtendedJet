@@ -7,8 +7,8 @@ contains
     !**********************************************************************************************
     !   Total losses
     !**********************************************************************************************
-    real(dp) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF)
-    real(dp), intent(in) :: B_FF, rj, v_norm, Eph_MFF, Kapp, EFF
+    real(kind(1.d0)) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF)
+    real(kind(1.d0)), intent(in) :: B_FF, rj, v_norm, Eph_MFF, Kapp, EFF
 
     TLosses = SyncLoss(B_FF,EFF) + AdLoss(rj, v_norm, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
 
@@ -18,9 +18,9 @@ contains
     !**********************************************************************************************
     !   Synchrotron losses
     !**********************************************************************************************
-    real(dp) function SyncLoss(B_FF, EFF)
-    real(dp), intent(in) :: B_FF, EFF
-    real(dp) :: Lgamma
+    real(kind(1.d0)) function SyncLoss(B_FF, EFF)
+    real(kind(1.d0)), intent(in) :: B_FF, EFF
+    real(kind(1.d0)) :: Lgamma
 
     !Lorentz factor of the particles in the fluid frame
     Lgamma = EFF/mec2
@@ -34,9 +34,9 @@ contains
     !**********************************************************************************************
     !   Inverse Compton losses (Eq. (36) in Khangulyan 2014)                    
     !**********************************************************************************************
-    real(dp) function ICLoss(Eph_MFF, Kapp, EFF)
-    real(dp), intent(in) :: Eph_MFF, Kapp, EFF
-    real(dp) :: TFF, t_iso, Eiso_ct
+    real(kind(1.d0)) function ICLoss(Eph_MFF, Kapp, EFF)
+    real(kind(1.d0)), intent(in) :: Eph_MFF, Kapp, EFF
+    real(kind(1.d0)) :: TFF, t_iso, Eiso_ct
 
     TFF = Eph_MFF/(2.7d0*mec2)   !Dimensionless stellar temperature in the FF (EphMFF = 2.7*kB*TFF)
     t_iso = 4d0*TFF*(EFF/mec2)
@@ -51,8 +51,8 @@ contains
     !**********************************************************************************************
     !   Adiabatic losses
     !**********************************************************************************************
-    real(dp) function AdLoss(r_j, v_norm, EFF)
-    real(dp), intent(in) :: r_j, v_norm, EFF
+    real(kind(1.d0)) function AdLoss(r_j, v_norm, EFF)
+    real(kind(1.d0)), intent(in) :: r_j, v_norm, EFF
 
     !Adiabatic losses
     AdLoss = - 2d0/3d0 * v_norm/r_j * EFF * gj    !E/t = E'/t' = ct
@@ -64,7 +64,7 @@ contains
     !**********************************************************************************************
     subroutine Print_tloss(segN)
     integer, intent(in) :: segN
-    real(dp) :: EFF, Eint, tSyn, tIC, tAd, tTot, tacc, tdiff, tcell, tconv
+    real(kind(1.d0)) :: EFF, Eint, tSyn, tIC, tAd, tTot, tacc, tdiff, tcell, tconv
     character(3) :: num_seg
     
     !Initialization

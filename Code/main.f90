@@ -2,8 +2,8 @@ PROGRAM main
     use globals
     use controls
     implicit none
-    real(dp), allocatable :: E_data(:)
-    real(dp) :: S_data(m_data_max)
+    real(kind(1.d0)), allocatable :: E_data(:)
+    real(kind(1.d0)) :: S_data(m_data_max)
     logical, parameter :: verbose = .True.
 
     interface
@@ -15,8 +15,8 @@ PROGRAM main
     interface
         subroutine sed_model(E_vector, S_vector) 
             use globals
-            real(dp), intent(in) :: E_vector(:)
-            real(dp), intent(out) :: S_vector(m_data_max)
+            real(kind(1.d0)), intent(in) :: E_vector(:)
+            real(kind(1.d0)), intent(out) :: S_vector(m_data_max)
         end subroutine sed_model
     end interface 
 
@@ -55,9 +55,9 @@ END PROGRAM main
     
     implicit none
     logical, intent(in) :: verbose
-    !real(dp) :: EphSy(NSED_sy), Lsy(NSED_sy), Lsy_CJ(NSED_sy)
-    !real(dp) :: EphIC(NSED_IC), LIC(NSED_IC), LIC_CJ(NSED_IC)
-    !real(dp) :: Flux(N_bands)
+    !real(kind(1.d0)) :: EphSy(NSED_sy), Lsy(NSED_sy), Lsy_CJ(NSED_sy)
+    !real(kind(1.d0)) :: EphIC(NSED_IC), LIC(NSED_IC), LIC_CJ(NSED_IC)
+    !real(kind(1.d0)) :: Flux(N_bands)
     character(3) :: numNE, numSED
 
     write(numNE,'(I3)') nIn         !Number of points for the N(E) distribution
@@ -168,9 +168,9 @@ END PROGRAM main
     use synrad
 
     implicit none
-    real(dp), intent(in) :: E_data(:)
-    real(dp), intent(out) :: S_data(m_data_max)
-    real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
+    real(kind(1.d0)), intent(in) :: E_data(:)
+    real(kind(1.d0)), intent(out) :: S_data(m_data_max)
+    real(kind(1.d0)) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .False.
 
 
