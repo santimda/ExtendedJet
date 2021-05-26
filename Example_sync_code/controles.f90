@@ -4,7 +4,7 @@ implicit none
 public
 
 !===================================================
-! Qué programas voy a correr
+! Programs to run 
 logical, parameter :: no = .FALSE.
 logical, parameter :: yes = .TRUE.
 

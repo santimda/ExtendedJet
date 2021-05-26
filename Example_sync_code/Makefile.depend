@@ -1,4 +1,7 @@
-global.o: global.f90
+
+constants.o: constants.f90 global.o
+
+global.o: global.f90 constants.o
 
 controles.o: controles.f90
 

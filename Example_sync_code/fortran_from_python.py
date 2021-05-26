@@ -12,3 +12,4 @@ E_data = np.array([1e-15,1e-14,1e-13])
 
 S_data = jet.sed_model(B, E_data)
 
+print(S_data)

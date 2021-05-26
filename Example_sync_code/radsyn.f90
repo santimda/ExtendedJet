@@ -1,5 +1,5 @@
 module radsyn
-
+  use constants
   use global
   
   implicit none
@@ -14,7 +14,6 @@ contains
   ! This routine calculates the intrinsic synchrotron emission in the fluid frame
   !-----------------------------------------------------------------------------
   subroutine radsyn_run(B_new, L_sy_tot)
-    use global
     !$ use omp_lib
     implicit none
     ! mEe -> electrons, m_nu -> emitted photons
@@ -119,7 +118,6 @@ contains
   ! at the energies E_data, and returns the flux at each of those energies
   !-----------------------------------------------------------------------------
   subroutine radsyn_data_run(B_new, E_data, S_data)
-    use global
     !$ use omp_lib
     implicit none
     ! mEe -> electrons, m_nu -> emitted photons
