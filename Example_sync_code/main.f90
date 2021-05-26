@@ -1,5 +1,6 @@
 PROGRAM main
   use global
+  use constants
   implicit none
   real(dp) :: B_value
   real(dp), allocatable :: E_data(:)
@@ -74,6 +75,7 @@ END PROGRAM main
     !===================================================================
     use global
     use controles
+    use constants
     use dist, only: diste_run
     use radsyn, only: radsyn_run, radsyn_data_run
 

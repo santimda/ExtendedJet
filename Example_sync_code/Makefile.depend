@@ -1,5 +1,5 @@
 
-constants.o: constants.f90 global.o
+constants.o: constants.f90 
 
 global.o: global.f90 constants.o
 

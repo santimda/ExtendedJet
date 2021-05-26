@@ -8,7 +8,7 @@ import numpy as np
 
 B = 1.e3
 
-E_data = np.array([1e-15,1e-14,1e-13])
+E_data = np.array([1e-19, 1e-14, 1.e-10, 2.e-8])
 
 S_data = jet.sed_model(B, E_data)
 
