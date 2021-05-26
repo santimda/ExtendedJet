@@ -1,5 +1,6 @@
 MODULE synrad
     use globals
+    use constants
     implicit none
 
 contains
@@ -288,6 +289,7 @@ contains
     ! to be smaller than m_data_max defined in globals.f90.
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
+    use constants
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet

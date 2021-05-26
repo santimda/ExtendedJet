@@ -16,7 +16,7 @@ PROGRAM main
     interface
         subroutine sed_model(E_vector, S_vector) 
             use globals
-            real(dp), intent(in) :: E_vector(:)
+            real(kind(1.d0)), intent(in) :: E_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
         end subroutine sed_model
     end interface 
@@ -44,6 +44,7 @@ END PROGRAM main
 
   subroutine run_jet(verbose)
     use controls
+    use constants
     use globals
     use initialize
     use trajectory
@@ -160,6 +161,7 @@ END PROGRAM main
   ! for the given input parameters (zero now).
   !===================================================================
     use controls
+    use constants
     use globals
     use initialize
     use trajectory

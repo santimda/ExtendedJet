@@ -35,6 +35,7 @@ run.x
 # Output files
 *.dat
 *.ps
+*.png 
 
 # Dirs
 .ipynb_checkpoints/

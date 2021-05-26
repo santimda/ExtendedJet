@@ -18,7 +18,6 @@ PROGRAM main
       use global
       real(dp), intent(in) :: B_value
       real(kind(1.d0)), intent(in) :: E_vector(:)
-      !real(kind(1.d0)), intent(out) :: S_vector(:)
       real(dp), intent(out) :: S_vector(m_data_max)
     end subroutine sed_model
   end interface 
@@ -30,10 +29,8 @@ PROGRAM main
 
   allocate( E_data(4) )
   E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8/)
-
   call sed_model(B_value, E_data, S_data) ! Energies in cgs
-
-  !deallocate(E_data,S_data)
+  deallocate( E_data )
 
 END PROGRAM main
 
