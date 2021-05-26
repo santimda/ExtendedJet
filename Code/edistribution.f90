@@ -1,4 +1,5 @@
 MODULE edistribution
+    use constants
     use globals
     use losses
     implicit none
@@ -12,9 +13,9 @@ contains
    !============================================================================
    ! This subroutine calculates the electron energy distribution at each segment
    !============================================================================
-    real(kind(1.d0)) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2
-    real(kind(1.d0)) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
-    real(kind(1.d0)) :: NEE(Ns)
+    real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2
+    real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
+    real(dp) :: NEE(Ns)
     integer :: izz
         
     open(11,file='Emax_FF.dat')
@@ -159,9 +160,9 @@ contains
    ! Calculate the numerical particle distribution by evolving each cut as a 
    ! 1-zone
    !============================================================================
-    real(kind(1.d0)), intent(in) :: Kinj,EFF,Ecut
-    real(kind(1.d0)), intent(out) :: NE(Ns)
-    real(kind(1.d0)) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod,BB,ee,zz,de,zm, dttFF
+    real(dp), intent(in) :: Kinj,EFF,Ecut
+    real(dp), intent(out) :: NE(Ns)
+    real(dp) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod,BB,ee,zz,de,zm, dttFF
     integer :: NN(Ns), jj, izz
     !Initialization of the current energy distribution
     NE = 0d0  !Applies to the whole vector
@@ -268,9 +269,9 @@ contains
     ! Calculate the electron energy distribution by analytical methods
     !============================================================================
         integer, intent(in) :: i2
-        real(kind(1.d0)), intent(in) :: EFF
-        real(kind(1.d0)), intent(inout) :: NEmatrix(nIn, Ns)
-        real(kind(1.d0)) :: tlossFF, sum, ee, zz, zm, dttFF, BB, rr, vlat
+        real(dp), intent(in) :: EFF
+        real(dp), intent(inout) :: NEmatrix(nIn, Ns)
+        real(dp) :: tlossFF, sum, ee, zz, zm, dttFF, BB, rr, vlat
         integer :: jj, izz
         !Initialization of the current energy distribution
 
@@ -306,11 +307,11 @@ contains
     !*************************************************************************************************************
     !subroutine CalcNE_analytical(EFF,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
     subroutine CalcNE_analytical2(izz, Evec, NEmat)
-        real(kind(1.d0)), intent(in) :: Evec(nIn)
+        real(dp), intent(in) :: Evec(nIn)
         integer, intent(in) :: izz
-        real(kind(1.d0)), intent(inout) :: NEmat(Ns, nIn)
-        real(kind(1.d0)) :: NEprev_vec(nIn)
-        real(kind(1.d0)) :: tlossFF, sum, ee, zp, zm, dttFF, BB, rr, vlat, ee_prev, Ne_prev
+        real(dp), intent(inout) :: NEmat(Ns, nIn)
+        real(dp) :: NEprev_vec(nIn)
+        real(dp) :: tlossFF, sum, ee, zp, zm, dttFF, BB, rr, vlat, ee_prev, Ne_prev
         integer :: jj, count1, count2
         !Initialization of the current energy distribution
 
@@ -370,9 +371,9 @@ contains
     !*************************************************************************************************************
     !   Setting of an appropriate time step for the N(E) computation
     !*************************************************************************************************************
-    real(kind(1.d0)) function Setdt(B,r_j,v_norm,Eph,Kapp,E)
-    real(kind(1.d0)), intent(in) :: B,r_j,v_norm,Eph,Kapp,E
-    real(kind(1.d0)) :: tloss
+    real(dp) function Setdt(B,r_j,v_norm,Eph,Kapp,E)
+    real(dp), intent(in) :: B,r_j,v_norm,Eph,Kapp,E
+    real(dp) :: tloss
     !Characteristic time for losses
     tloss = abs(E/TLosses(B,r_j,v_norm,Eph,Kapp,E))
     !Set dt according to the characterstic losses and injection times
@@ -384,9 +385,9 @@ contains
     !************************************************************************************
     !   Determination of the cutoff energy of the particle injection
     !************************************************************************************
-    real(kind(1.d0)) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1)
-    real(kind(1.d0)), intent(in) :: BFF1,rj1,vnorm1,Eph1,Kappa1
-    real(kind(1.d0)) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,error,check
+    real(dp) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1)
+    real(dp), intent(in) :: BFF1,rj1,vnorm1,Eph1,Kappa1
+    real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,error,check
     !Injected power (erg/s)
     Eacc = facc*qe*BFF1*c
     !Initialization
@@ -417,8 +418,8 @@ contains
     !************************************************************************************
     !   Injection function (only one injection cell)
     !************************************************************************************
-    real(kind(1.d0)) function Q_E (K,Ecut,E)
-    real(kind(1.d0)), intent(in) :: K,Ecut,E
+    real(dp) function Q_E (K,Ecut,E)
+    real(dp), intent(in) :: K,Ecut,E
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
         Q_E = K*E**(-p) * exp(-E/Ecut)
@@ -431,10 +432,10 @@ contains
     !************************************************************************************
     !   Injection function (for multiple injection cells?)
     !************************************************************************************
-    real(kind(1.d0)) function Q_Ez (E, iz)
-    real(kind(1.d0)), intent(in) :: E
+    real(dp) function Q_Ez (E, iz)
+    real(dp), intent(in) :: E
     integer, intent(in) :: iz
-    real(kind(1.d0)) :: Ecut, Kinj
+    real(dp) :: Ecut, Kinj
     Ecut = CutE(BFF(iz),rj(iz),vnorm(iz),EphMFF(iz),Kappa(iz))!Cutoff energy for Q(E) in the FF
     Kinj = NormKz(Ecut)                                       !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
@@ -449,9 +450,9 @@ contains
     !************************************************************************************
     !   Injection function (for multiple injection cells)
     !************************************************************************************
-    real(kind(1.d0)) function dQ_Edz(E, zz, BB, rr, vlat)
-    real(kind(1.d0)), intent(in) :: E, zz, BB, rr, vlat
-    real(kind(1.d0)) :: Ecut, Kinj
+    real(dp) function dQ_Edz(E, zz, BB, rr, vlat)
+    real(dp), intent(in) :: E, zz, BB, rr, vlat
+    real(dp) :: Ecut, Kinj
     Ecut = CutE(BB, rr, vlat, 1d0, 1d0)   !Cutoff energy for Q(E) in the FF
     Kinj = NormKz(Ecut) / (zz * log_zmax_zinj_z0)         !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
@@ -466,9 +467,9 @@ contains
     !************************************************************************************
     !   Injection normalization (only one injection cell)
     !************************************************************************************  
-    real(kind(1.d0)) function NormK(Ecut)
-    real(kind(1.d0)), intent(in) :: Ecut
-    real(kind(1.d0)) :: E, Einc, dE, QInt, f, f1, f2, E2
+    real(dp) function NormK(Ecut)
+    real(dp), intent(in) :: Ecut
+    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2
     integer, parameter :: N = 300   !Number of subintervals for the integral
     Einc = (EmaxFF/EminFF)**(1d0/(N-1))  !Increase factor of the energy
     !Initialization
@@ -493,9 +494,9 @@ contains
     !************************************************************************************
     !   Injection normalization
     !************************************************************************************  
-    real(kind(1.d0)) function NormKz(Ecut)
-    real(kind(1.d0)), intent(in) :: Ecut
-    real(kind(1.d0)) :: E, Einc, dE, QInt, f, f1, f2, E2
+    real(dp) function NormKz(Ecut)
+    real(dp), intent(in) :: Ecut
+    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2
     integer, parameter :: N = 300   !Number of subintervals for the integral
     Einc = (EmaxFF/EminFF)**(1d0/(N-1))  !Increase factor of the energy
     !Initialization
@@ -525,7 +526,7 @@ contains
     !============================================================================
     ! Computation of the electron energy density in each segment (FF)
     !============================================================================
-        real(kind(1.d0)) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
+        real(dp) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
 
         ! Read from a file: Ee(i), Ne(i,l)
         open(70,file='NE_cuts.dat')
@@ -559,9 +560,9 @@ contains
     !*********************************************************************************
     !  Minimum z for a given characteristic curve ending at (zf, Ef)
     !*********************************************************************************
-    real(kind(1.d0)) function zMin(E, z_)
-    real(kind(1.d0)), intent(in) :: E, z_
-    real(kind(1.d0)) :: A, B, D, xi_f, g_f, f, U0
+    real(dp) function zMin(E, z_)
+    real(dp), intent(in) :: E, z_
+    real(dp) :: A, B, D, xi_f, g_f, f, U0
 
     U0 = (B0/gj)**2 / (8.d0*pi)
     A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
@@ -581,9 +582,9 @@ contains
     !*********************************************************************************
     !  Analytical function for the characteristic curve
     !*********************************************************************************
-    real(kind(1.d0)) function Echar(z_, Efinal, zfinal)
-    real(kind(1.d0)), intent(in) :: z_, Efinal, zfinal
-    real(kind(1.d0)) :: A, B, C1, D, xi_final, g_final, xi, f, U0
+    real(dp) function Echar(z_, Efinal, zfinal)
+    real(dp), intent(in) :: z_, Efinal, zfinal
+    real(dp) :: A, B, C1, D, xi_final, g_final, xi, f, U0
 
     U0 = (B0/gj)**2 / (8.d0*pi)
     A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
@@ -605,9 +606,9 @@ contains
     !*********************************************************************************
     !  Integrating factor 
     !*********************************************************************************
-    real(kind(1.d0)) function factorIntegrante(xp, xi_f, g_f)
-    real(kind(1.d0)), intent(in) :: xp, g_f, xi_f
-    real(kind(1.d0)) :: A, B, aux, D, f, U0, C1
+    real(dp) function factorIntegrante(xp, xi_f, g_f)
+    real(dp), intent(in) :: xp, g_f, xi_f
+    real(dp) :: A, B, aux, D, f, U0, C1
 
     !write(*, *) zp/z0, zf/z0, Ef
     U0 = (B0/gj)**2 / (8.d0*pi)
@@ -624,9 +625,9 @@ contains
 
     !----------------------------------------------------------------------------------
 
-    real(kind(1.d0)) function factorIntegrante2(xm, xp, ym)
-    real(kind(1.d0)), intent(in) :: xm, ym, xp
-    real(kind(1.d0)) :: A, B, aux, D, f, U0, C1, g
+    real(dp) function factorIntegrante2(xm, xp, ym)
+    real(dp), intent(in) :: xm, ym, xp
+    real(dp) :: A, B, aux, D, f, U0, C1, g
 
     U0 = (B0/gj)**2 / (8.d0*pi)
     A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2

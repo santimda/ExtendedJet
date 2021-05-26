@@ -1,4 +1,5 @@
 MODULE evolution
+   use constants
    use globals
    implicit none
 

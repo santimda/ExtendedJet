@@ -7,7 +7,7 @@ MODULE controls
     !===================================================
     ! Programs to run
 
-    logical, parameter :: run_jet_calc = yes
+    logical, parameter :: run_jet_calc = no!yes
     logical, parameter :: run_sed_calc = yes
 
     logical, parameter :: JET_ = yes

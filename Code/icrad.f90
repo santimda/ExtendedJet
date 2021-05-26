@@ -1,4 +1,5 @@
 MODULE icrad
+  use constants
   use globals
   implicit none
 

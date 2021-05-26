@@ -1,5 +1,6 @@
 MODULE trajectory
   use globals
+  use constants
   implicit none
   private
   public :: trajectory_calc

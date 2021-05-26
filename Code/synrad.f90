@@ -13,10 +13,10 @@ contains
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' or 'jet'
-    real(kind(1.d0)) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
-    real(kind(1.d0)) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
-    real(kind(1.d0)) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
-    real(kind(1.d0)) :: boost(Ns)
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
+    real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
+    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
+    real(dp) :: boost(Ns)
     allocate ( delta_obs(Ns) )
 
     !Quantities at each segment
@@ -129,11 +129,11 @@ contains
     !************************************************************************************
     !   Synchrotron luminosity per photon energy unit
     !************************************************************************************
-    real(kind(1.d0)) function SyncLum(B,Eph,E,NE)
-    real(kind(1.d0)), intent(in) :: B, Eph, E(nIn), NE(nIn)
-    real(kind(1.d0)) :: dE, Ec, x, Psync, E_step
-    real(kind(1.d0)), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
-    real(kind(1.d0)), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
+    real(dp) function SyncLum(B,Eph,E,NE)
+    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp) :: dE, Ec, x, Psync, E_step
+    real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
+    real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
     !Initialization
     SyncLum = 0d0
     !Integral by rectangles
@@ -158,9 +158,9 @@ contains
     !============================================================================
     ! Luminosity corrected for synchrotron self-absorption
     !============================================================================
-    real(kind(1.d0)), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn),Lum(Ns)
-    real(kind(1.d0)), intent(out) :: LumA(Ns)
-    real(kind(1.d0)) :: K,Ecf,Sf,depth,tau,Ap
+    real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn),Lum(Ns)
+    real(dp), intent(out) :: LumA(Ns)
+    real(dp) :: K,Ecf,Sf,depth,tau,Ap
 
     !Loop for the segments
     do j = 1, Ns
@@ -200,10 +200,10 @@ contains
     !************************************************************************************
     !   Integral for the particle energy in SSA
     !************************************************************************************
-    real(kind(1.d0)) function EintSSA(B,Eph,E,NE)
-    real(kind(1.d0)), intent(in) :: B, Eph, E(nIn), NE(nIn)
-    real(kind(1.d0)) :: dE, Ec, x, F, E_step
-    real(kind(1.d0)), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
+    real(dp) function EintSSA(B,Eph,E,NE)
+    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp) :: dE, Ec, x, F, E_step
+    real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     EIntSSA = 0d0   !Initialization
     E_step = E(2)/E(1)
     do i = 1, nIn
@@ -228,9 +228,9 @@ contains
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
         character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet 
-        real(kind(1.d0)) :: L_tot(Ns), L_abs(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns)
-        real(kind(1.d0)) :: Esy(NSED_sy), Esy_step, dEsy
-        real(kind(1.d0)) :: boost(Ns), U_sy_FF
+        real(dp) :: L_tot(Ns), L_abs(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns)
+        real(dp) :: Esy(NSED_sy), Esy_step, dEsy
+        real(dp) :: boost(Ns), U_sy_FF
 
         ! Read relevant quantities at each segment
         open(20, file='deltas'//jet//'.dat')
@@ -288,13 +288,13 @@ contains
     ! to be smaller than m_data_max defined in globals.f90.
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
-    real(kind(1.d0)), intent(in) :: E_data(:)
-    real(kind(1.d0)), intent(out) :: S_data(m_data_max)
+    real(dp), intent(in) :: E_data(:)
+    real(dp), intent(out) :: S_data(m_data_max)
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-    real(kind(1.d0)), allocatable :: Eph(:), LumA(:)
-    real(kind(1.d0)) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
-    real(kind(1.d0)) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
-    real(kind(1.d0)) :: boost(Ns), dil
+    real(dp), allocatable :: Eph(:), LumA(:)
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
+    real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
+    real(dp) :: boost(Ns), dil
     integer :: m_data
     allocate( delta_obs(Ns) )
 
