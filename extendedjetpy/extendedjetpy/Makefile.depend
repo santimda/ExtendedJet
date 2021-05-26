@@ -1,0 +1,12 @@
+
+constants.o: constants.f90 
+
+global.o: global.f90 constants.o
+
+controles.o: controles.f90
+
+dist.o: dist.f90 global.o
+
+radsyn.o: radsyn.f90 global.o
+
+main.o: main.f90 global.o controles.o dist.o radsyn.o
