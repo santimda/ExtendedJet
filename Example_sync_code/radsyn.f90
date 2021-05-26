@@ -123,9 +123,9 @@ contains
     ! mEe -> electrons, m_nu -> emitted photons
     real(dp), intent(in) :: B_new
     real(dp), intent(in) :: E_data(:)
+    real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: gamma_e(mE_e), x
     real(dp) :: nuc, sum, cte_Psy, a, B_par
-    real(dp), intent(out) :: S_data(m_data_max)
     integer :: m_data
     allocate( N_e(mE_e), E_e(mE_e) )
 
