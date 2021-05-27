@@ -41,19 +41,24 @@ END PROGRAM main
     use controles
     use dist, only: diste_run
     use radsyn, only: radsyn_run, radsyn_data_run
+    use radssc
 
     implicit none
     real(dp), intent(in) :: B_value
     logical, intent(in) :: verbose
-    real(dp) :: L_sy_tot
+    real(dp) :: L_sy_tot, L_SSC_tot
 
     if (verbose) write(*,*) '\nJET_CALC started'
-    if (dist .and. verbose) write(*,*) '\n Calculate NT electron distribution'
+    if (dist .and. verbose) write(*,*) '\n Calculate the NT electron distribution'
     if (dist) call diste_run 
  
-    if (radsyn .and. verbose) write(*,*) 'Calculate synchrotron SED'
+    if (radsyn .and. verbose) write(*,*) 'Calculate the synchrotron SED'
     if (radsyn) call radsyn_run(B_value, L_sy_tot)
     if (radsyn .and. verbose) write(*,'(A10,X,Es10.2)') 'L_sy =', L_sy_tot
+
+    if (radssc .and. verbose) write(*,*) 'Calculate the SSC SED'
+    if (radssc) call radssc_run(L_SSC_tot)
+    if (radssc .and. verbose) write(*,'(A10,X,Es10.2)') 'L_SSC =', L_SSC_tot
 
     if (verbose) then
       write(*,*) 'B [uG] = ', B_value*1.d6

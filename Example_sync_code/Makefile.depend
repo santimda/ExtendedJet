@@ -9,4 +9,6 @@ dist.o: dist.f90 global.o
 
 radsyn.o: radsyn.f90 global.o
 
-main.o: main.f90 global.o controles.o dist.o radsyn.o
+radssc.o: radssc.f90 global.o
+
+main.o: main.f90 global.o controles.o dist.o radsyn.o radssc.o

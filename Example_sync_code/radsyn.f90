@@ -72,15 +72,14 @@ contains
           endif
        enddo                ! N_e 
        Lsy(i) = sum         ! [erg/s/erg]
-       sum_sy = sum_sy + Lsy(i)*deps
+       sum_sy = sum_sy + Lsy(i)*dEps
        
     enddo  ! eps(i),nu(i)
     L_sy_tot = sum_sy
 
     open(17,file='radsyn.dat')
-    a = 4.d0*pi*d**2
     do i = 1, m_nu
-       write(17,*) eps(i)/eV, Lsy(i)/a ! F(E) for the SED
+       write(17,*) eps(i)/eV, Lsy(i) ! L(E) for the SED
     enddo
     close(17)
 
@@ -158,6 +157,9 @@ contains
 
     cte_Psy = 1.85*sqrt(3.)*qe**3*B_par/h/mec2 !4.39d-22*B_par/h
     ! Calculate the luminosity at each value of the photon energy E_data(i)
+    
+    !-----------------------------------------------------------------------
+    !!!!!!!!!   HACER UNA PRUEBA CON OPENMP ACA   !!!!!!!!!!!!!!!!!!!!!!!!!!
     do i = 1, m_data           ! eps(i), or nu(i)
        sum = 0.d0
        
@@ -175,6 +177,8 @@ contains
        Lsy(i) = sum         ! [erg/s/erg]
        
     enddo  ! eps(i),nu(i)
+    !!!!!!!!!   HACER UNA PRUEBA CON OPENMP ACA   !!!!!!!!!!!!!!!!!!!!!!!!!!
+    !-----------------------------------------------------------------------
 
     ! Define the output vector for the first m_data positions
     S_data = 0.d0
