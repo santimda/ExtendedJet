@@ -36,6 +36,7 @@ run.x
 *.dat
 *.ps
 *.png 
+*.pdf
 
 # Dirs
 .ipynb_checkpoints/
