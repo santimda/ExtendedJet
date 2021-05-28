@@ -40,7 +40,7 @@ MODULE evolution
 
          deltaZ(i) = abs(z(i)) * (sqrt(dlogZ)-1d0/sqrt(dlogZ)) ! Added abs value for CJ
          deltatFF(i) = deltaZ(i) / (vj*gj)
-
+         !print*, (deltaZ(i)/gj)/rj(i), z(i)/rj(i)/gj
          !Doppler factor between the jet and the observer
          delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*CJo))
 

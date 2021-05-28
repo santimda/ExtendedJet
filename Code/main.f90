@@ -3,6 +3,7 @@ PROGRAM main
     use globals
     use controls
     implicit none
+    real(dp) :: B_value
     real(dp), allocatable :: E_data(:)
     real(dp) :: S_data(m_data_max)
     logical, parameter :: verbose = .True.
@@ -14,8 +15,9 @@ PROGRAM main
     end interface
 
     interface
-        subroutine sed_model(E_vector, S_vector) 
+        subroutine sed_model(B_value, E_vector, S_vector) 
             use globals
+            real(dp), intent(in) :: B_value
             real(kind(1.d0)), intent(in) :: E_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
         end subroutine sed_model
@@ -31,8 +33,9 @@ PROGRAM main
     
     if (run_sed_calc) then
         allocate( E_data(4) )
+        B_value = 1.d-2
         E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8/)
-        call sed_model(E_data, S_data) ! Energies in cgs
+        call sed_model(B_value, E_data, S_data) ! Energies in cgs
         deallocate( E_data )
     endif
 
@@ -53,6 +56,7 @@ END PROGRAM main
     use edistribution
     use synrad
     use icrad
+    use sscrad
 !    use fluxes
     
     implicit none
@@ -101,6 +105,9 @@ END PROGRAM main
         
         !IC SED     
         if (radic_calc) call SEDIC(iso)     ! Calculate the IC-CMB SED
+
+        !SSC SED     
+        if (radssc_calc) call SEDssc('')    ! Calculate the SSC SED
     endif
 
     ! Calculate everything for the counter-jet next
@@ -140,6 +147,9 @@ END PROGRAM main
         
         !IC SED     
         if (radic_calc) call SEDIC(iso)     ! Calculate the IC-CMB SED
+
+        !SSC SED     
+        if (radssc_calc) call SEDssc('CJ')  ! Calculate the SSC SED
     endif
 
     if (verbose) write(*,*) '\n Deallocate vectors'    
@@ -155,7 +165,7 @@ END PROGRAM main
   !============================================================================
   ! sed_model(START)
   !============================================================================
-  subroutine sed_model(E_data, S_data)
+  subroutine sed_model(B_value, E_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron SED at specific energies
   ! for the given input parameters (zero now).
@@ -171,13 +181,14 @@ END PROGRAM main
     use synrad
 
     implicit none
+    real(dp), intent(in) :: B_value
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
-    logical, parameter :: verbose = .False.
+    logical, parameter :: verbose = .True.!.False.
         
-    print*, E_data
-    stop
+    !print*, B_value, E_data
+    !stop
     S_data = 0.d0 ! Initialize
     ! Calculate everything for the jet first
     if (JET_) then  
@@ -193,7 +204,7 @@ END PROGRAM main
         call Edist()   
 
         !Synchrotron SED at the given values
-        call SEDsyn_data(E_data, S_data_J, '')   
+        call SEDsyn_data(B_value, E_data, S_data_J, '')   
         
         call initialize_deallocate 
         S_data = S_data_J
@@ -217,7 +228,7 @@ END PROGRAM main
         endif
 
         !Synchrotron SED at the given values
-        call SEDsyn_data(E_data, S_data_CJ, 'CJ')
+        call SEDsyn_data(B_value, E_data, S_data_CJ, 'CJ')
         S_data = S_data + S_data_CJ
         if (verbose) write(*,*) 'S_data[cgs] =', S_data
         

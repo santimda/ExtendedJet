@@ -7,8 +7,8 @@ MODULE controls
     !===================================================
     ! Programs to run
 
-    logical, parameter :: run_jet_calc = no!yes
-    logical, parameter :: run_sed_calc = yes
+    logical, parameter :: run_jet_calc = yes
+    logical, parameter :: run_sed_calc = no!yes
 
     logical, parameter :: JET_ = yes
     logical, parameter :: CJ_ = yes
@@ -16,6 +16,7 @@ MODULE controls
     logical, parameter :: jet_calc = yes
     logical, parameter :: NE_calc = yes
     logical, parameter :: radsyn_calc = yes
+    logical, parameter :: radssc_calc = yes
     logical, parameter :: radic_calc = no!yes
     
     !===================================================

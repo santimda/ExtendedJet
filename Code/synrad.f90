@@ -114,7 +114,7 @@ contains
     enddo
     
     !write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
-    !write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
+    write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
 
     close(40)
     close(50)
@@ -267,7 +267,7 @@ contains
             enddo
             U_sy_FF = ( L_tot(l)/VFF(l) ) * ( rj(l)/c ) !!! CHECK IF <t> = r/c, deltaz/c, or what
             write(28,*) l, z(l), U_sy_FF, BFF(l)**2/(8.d0*pi), U_sy_FF/(BFF(l)**2/(8.d0*pi))
-            write(29,*) l, z(l)/R_g, L_tot(l), L_tot(l)/LnTFF
+            write(29,*) l, z(l)/R_g, L_tot(l), L_abs(l)/LnTFF
         enddo
         close(28)
         close(29)
@@ -281,7 +281,7 @@ contains
     !============================================================================
     ! SEDsyn_data (START)
     !============================================================================
-    subroutine SEDsyn_data(E_data, S_data, jet)
+    subroutine SEDsyn_data(B_new, E_data, S_data, jet)
     !============================================================================
     ! This routine calculates the intrinsic synchrotron emission in the fluid frame
     ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
@@ -289,7 +289,7 @@ contains
     ! to be smaller than m_data_max defined in globals.f90.
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
-    use constants
+    real(dp), intent(in) :: B_new
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
@@ -327,9 +327,7 @@ contains
     do l = 1, m_data
         do j = 1, Ns                        !Loop for the jet segments
             EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
-            do i = 1, nIn
-                NEcut(i) = NE(i,j)          !N(E) for the segment j
-            enddo
+            NEcut = NE(:,j)                 !N(E) for the segment j
             !Unabsorbed synchrotron luminosity for each segment
             LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut)
         enddo

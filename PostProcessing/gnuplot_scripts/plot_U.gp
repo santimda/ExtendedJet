@@ -10,20 +10,23 @@ set format x '10^{%L}'
 set format y '10^{%L}'
 set logscale
 #set xrange [:8]
-set yrange [1e-4:]
+set yrange [1e-5:]
 #set mxtics 10
 set mytics 10
 set xlabel 'z_j'
 set ylabel 'U [erg s^{-1}]'
 
-f(x) = 0
+f1(x) = 1.0/(x/3e15)
+f2(x) = 1.0/(x/3e15)**2
 
 #x1 = 4.e5
 #set arrow from x1, graph 0.007 to x1, graph 0.993 nohead lc rgb 'grey88' lw 140
 
 plot '../../Code/U_FF.dat' u 2:4 t 'U_B' w l lw 3 lc 1,\
 	'../../Code/U_FF.dat' u 2:3 t 'U_{sy}' w l lw 3 lc 2,\
-	'../../Code/U_e.dat' u 2:3 t 'U_{e}' w l lw 3 lc 3    
+	'../../Code/U_e.dat' u 2:3 t 'U_{e}' w l lw 3 lc 3,\
+	f1(x) t 'z^{-1}' w l lw 2 dt 2 lc rgb "grey30",\
+	f2(x) t 'z^{-2}' w l lw 2 dt 3 lc rgb "grey40"
 	
 #plot './Quant_FF_norm.dat' u 1:5 t 'cos(wo) jet' w l lw 3 lc 2,\
 #	'./Quant_FF_norm.dat' u 1:6 t 'cos(woFF) jet' w l lw 3 lc 2 dt 2,\

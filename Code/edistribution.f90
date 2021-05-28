@@ -264,11 +264,12 @@ contains
     !============================================================================
     ! CalcNE_analytical (START)
     !============================================================================
-    subroutine CalcNE_analytical(EFF, i2, NEmatrix)
+    subroutine CalcNE_analytical(EFF, i3, NEmatrix)
     !============================================================================
     ! Calculate the electron energy distribution by analytical methods
     !============================================================================
-        integer, intent(in) :: i2
+        use globals
+        integer, intent(in) :: i3
         real(dp), intent(in) :: EFF
         real(dp), intent(inout) :: NEmatrix(nIn, Ns)
         real(dp) :: tlossFF, sum, ee, zz, zm, dttFF, BB, rr, vlat
@@ -293,7 +294,7 @@ contains
                 !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, EFF/mec2)
                 zz = zz - vj*gj*dttFF
             enddo
-            NEmatrix(i2, izz) = sum * deltaZ(izz)
+            NEmatrix(i3, izz) = sum * deltaZ(izz)
         enddo
    
     end subroutine CalcNE_analytical
