@@ -35,7 +35,7 @@ module system_parameters
    real(dp), parameter :: Pdotj = Lj*gj*Bj/(c*(gj-1d0))    !Jet lateral momentum flux
    real(dp), parameter :: fB = 1d-1              !Fraction of magnetic energy
    real(dp), parameter :: B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
-   real(dp), parameter :: exp_B = 1.d0             ! B = B0*(z/z0)^exp_B
+   real(dp), parameter :: exp_B = 1.d0             ! B = B0*(r/r0)^exp_B
 
    !===NONTHERMAL PARTICLES======================================================================================
 
@@ -71,7 +71,7 @@ module system_parameters
       !*************************************************************************************
       real(dp) function v_lat(zz)
          real(dp), intent(in) :: zz
-         v_lat = vj * tan(thetaj) * (z0/zz)**(1d0-geomIndex)
+         v_lat = vj * (r0/z0) * geomIndex * (z0/zz)**(1d0-geomIndex)
          return
       end function
 
