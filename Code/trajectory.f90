@@ -16,7 +16,7 @@ MODULE trajectory
   ! The input is the '' (jet) or 'CJ' (counter-jet). 
   !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-    real(dp) :: dir, tan_theta
+    real(dp) :: dir
 
     ! The jet goes upwards, the CJ goes downwards (negative z)
     if (jet == '') then
@@ -28,19 +28,15 @@ MODULE trajectory
       stop
     endif
 
-    tan_theta = tan(thetaj)
     z(1) = dir*z0               ! jet height
-    rj(1) = abs(z(1))*tan_theta ! jet radius
-
+    rj(1) = r0
     !equidistant spacing in z + conical jet
     !do i = 1, Ns-1
     !  z(i+1) = z(i) + dir*vj*dt
-    !  rj(i+1) = abs(z(i+1))*tan_theta
     !enddo
-
     do i = 1, Ns-1
       z(i+1) = z(i) * dlogZ
-      rj(i+1) = abs(z(i+1)/z0)**geomIndex * rj(1)
+      rj(i+1) = r_fun(z(i+1))
     enddo
 
     open(10, file='trajectory'//jet//'.dat')

@@ -53,7 +53,9 @@ module system_parameters
       !*************************************************************************************
       real(dp) function r_fun(zz)
          real(dp), intent(in) :: zz
-         r_fun = r0 * (zz/z0)**geomIndex
+         real(dp) :: zz_
+         zz_ = abs(zz)
+         r_fun = r0 * (zz_/z0)**geomIndex
          return
       end function
       !*************************************************************************************
@@ -61,8 +63,9 @@ module system_parameters
       !*************************************************************************************
       real(dp) function BFF_fun(zz)
          real(dp), intent(in) :: zz
-         real(dp) :: rr
-         rr = r_fun(zz)
+         real(dp) :: rr, zz_
+         zz_ = abs(zz)
+         rr = r_fun(zz_)
          BFF_fun = (B0/gj) * (r0/rr)**exp_B
          return
       end function
@@ -71,7 +74,9 @@ module system_parameters
       !*************************************************************************************
       real(dp) function v_lat(zz)
          real(dp), intent(in) :: zz
-         v_lat = vj * (r0/z0) * geomIndex * (z0/zz)**(1d0-geomIndex)
+         real(dp) :: zz_
+         zz_ = abs(zz)
+         v_lat = vj * (r0/z0) * geomIndex * (z0/zz_)**(1d0-geomIndex)
          return
       end function
 

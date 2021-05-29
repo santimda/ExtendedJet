@@ -15,7 +15,7 @@ MODULE evolution
    ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-      real(dp) :: B, dir, CJo, boost 
+      real(dp) :: dir, cjo, boost 
       allocate( joFF(Ns) )
       allocate( delta_obs(Ns) )
 
@@ -33,7 +33,7 @@ MODULE evolution
          stop
       endif
 
-      CJo = cos(jo)
+      cjo = cos(jo)
       do i = 1, Ns
 
          if (abs(z(i)) < zmax_inj) Ninj = i
@@ -42,11 +42,10 @@ MODULE evolution
          deltatFF(i) = deltaZ(i) / (vj*gj)
          !print*, (deltaZ(i)/gj)/rj(i), z(i)/rj(i)/gj
          !Doppler factor between the jet and the observer
-         delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*CJo))
+         delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*cjo))
 
          !Magnetic field
-         B = B0*(rj(1)/rj(i))**exp_B
-         BFF(i) = B/gj
+         BFF(i) = BFF_fun(z(i))
 
          !Stellar photon density and energy 
          nfFF(i) = nf0/delta_obs(i)  !!! CHECK!!!!!
@@ -56,18 +55,14 @@ MODULE evolution
          Kappa(i) = delta_obs(i)**2 ! CHECK, FOR CMB
 
          !Velocity perpendicular to the jet propagation
-         if (i == 1) then
-            vnorm(i) = vj*tan(thetaj)   !Conical expansion???
-         else
-            vnorm(i) = (rj(i)-rj(i-1))/(deltatFF(i)*gj)
-         endif
+         vnorm(i) = v_lat(z(i))
 
          !Jet observer angle in the FF
-         joFF(i) = acos( (cos(jo)-Bj)/(1d0-Bj*cos(jo)) )
+         joFF(i) = acos( (cjo-Bj)/(1d0-Bj*cjo) )
          sjoFF(i) = sin(joFF(i))        !Sinus of joFF
 
          !Segment volume in the FF
-         VFF(i) = pi*rj(i)**2*deltatFF(i)*vj
+         VFF(i) = pi*rj(i)**2*(deltaZ(i)/gj)
 
          !boost = delta_obs(i)**2/gj  ! CHECK THIS!
          boost = delta_obs(i)**2  ! CHECK THIS! (delta z defined in LF)
