@@ -5,10 +5,14 @@ implicit none
 public
 
 !===================================================
+! free parameters
 
-real(dp), parameter :: U = 1.d6*eV      ! [U_e_NT] = erg/cm^3
+real(dp) :: U = 1.d6*eV      ! [U_e_NT] = erg/cm^3
 real(dp) :: B = 100.d-6        ! B = 100 uG
-!real(dp) :: B_par = B*sqrt(2./3.) ! Assuming isotropy
+
+!==================================================
+! parameters 
+
 real(dp), parameter :: p = 2.d0           ! Injection spectral index
 real(dp), parameter :: R = 0.01*pc         ! Hot-spot size
 real(dp), parameter :: Vol = (4.d0/3.d0)*pi*R**3 ! Assume spherical region 
@@ -20,15 +24,13 @@ integer, parameter :: mE_e = 400          ! Energy resolution for electrons
 integer :: i,j,l
 real(dp), parameter :: d = 1.d3*pc      ! 1 kpc
 
-
 !===================================================
 ! emission
 
 real(dp) :: P_Eps, dP_Eps
 integer, parameter :: m_nu = 800  ! frequency resolution for synchrotron photons
 real(dp), dimension(:), allocatable :: nu, Lsy
-integer, parameter :: mE_f = 50  ! frequency resolution for SSC photons
-
+integer, parameter :: mE_f = 250  ! frequency resolution for SSC photons
 integer, parameter :: m_data_max = 50 ! maximum number of points to fit
 
 !===================================================

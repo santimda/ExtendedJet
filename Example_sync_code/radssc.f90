@@ -1,4 +1,5 @@
 module radssc
+   use constants
    use global
 
    implicit none
@@ -13,12 +14,18 @@ module radssc
    ! This routine calculates the intrinsic SSC emission in the fluid frame
    !-----------------------------------------------------------------------------
    subroutine radssc_run(L_SSC_tot)  
-      use global
       implicit none
       real(dp), intent(out) :: L_SSC_tot
       real(dp) :: Lic(mE_f), Eg(mE_f), Eg_int, dEg, f, q_gamma, P_g, Lic_tot
       real(dp) :: cte_ic, dotNsy(m_nu), nph(m_nu), Eph(m_nu), dEph, Eint_ph
       integer :: i2
+
+      interface
+         function f(E_g, E_e, E_f) 
+            real(kind(1.d0)), intent(in) :: E_g, E_e, E_f
+         end function f
+      end interface
+
       allocate( N_e(mE_e), E_e(mE_e), Lsy(m_nu) )
 
       !------------------------------------------------------------------------
@@ -87,7 +94,7 @@ END module radssc
 
 !====================================================================================
 real(dp) function f(Eg, Ee, Eph)     !f from Eq. 5.86 
-use global
+use constants
 real(dp) :: Eg, Ee, Eph, z, b_, t_  !Eg = gamma photon, Ee = electron, Eph = target
 z = Eg/Ee                      
 b_ = (4.d0*Eph*Ee)/(mec2**2)    

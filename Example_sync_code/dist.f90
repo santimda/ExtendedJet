@@ -1,7 +1,6 @@
 module dist
-
+  use constants
   use global
-
   implicit none
   private
   public :: diste_run
@@ -12,12 +11,15 @@ module dist
   ! diste_run
   !============================================================================
 
-  subroutine diste_run  
-    use global
+  subroutine diste_run(U_new)
     implicit none
+    real(dp), intent(in) :: U_new
     real(dp) :: integral, Ka
     allocate( N_e(mE_e),E_e(mE_e) )
 
+    U = U_new
+
+    !----------------------------------------------------
     ! Define a logarithmically spaced energy vector
     ! The subroutine vector_log is defined in global.f90
     call vector_log(Emin_e, 10.d0*Emax_e, Eint_e, E_e)
