@@ -25,11 +25,11 @@ PROGRAM main
   !-------------------------------------------------------------
 
   B_value = 1.d-2
-  U_value = 1.d4
+  U_value = 1.d4*eV
   call jet_calc(B_value, U_value, .true.)
 
-  allocate( E_data(4) )
-  E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8/)
+  allocate( E_data(6) )
+  E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8, 1.d-5, 1.d-3/)
   call sed_model(B_value, U_value, E_data, S_data) ! Energies in cgs
   deallocate( E_data )
 
@@ -42,7 +42,7 @@ END PROGRAM main
     use controles
     use dist, only: diste_run
     use radsyn, only: radsyn_run, radsyn_data_run
-    use radssc
+    use radssc, only: radssc_run, radssc_data_run
 
     implicit none
     real(dp), intent(in) :: B_value, U_value
@@ -63,7 +63,7 @@ END PROGRAM main
 
     if (verbose) then
       write(*,*) 'B [uG] = ', B_value*1.d6
-      write(*,*) 'U [erg/cm3] = ', U_value
+      write(*,*) 'U [eV/cm3] = ', U_value/eV
       write(*,*) 'E_max [TeV] = ', Emax_e/eV/1.d12
       write(*,*) '\nJET_CALC finished\n'
     endif
@@ -82,16 +82,20 @@ END PROGRAM main
     use constants
     use dist, only: diste_run
     use radsyn, only: radsyn_run, radsyn_data_run
+    use radssc, only: radssc_run, radssc_data_run
 
     implicit none
     real(dp), intent(in) :: B_value, U_value
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
-    logical, parameter :: verbose=.False.
+    real(dp) :: S_data_syn(m_data_max), S_data_ssc(m_data_max)
+    logical, parameter :: verbose=.True.!.False.
 
     call diste_run(U_value)
 
-    call radsyn_data_run(B_value, E_data, S_data)
+    call radsyn_data_run(B_value, E_data, S_data_syn)
+    call radssc_data_run(E_data, S_data_ssc)
+    S_data = S_data_syn + S_data_ssc
 
     if(verbose) write(*,*) 'E_data[eV] =', E_data/eV
     if(verbose) write(*,*) 'S_data[cgs] =', S_data

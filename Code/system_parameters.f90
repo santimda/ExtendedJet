@@ -15,8 +15,8 @@ module system_parameters
    real(dp), parameter :: L_Edd = 1.25d38*M_BH     !Eddington luminosity
    real(dp), parameter :: R_g = 1.477d5*M_BH       !Gravitational radius (M_BH [Msun])
    real(dp), parameter :: z0 = 3.d0*R_g               !Jet launching height
-   real(dp), parameter :: zmax = 3d5*R_g         !Jet maximum height
-   real(dp), parameter :: zmax_inj = 5.d4*R_g       !Jet maximum cell of injection
+   real(dp), parameter :: zmax = 3d3*R_g         !Jet maximum height
+   real(dp), parameter :: zmax_inj = 1.d5*R_g       !Jet maximum cell of injection
    real(dp), parameter :: EphM = kB*T_CMB          !Target photon energy in the obs frame
    real(dp), parameter :: nf0 = u_CMB/EphM         !Target photon number density in the obs frame
 
@@ -26,7 +26,7 @@ module system_parameters
    real(dp), parameter :: vj = sqrt(gj**2-1d0)*c/gj        !Fluid bulk speed
    real(dp), parameter :: Bj = vj/c              !Beta
    real(dp), parameter :: thetaj = 0.6d0         !Half opening angle (rad)  
-   real(dp), parameter :: r0 = tan(thetaj) * z0  !Jet launching radius
+   real(dp), parameter :: r0 = 5.d0*R_g !Jet launching radius
    real(dp), parameter :: geomIndex = 0.6d0        !Jet opening parameter
    real(dp), parameter :: Lj = L_Edd*4d-5       !Jet luminosity (erg/s)
    real(dp), parameter :: fnT = 0.5d-2             !Nonthermal energy fraction
