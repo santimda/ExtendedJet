@@ -15,8 +15,8 @@ module system_parameters
    real(dp), parameter :: L_Edd = 1.25d38*M_BH     !Eddington luminosity
    real(dp), parameter :: R_g = 1.477d5*M_BH       !Gravitational radius (M_BH [Msun])
    real(dp), parameter :: z0 = 3.d0*R_g               !Jet launching height
-   real(dp), parameter :: zmax = 3d3*R_g         !Jet maximum height
-   real(dp), parameter :: zmax_inj = 1.d5*R_g       !Jet maximum cell of injection
+   real(dp), parameter :: zmax = 5d3*R_g         !Jet maximum height
+   real(dp), parameter :: zmax_inj = 5.d3*R_g       !Jet maximum cell of injection
    real(dp), parameter :: EphM = kB*T_CMB          !Target photon energy in the obs frame
    real(dp), parameter :: nf0 = u_CMB/EphM         !Target photon number density in the obs frame
 
@@ -40,14 +40,17 @@ module system_parameters
    !===NONTHERMAL PARTICLES======================================================================================
 
    !Particle injection
-   real(dp), parameter :: facc = 1d-2        !Acceleration efficiency
-   real(dp), parameter :: EminFF = 1d6*eV    !Minimum energy in the FF
-   real(dp), parameter :: EmaxFF = 2d14*eV   !Maximum energy in the FF
-   real(dp), parameter :: p = 2.12d0            !Power law exponent
+   real(dp), parameter :: facc = 1d-2           !Acceleration efficiency
+   real(dp), parameter :: EminFF = 1d6*eV       !Minimum energy in the FF
+   real(dp), parameter :: Emin_injFF = 1d8*eV   !Minimum energy of injected particles in the FF
+   real(dp), parameter :: EmaxFF = 2d14*eV      !Maximum energy in the FF
+   real(dp), parameter :: p = 2.12d0            !Power law exponent for Q(E) = cte * E**-p
+   real(dp), parameter :: a_inj = 1.00001d0     !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
 
    !============================================================================
 
    contains
+
       !*************************************************************************************
       !   Jet radius as a function of z
       !*************************************************************************************
@@ -79,5 +82,7 @@ module system_parameters
          v_lat = vj * (r0/z0) * geomIndex * (z0/zz_)**(1d0-geomIndex)
          return
       end function
+
+   !============================================================================
 
 END module system_parameters

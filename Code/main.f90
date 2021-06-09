@@ -6,7 +6,7 @@ PROGRAM main
     real(dp) :: B_value
     real(dp), allocatable :: E_data(:)
     real(dp) :: S_data(m_data_max)
-    logical, parameter :: verbose = .True.
+    logical, parameter :: verbose = .False.
 
     interface
         subroutine run_jet(verbose) 
