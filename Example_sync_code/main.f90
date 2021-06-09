@@ -89,7 +89,7 @@ END PROGRAM main
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_syn(m_data_max), S_data_ssc(m_data_max)
-    logical, parameter :: verbose=.True.!.False.
+    logical, parameter :: verbose=.False.
 
     call diste_run(U_value)
 

@@ -169,7 +169,7 @@ module radssc
       enddo
 
       deallocate( Eg, Lic )
-      deallocate( N_e, E_e )
+      deallocate( N_e, E_e, Lsy )
 
    END subroutine radssc_data_run
 
