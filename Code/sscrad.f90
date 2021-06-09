@@ -1,4 +1,5 @@
 module sscrad
+   use constants
    use globals
    implicit none
    public :: SEDssc
@@ -12,13 +13,12 @@ module sscrad
    ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
    subroutine SEDssc(jet)  
-      use globals
       implicit none
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet 
       real(dp) :: Ee(nIn), Ne(nIn,Ns), Ne_cut(nIn), Eint_e, dEe(nIn)
       real(dp) :: Eph(NSED_sy), Lsy(NSED_sy,Ns), nph(NSED_sy,Ns), dotNsy, nph_cut(NSED_sy)
       real(dp) :: LicFF(NSED_IC,Ns), Lic(NSED_IC,Ns), EgFF(NSED_IC), Eg(NSED_IC)
-      real(dp) :: Eg_int, EgFF_int, dEgFF, f, q_gamma, P_g, Lic_tot
+      real(dp) :: Eg_int, EgFF_int, dEgFF, q_gamma, P_g, Lic_tot
       real(dp) :: Lic_jet(NSED_IC), Lic2_jet(NSED_IC), Lic3_jet(NSED_IC)
       real(dp) :: boost(Ns), cte_ic, dEph, Eint_ph
       allocate ( delta_obs(Ns) )
@@ -125,14 +125,10 @@ module sscrad
    END subroutine SEDssc
    !============================================================================
    ! SEDssc (END)
-   !============================================================================
-    
+   !============================================================================  
 
-END module sscrad
-
-!====================================================================================
-real(dp) function f(Eg, Ee, Eph)     !f from Eq. 5.86 
-   use globals
+   !********************************************************************************
+   real(dp) function f(Eg, Ee, Eph)     !f from Eq. 5.86 
    real(dp) :: Eg, Ee, Eph, z_, b_, t_  !Eg = gamma photon, Ee = electron, Eph = target
    z_ = Eg/Ee                      
    b_ = (4.d0*Eph*Ee)/(mec2**2)    
@@ -142,6 +138,10 @@ real(dp) function f(Eg, Ee, Eph)     !f from Eq. 5.86
    else
       f = 0.d0
    endif
+   return
    end function f
+!********************************************************************************
 
-!================================================================================
+!=======================================================================================
+
+END module sscrad
