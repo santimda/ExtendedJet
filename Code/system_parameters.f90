@@ -29,10 +29,10 @@ module system_parameters
    real(dp), parameter :: z0 = 3.d0*R_g            !Jet launching height (Kim+2018? arbitrary?)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
    real(dp), parameter :: Lj = L_Edd*4d-5          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp), parameter :: fnT = 1.d-1              !Nonthermal energy fraction
+   real(dp), parameter :: fnT = 1.d-2              !Nonthermal energy fraction
    real(dp), parameter :: LnT = Lj*fnT             !Available nonthermal luminosity
    real(dp), parameter :: LnTFF = LnT!/gj**2       !Available nonthermal luminosity in the FF
-   real(dp), parameter :: fB = 1d-1              !Fraction of magnetic energy
+   real(dp), parameter :: fB = 1d-1                !Fraction of magnetic energy
    real(dp), parameter :: B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
    real(dp), parameter :: exp_B = 1.d0             ! B = B0*(r/r0)^exp_B
 
@@ -41,7 +41,7 @@ module system_parameters
    !Particle injection
    real(dp), parameter :: facc = 1d-2           !Acceleration efficiency
    real(dp), parameter :: EminFF = 1d6*eV       !Minimum energy in the FF
-   real(dp), parameter :: Emin_injFF = 1d8*eV   !Minimum energy of injected particles in the FF
+   real(dp), parameter :: Emin_injFF = 1d6*eV   !Minimum energy of injected particles in the FF
    real(dp), parameter :: EmaxFF = 2d14*eV      !Maximum energy in the FF
    real(dp), parameter :: p = 2.12d0            !Power law exponent for Q(E) = cte * E**-p
    real(dp), parameter :: a_inj = 1.00001d0     !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
