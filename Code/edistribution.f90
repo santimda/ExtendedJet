@@ -381,9 +381,9 @@ contains
     real(dp), intent(in) :: Ecut
     real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2
     integer, parameter :: N = 200   !Number of subintervals for the integral
-    Einc = (EmaxFF/EminFF)**(1d0/(N-1))  !Increase factor of the energy
+    Einc = (EmaxFF/Emin_injFF)**(1d0/(N-1))  !Increase factor of the energy
     !Initialization
-    E = EminFF
+    E = Emin_injFF
     QInt = 0.d0
     ! The integral is solved with the trapezoid method
     f1 = E * Q_E(1.d0,Ecut,E)
