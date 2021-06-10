@@ -14,27 +14,36 @@ module system_parameters
    real(dp), parameter :: M_BH = 6.5d9             !Black hole mass [Msun] (EHT+2018?)
    real(dp), parameter :: L_Edd = 1.25d38*M_BH     !Eddington luminosity
    real(dp), parameter :: R_g = 1.477d5*M_BH       !Gravitational radius (M_BH [Msun])
-   real(dp), parameter :: zmax = 5d3*R_g           !Jet maximum height
-   real(dp), parameter :: zmax_inj = 5.d3*R_g      !Jet maximum cell of injection
    real(dp), parameter :: EphM = kB*T_CMB          !Target photon energy in the obs frame
    real(dp), parameter :: nf0 = u_CMB/EphM         !Target photon number density in the obs frame
-
+   
    !===JET PROPERTIES============================================================================================
-
-   real(dp), parameter :: gj = 1.5d0               !Lorentz factor (Algaba+2021: Gamma ~ 1-3)
-   real(dp), parameter :: vj = sqrt(gj**2-1d0)*c/gj!Fluid bulk speed
-   real(dp), parameter :: Bj = vj/c                !Beta
-   real(dp), parameter :: thetaj = 0.6d0           !Half opening angle (rad)  
-   real(dp), parameter :: r0 = 5.d0*R_g            !Jet launching radius (Kim+2018)
-   real(dp), parameter :: z0 = 3.d0*R_g            !Jet launching height (Kim+2018? arbitrary?)
-   real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: Lj = L_Edd*4d-5          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp), parameter :: fnT = 1.d-2              !Nonthermal energy fraction
-   real(dp), parameter :: LnT = Lj*fnT             !Available nonthermal luminosity
-   real(dp), parameter :: LnTFF = LnT!/gj**2       !Available nonthermal luminosity in the FF
-   real(dp), parameter :: fB = 1d-1                !Fraction of magnetic energy
+   
+   real(dp), parameter :: gj = 1.5d0              !Lorentz factor
+   real(dp), parameter :: z0 = gj**2*R_g               !Jet launching height
+   real(dp), parameter :: zmax = 3d5*R_g         !Jet maximum height
+   real(dp), parameter :: zmax_inj = 5.d4*R_g       !Jet maximum cell of injection
+   real(dp), parameter :: vj = sqrt(gj**2-1d0)*c/gj        !Fluid bulk speed
+   real(dp), parameter :: Bj = vj/c              !Beta
+   real(dp), parameter :: thetaj = 0.6d0         !Half opening angle (rad)  
+   real(dp), parameter :: r0 = tan(thetaj) * z0  !Jet launching radius
+   real(dp), parameter :: geomIndex = 0.6d0        !Jet opening parameter
+   real(dp), parameter :: Lj = L_Edd*4d-5       !Jet luminosity (erg/s)
+   real(dp), parameter :: fnT = 0.5d-2             !Nonthermal energy fraction
+   real(dp), parameter :: LnT = Lj*fnT           !Available nonthermal luminosity
+   real(dp), parameter :: LnTFF = LnT!/gj**2      !Available nonthermal luminosity in the FF
+   real(dp), parameter :: Pdotj = Lj*gj*Bj/(c*(gj-1d0))    !Jet lateral momentum flux
+   real(dp), parameter :: fB = 1d-1              !Fraction of magnetic energy
    real(dp), parameter :: B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
-   real(dp), parameter :: exp_B = 1.d0             ! B = B0*(r/r0)^exp_B
+   !===FREE PARAMETERS=========================================================================================
+
+   real(dp) :: Lj = L_Edd*4d-5          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: fnT != 1.d-2              !Nonthermal energy fraction
+   real(dp) :: LnT != Lj*fnT             !Available nonthermal luminosity
+   real(dp) :: LnTFF != LnT!/gj**2       !Available nonthermal luminosity in the FF
+
+   real(dp) :: fB = 1d-1                                 !Fraction of magnetic energy in the jet
+   real(dp) :: B0 != sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
 
    !===NONTHERMAL PARTICLES======================================================================================
 
@@ -66,6 +75,7 @@ module system_parameters
       real(dp) function BFF_fun(zz)
          real(dp), intent(in) :: zz
          real(dp) :: rr, zz_
+         !print*,B0
          zz_ = abs(zz)
          rr = r_fun(zz_)
          BFF_fun = (B0/gj) * (r0/rr)**exp_B

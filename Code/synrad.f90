@@ -281,7 +281,7 @@ contains
     !============================================================================
     ! SEDsyn_data (START)
     !============================================================================
-    subroutine SEDsyn_data(B_new, E_data, S_data, jet)
+    subroutine SEDsyn_data(E_data, S_data, jet)
     !============================================================================
     ! This routine calculates the intrinsic synchrotron emission in the fluid frame
     ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
@@ -289,7 +289,6 @@ contains
     ! to be smaller than m_data_max defined in globals.f90.
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
-    real(dp), intent(in) :: B_new
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
