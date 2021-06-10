@@ -51,7 +51,7 @@ module system_parameters
    real(dp), parameter :: facc = 1d-2           !Acceleration efficiency
    real(dp), parameter :: EminFF = 1d6*eV       !Minimum energy in the FF
    real(dp), parameter :: Emin_injFF = 1d6*eV   !Minimum energy of injected particles in the FF
-   real(dp), parameter :: EmaxFF = 2d14*eV      !Maximum energy in the FF
+   real(dp), parameter :: EmaxFF = 1d15*eV      !Maximum energy in the FF
    real(dp), parameter :: p = 2.12d0            !Power law exponent for Q(E) = cte * E**-p
    real(dp), parameter :: a_inj = 1.00001d0     !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
 
