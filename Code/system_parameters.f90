@@ -9,9 +9,9 @@ module system_parameters
 
    !===SYSTEM PARAMETERS=========================================================================================
 
-   real(dp), parameter :: dist = 16.8*Mpc          !Distance to the system
-   real(dp), parameter :: jo = 17.d0*pi/180.d0     !Observer's angle with the jet axis (rad)
-   real(dp), parameter :: M_BH = 6.5d9             !Black hole mass [Msun]
+   real(dp), parameter :: dist = 16.8*Mpc          !Distance to the system (EHT+2018?)
+   real(dp), parameter :: jo = 17.d0*pi/180.d0     !Observer's angle with the jet axis (rad) (EHT+2018?)
+   real(dp), parameter :: M_BH = 6.5d9             !Black hole mass [Msun] (EHT+2018?)
    real(dp), parameter :: L_Edd = 1.25d38*M_BH     !Eddington luminosity
    real(dp), parameter :: R_g = 1.477d5*M_BH       !Gravitational radius (M_BH [Msun])
    real(dp), parameter :: EphM = kB*T_CMB          !Target photon energy in the obs frame
@@ -35,19 +35,30 @@ module system_parameters
    real(dp), parameter :: Pdotj = Lj*gj*Bj/(c*(gj-1d0))    !Jet lateral momentum flux
    real(dp), parameter :: fB = 1d-1              !Fraction of magnetic energy
    real(dp), parameter :: B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
-   real(dp), parameter :: exp_B = 1.d0             ! B = B0*(r/r0)^exp_B
+   !===FREE PARAMETERS=========================================================================================
+
+   real(dp) :: Lj = L_Edd*4d-5          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: fnT != 1.d-2              !Nonthermal energy fraction
+   real(dp) :: LnT != Lj*fnT             !Available nonthermal luminosity
+   real(dp) :: LnTFF != LnT!/gj**2       !Available nonthermal luminosity in the FF
+
+   real(dp) :: fB = 1d-1                                 !Fraction of magnetic energy in the jet
+   real(dp) :: B0 != sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
 
    !===NONTHERMAL PARTICLES======================================================================================
 
    !Particle injection
-   real(dp), parameter :: facc = 1d-2        !Acceleration efficiency
-   real(dp), parameter :: EminFF = 1d6*eV    !Minimum energy in the FF
-   real(dp), parameter :: EmaxFF = 2d14*eV   !Maximum energy in the FF
-   real(dp), parameter :: p = 2.12d0            !Power law exponent
+   real(dp), parameter :: facc = 1d-2           !Acceleration efficiency
+   real(dp), parameter :: EminFF = 1d6*eV       !Minimum energy in the FF
+   real(dp), parameter :: Emin_injFF = 1d6*eV   !Minimum energy of injected particles in the FF
+   real(dp), parameter :: EmaxFF = 2d14*eV      !Maximum energy in the FF
+   real(dp), parameter :: p = 2.12d0            !Power law exponent for Q(E) = cte * E**-p
+   real(dp), parameter :: a_inj = 1.00001d0     !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
 
    !============================================================================
 
    contains
+
       !*************************************************************************************
       !   Jet radius as a function of z
       !*************************************************************************************
@@ -64,6 +75,7 @@ module system_parameters
       real(dp) function BFF_fun(zz)
          real(dp), intent(in) :: zz
          real(dp) :: rr, zz_
+         !print*,B0
          zz_ = abs(zz)
          rr = r_fun(zz_)
          BFF_fun = (B0/gj) * (r0/rr)**exp_B
@@ -79,5 +91,7 @@ module system_parameters
          v_lat = vj * (r0/z0) * geomIndex * (z0/zz_)**(1d0-geomIndex)
          return
       end function
+
+   !============================================================================
 
 END module system_parameters
