@@ -25,11 +25,11 @@ PROGRAM main
   !-------------------------------------------------------------
 
   B_value = 1.d-2
-  U_value = 1.d4*eV
+  U_value = 1.d6*eV
   call jet_calc(B_value, U_value, .true.)
 
-  allocate( E_data(6) )
-  E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8, 1.d-5, 1.d-3/)
+  allocate( E_data(7) )
+  E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8, 1.d-5, 1.d-3, 1.d0/)
   call sed_model(B_value, U_value, E_data, S_data) ! Energies in cgs
   deallocate( E_data )
 

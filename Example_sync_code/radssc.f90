@@ -109,7 +109,7 @@ module radssc
       end interface
 
       allocate( N_e(mE_e), E_e(mE_e), Lsy(m_nu) )
-
+      
       !------------------------------------------------------------------------
       !  Reading information here  
 
@@ -143,6 +143,7 @@ module radssc
          stop
       endif
       allocate( Eg(m_data), Lic(m_data) )
+      Eg = E_data
 
       cte_ic = 8.d0*pi*re**2*c
 

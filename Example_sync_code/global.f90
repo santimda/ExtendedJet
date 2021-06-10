@@ -31,7 +31,7 @@ real(dp) :: P_Eps, dP_Eps
 integer, parameter :: m_nu = 800  ! frequency resolution for synchrotron photons
 real(dp), dimension(:), allocatable :: nu, Lsy
 integer, parameter :: mE_f = 250  ! frequency resolution for SSC photons
-integer, parameter :: m_data_max = 50 ! maximum number of points to fit
+integer, parameter :: m_data_max = 100 ! maximum number of points to fit
 
 !===================================================
 
