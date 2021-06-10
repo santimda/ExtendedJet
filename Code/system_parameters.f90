@@ -28,13 +28,17 @@ module system_parameters
    real(dp), parameter :: r0 = 5.d0*R_g            !Jet launching radius (Kim+2018)
    real(dp), parameter :: z0 = 3.d0*R_g            !Jet launching height (Kim+2018? arbitrary?)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: Lj = L_Edd*4d-5          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp), parameter :: fnT = 1.d-2              !Nonthermal energy fraction
-   real(dp), parameter :: LnT = Lj*fnT             !Available nonthermal luminosity
-   real(dp), parameter :: LnTFF = LnT!/gj**2       !Available nonthermal luminosity in the FF
-   real(dp), parameter :: fB = 1d-1                !Fraction of magnetic energy
-   real(dp), parameter :: B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
    real(dp), parameter :: exp_B = 1.d0             ! B = B0*(r/r0)^exp_B
+
+   !===FREE PARAMETERS=========================================================================================
+
+   real(dp) :: Lj = L_Edd*4d-5          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: fnT != 1.d-2              !Nonthermal energy fraction
+   real(dp) :: LnT != Lj*fnT             !Available nonthermal luminosity
+   real(dp) :: LnTFF != LnT!/gj**2       !Available nonthermal luminosity in the FF
+
+   real(dp) :: fB = 1d-1                                 !Fraction of magnetic energy in the jet
+   real(dp) :: B0 != sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
 
    !===NONTHERMAL PARTICLES======================================================================================
 
@@ -66,6 +70,7 @@ module system_parameters
       real(dp) function BFF_fun(zz)
          real(dp), intent(in) :: zz
          real(dp) :: rr, zz_
+         !print*,B0
          zz_ = abs(zz)
          rr = r_fun(zz_)
          BFF_fun = (B0/gj) * (r0/rr)**exp_B

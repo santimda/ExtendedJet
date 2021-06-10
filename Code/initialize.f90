@@ -1,5 +1,6 @@
 MODULE initialize
     use globals
+    use constants
     use controls
     implicit none
     
@@ -8,16 +9,30 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (START)
     !============================================================================
-    subroutine initialize_allocate
+    subroutine initialize_allocate(fB_value, Lj_value)
     !============================================================================
     ! allocate and initialize vectors 
     !============================================================================
+        real(dp), intent(in) :: fB_value, Lj_value
         logical :: fexist
 
         allocate( z(Ns), rj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 
         allocate( deltaZ(Ns), deltatFF(Ns) )
 
+        ! Initialize values given by free parameters:
+   
+        Lj = Lj_value 
+        fnT = 1.d-2              !Nonthermal energy fraction
+        LnT = Lj*fnT             !Available nonthermal luminosity
+        LnTFF = LnT!/gj**2       !Available nonthermal luminosity in the FF
+
+        cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
+        
+        fB = fB_value
+        B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))
+
+        ! Initialize arrays
         if (.not.jet_calc) then 
             ! Initialize using the values from a previous run (if the file exists)
             inquire(file='quant_FF.dat',exist=fexist)
