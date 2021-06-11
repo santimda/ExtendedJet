@@ -24,6 +24,16 @@ PROGRAM main
         end subroutine sed_model
     end interface 
 
+    interface
+        subroutine syn_model(fB_value, Lj_value, E_vector, S_vector) 
+            use globals
+            use constants
+            real(dp), intent(in) :: fB_value, Lj_value
+            real(dp), intent(in) :: E_vector(:)
+            real(dp), intent(out) :: S_vector(m_data_max)
+        end subroutine syn_model
+    end interface 
+
     !----------------------------------------------------------------
     ! Original Fortran program
 
@@ -170,8 +180,8 @@ END PROGRAM main
   !============================================================================
   subroutine sed_model(fB_value, Lj_value, E_data, S_data)
   !===================================================================
-  ! Subroutine to calculate the synchrotron SED at specific energies
-  ! for the given input parameters (zero now).
+  ! Subroutine to calculate the synchrotron + SSC SED at specific energies
+  ! for the given input parameters. Calculates both J and CJ
   !===================================================================
     use controls
     use constants
@@ -182,6 +192,7 @@ END PROGRAM main
     use losses
     use edistribution
     use synrad
+    use sscrad
 
     implicit none
     real(dp), intent(in) :: fB_value, Lj_value
@@ -242,5 +253,52 @@ END PROGRAM main
     endif
 
   end subroutine sed_model
+
+  !===================================================================
+
+
+
+  !============================================================================
+  ! syn_model(START)
+  !============================================================================
+  subroutine syn_model(fB_value, Lj_value, E_data, S_data)
+  !===================================================================
+  ! Subroutine to calculate the synchrotron SED at specific energies
+  ! for the given input parameters. 
+  !===================================================================
+    use controls
+    use constants
+    use globals
+    use initialize
+    use trajectory
+    use evolution
+    use losses
+    use edistribution
+    use synrad
+    use sscrad
+    implicit none
+    real(dp), intent(in) :: fB_value, Lj_value
+    real(dp), intent(in) :: E_data(:)
+    real(dp), intent(out) :: S_data(m_data_max)
+    real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
+        
+    ! Calculate everything for the jet first
+    call initialize_allocate(fB_value, Lj_value )
+    call trajectory_calc('')  
+    call Quantities('')    
+    call Edist()   
+    call SEDsyn_data(E_data, S_data_J, '')   
+    call initialize_deallocate 
+
+    ! Calculate everything for the counter-jet next
+    call initialize_allocate(fB_value, Lj_value)
+    call trajectory_calc('CJ')  
+    call Quantities('CJ')       
+    call SEDsyn_data(E_data, S_data_CJ, 'CJ')
+    call initialize_deallocate 
+
+    S_data = S_data_J + S_data_CJ
+
+  end subroutine syn_model
 
   !===================================================================
