@@ -1,7 +1,7 @@
 # %ECSV 0.9
 # ---
 # datatype:
-# - {name: band minimum, unit: TeV, datatype: float64}
+# - {name: band minimum, unit: Hz, datatype: float64}
 # - {name: band center,  unit: Hz, datatype: float64}
 # - {name: band maximum, unit: Hz, datatype: float64}
 # - {name: flux density, unit: Jy, datatype: float64}

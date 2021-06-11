@@ -16,16 +16,16 @@ MODULE globals
 
   !===========================================================
   ! Simulation grid/vectors size
-  integer, parameter :: Ns = 200        !Number of jet segments
-  integer, parameter :: nIn = 80       ! Number of points in the electron energy distribution
-  integer, parameter :: m_data_max = 50 ! maximum number of points to fit
+  integer, parameter :: Ns = 50        !Number of jet segments
+  integer, parameter :: nIn = 50       ! Number of points in the electron energy distribution
+  integer, parameter :: m_data_max = 100 ! maximum number of points to fit
   integer, parameter :: NSED_sy = 150   !Number of points for the synchrotron SED
   integer, parameter :: NSED_IC = 100   !Number of points for the IC SED
 
   real(dp), parameter :: dl = (zmax-z0)/Ns    !Segment length
   real(dp), parameter :: dlogz = (zmax/z0)**(1d0/(Ns-1d0))
   ! L(z) = cte_inj * z**-a_inj --> LnTFF = integral L(z) dz = log(zmax_inj/z0) iif a_inj == 1.d0, else: 
-  real(dp), parameter :: cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
+  real(dp) :: cte_inj != LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
   real(dp), parameter :: dt = dl/vj           !Segment advection time for constant velocity
   real(dp), parameter :: dtFF = dt/gj         !Advection time in the FF
   real(dp), dimension(:), allocatable :: deltaZ, deltatFF

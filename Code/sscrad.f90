@@ -55,6 +55,7 @@ module sscrad
             read(27,*) Eph(i), dummy, Lsy(i,l), dummy
             Eph(i) = Eph(i)*eV ! Convert from eV to cgs
             ! We need L_sy_FF, so we unboost
+            ! LA ENERGIA A LA QUE SE CALCULA ESTO TAMBIEN ES LA DEBOOSTEADA?
             Lsy(i,l) = Lsy(i,l)/(Eph(i)*boost(l)) ! [erg/s/erg]
             dotNsy = Lsy(i,l)/Eph(i)              ! [1/s/erg]
             nph(i,l) = dotNsy/VFF(l) * (rj(l)/c) !!! MAKE SURE IT IS CONSISTENT WITH U_sy

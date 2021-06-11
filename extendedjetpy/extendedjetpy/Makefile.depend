@@ -1,12 +1,27 @@
+constants.o: constants.f90
 
-constants.o: constants.f90 
+system_parameters.o: system_parameters.f90 constants.o
 
-global.o: global.f90 constants.o
+globals.o: globals.f90 constants.o system_parameters.o
 
-controles.o: controles.f90
+controls.o: controls.f90
 
-dist.o: dist.f90 global.o
+initialize.o: initialize.f90 controls.o globals.o
 
-radsyn.o: radsyn.f90 global.o
+trajectory.o: trajectory.f90 globals.o
 
-main.o: main.f90 global.o controles.o dist.o radsyn.o
+evolution.o: evolution.f90 globals.o
+
+losses.o: losses.f90 globals.o
+
+edistribution.o: edistribution.f90 globals.o losses.o
+
+synrad.o: synrad.f90 globals.o
+
+icrad.o: icrad.f90 globals.o
+
+sscrad.o: sscrad.f90 globals.o
+
+#fluxes.o: fluxes.f90 globals.o
+
+main.o: main.f90 globals.o controls.o initialize.o trajectory.o evolution.o losses.o edistribution.o synrad.o icrad.o sscrad.o
