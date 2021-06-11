@@ -8,10 +8,11 @@ contains
     !**********************************************************************************************
     !   Total losses
     !**********************************************************************************************
-    real(dp) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF)
+    real(dp) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF, p)
+    character(15), intent(in) :: p
     real(dp), intent(in) :: B_FF, rj, v_norm, Eph_MFF, Kapp, EFF
 
-    TLosses = SyncLoss(B_FF,EFF) + AdLoss(rj, v_norm, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
+    TLosses = SyncLoss(B_FF,EFF,p) + AdLoss(rj, v_norm, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
 
     return
     end function TLosses
@@ -19,15 +20,20 @@ contains
     !**********************************************************************************************
     !   Synchrotron losses
     !**********************************************************************************************
-    real(dp) function SyncLoss(B_FF, EFF)
+    real(dp) function SyncLoss(B_FF, EFF, p)
     real(dp), intent(in) :: B_FF, EFF
-    real(dp) :: Lgamma
+    character(15), intent(in) :: p
+    real(dp) :: Lgamma, factor
 
     !Lorentz factor of the particles in the fluid frame
     Lgamma = EFF/mec2
-
+    factor = 1d0
+    if (p == 'proton') then
+        factor = 2.966d-7    ! (me/mp)^2
+        Lgamma = EFF/mpc2
+    endif
     !Synchrotron losses in erg/s
-    SyncLoss = - 1.05804d-15 * B_FF**2 * Lgamma**2   !4/9*c*re^2 * B^2 * gamma^2
+    SyncLoss = - 1.05804d-15 * factor * B_FF**2 * Lgamma**2   !4/9*c*re^2 * B^2 * gamma^2
 
     return
     end function SyncLoss
@@ -83,7 +89,7 @@ contains
 
     do i = 1, nIn
         !Cooling time for each process for segment segN
-        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF))
+        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF, 'electron'))
         tIC = EFF/abs(ICLoss(EphMFF(segN),Kappa(segN),EFF))
         tAd = EFF/abs(AdLoss(rj(segN),vnorm(segN),EFF))
         tTot = EFF/abs(TLosses(BFF(segN),rj(segN),vnorm(segN),EphMFF(segN),Kappa(segN),EFF))

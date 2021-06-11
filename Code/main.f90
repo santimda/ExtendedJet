@@ -130,7 +130,8 @@ END PROGRAM main
         !Particle distribution
         if (NE_calc .and. (.not. JET_)) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
-            call Edist()        ! Calculate the particle energy distribution
+            call Edist('electron')        ! Calculate the particle energy distribution
+            !call Edist('proton')
             call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
             if (verbose) write(*,*) '\n Creating the tloss files for plots'
