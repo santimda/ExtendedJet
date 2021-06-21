@@ -8,11 +8,11 @@ contains
     !**********************************************************************************************
     !   Total losses
     !**********************************************************************************************
-    real(dp) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF, p)
-    character(15), intent(in) :: p
+    real(dp) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF, particle)
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: B_FF, rj, v_norm, Eph_MFF, Kapp, EFF
 
-    TLosses = SyncLoss(B_FF,EFF,p) + AdLoss(rj, v_norm, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
+    TLosses = SyncLoss(B_FF,EFF,particle) + AdLoss(rj, v_norm, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
 
     return
     end function TLosses
@@ -20,15 +20,15 @@ contains
     !**********************************************************************************************
     !   Synchrotron losses
     !**********************************************************************************************
-    real(dp) function SyncLoss(B_FF, EFF, p)
+    real(dp) function SyncLoss(B_FF, EFF, particle)
     real(dp), intent(in) :: B_FF, EFF
-    character(15), intent(in) :: p
+    character(1), intent(in) :: particle
     real(dp) :: Lgamma, factor
 
     !Lorentz factor of the particles in the fluid frame
     Lgamma = EFF/mec2
     factor = 1d0
-    if (p == 'proton') then
+    if (particle == 'p') then
         factor = 2.966d-7    ! (me/mp)^2
         Lgamma = EFF/mpc2
     endif
@@ -69,8 +69,9 @@ contains
     !**********************************************************************************************
     !   Write the different cooling times for a given segment
     !**********************************************************************************************
-    subroutine Print_tloss(segN)
+    subroutine Print_tloss(segN, particle)
     integer, intent(in) :: segN
+    character(1), intent(in) :: particle
     real(dp) :: EFF, Eint, tSyn, tIC, tAd, tTot, tacc, tdiff, tcell, tconv
     character(3) :: num_seg
     
@@ -89,10 +90,10 @@ contains
 
     do i = 1, nIn
         !Cooling time for each process for segment segN
-        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF, 'electron'))
+        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF, 'e'))
         tIC = EFF/abs(ICLoss(EphMFF(segN),Kappa(segN),EFF))
         tAd = EFF/abs(AdLoss(rj(segN),vnorm(segN),EFF))
-        tTot = EFF/abs(TLosses(BFF(segN),rj(segN),vnorm(segN),EphMFF(segN),Kappa(segN),EFF))
+        tTot = EFF/abs(TLosses(BFF(segN),rj(segN),vnorm(segN),EphMFF(segN),Kappa(segN),EFF, particle))
         tacc = EFF/(facc*BFF(segN)*qe*c)                    !Acceleration timescale
         tdiff = 3d0*qe*BFF(segN)*rj(segN)**2/(2d0*c*EFF)    !Diffusion timescale
         write(20,*) EFF/eV, tSyn, tIC, tAd, tTot, tcell, tacc, tdiff, tconv

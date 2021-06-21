@@ -15,7 +15,7 @@ MODULE evolution
    ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-      real(dp) :: dir, cjo, boost 
+      real(dp) :: dir, cjo, boost, bj_, gj_
       allocate( joFF(Ns) )
       allocate( delta_obs(Ns) )
 
@@ -38,11 +38,13 @@ MODULE evolution
 
          if (abs(z(i)) < zmax_inj) Ninj = i
 
+         gj_ = lorentzFactor(z(i))
+         bj_ = sqrt(1d0-1d0/gj_**2)
          deltaZ(i) = abs(z(i)) * (sqrt(dlogZ)-1d0/sqrt(dlogZ)) ! Added abs value for CJ
-         deltatFF(i) = deltaZ(i) / (vj*gj)
+         deltatFF(i) = deltaZ(i) / (c*bj_*gj_)
          !print*, (deltaZ(i)/gj)/rj(i), z(i)/rj(i)/gj
          !Doppler factor between the jet and the observer
-         delta_obs(i) = 1d0/(gj*(1d0-dir*Bj*cjo))
+         delta_obs(i) = 1d0/(gj_*(1d0-dir*bj_*cjo))
 
          !Magnetic field
          BFF(i) = BFF_fun(z(i))
@@ -58,11 +60,11 @@ MODULE evolution
          vnorm(i) = v_lat(z(i))
 
          !Jet observer angle in the FF
-         joFF(i) = acos( (cjo-Bj)/(1d0-Bj*cjo) )
+         joFF(i) = acos( (cjo-bj_)/(1d0-bj_*cjo) )
          sjoFF(i) = sin(joFF(i))        !Sinus of joFF
 
          !Segment volume in the FF
-         VFF(i) = pi*rj(i)**2*(deltaZ(i)/gj)
+         VFF(i) = pi*rj(i)**2*(deltaZ(i)/gj_)
 
          !boost = delta_obs(i)**2/gj  ! CHECK THIS!
          boost = delta_obs(i)**2  ! CHECK THIS! (delta z defined in LF)

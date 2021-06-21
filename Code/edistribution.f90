@@ -13,20 +13,30 @@ contains
    !============================================================================
    ! This subroutine calculates the electron energy distribution at each segment
    !============================================================================
-    character(15), intent(in) :: particle
-    real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2
+    character(1), intent(in) :: particle
+    real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2, EminFF2, restEnergy
     real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
     real(dp) :: NEE(Ns)
     integer :: izz
-        
-    if (particle == 'electron') then
+
+    if (particle == 'e') then
         open(11,file='Emax_FF.dat')
+        open(20,file='NE_cuts.dat')
+        open(30,file='NE_jet.dat')
+        EminFF2 = EminFF
         EmaxFF2 = EmaxFF
-    else if (particle == 'proton') then
+        restEnergy = mec2
+    else if (particle == 'p') then
+        open(20,file='Np_cuts.dat')
+        open(30,file='Np_jet.dat')
         open(11, file='Epmax_FF.dat')
+        EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
+        restEnergy = mpc2
     else
         write(*,*) "FATAL ERROR: WRONG PARTICLE CLASS!!!"
+    endif
+
     do i = 1,Ns
         !Quantities at each segment
         Ecut = CutE(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
@@ -39,11 +49,8 @@ contains
     enddo
     close(11)
     
-    open(20,file='NE_cuts.dat')
-    open(30,file='NE_jet.dat')
-    
     ! Calculate logarithmically-spaced energy vector
-    call vector_log( EminFF, EmaxFF, Ein, Evec ) 
+    call vector_log(EminFF2, EmaxFF2, Ein, Evec ) 
 
     do izz = 1,Ns
         NEE(izz) = 0d0
@@ -91,14 +98,13 @@ contains
         ! !$OMP PARALLEL SHARED(NEmatrix, z) DEFAULT(Private)
         ! !$OMP DO
         do i2 = 1, nIn
-            !write(*,*) i2
-            call CalcNE_analytical(Evec(i2), i2, NEmatrix)
+            call CalcNE_analytical(Evec(i2), i2, NEmatrix, particle)
             EFF = EFF*Ein   !Exponential energy increase
         enddo
         ! !$OMP END DO
         ! !$OMP END PARALLEL
 
-        EFF = EminFF                        !Initialization
+        EFF = EminFF2                        !Initialization
         do i2 = 1, nIn
             NEtot = 0.d0    ! Initialization
             do izz = 1, Ns
@@ -121,7 +127,7 @@ contains
         open(41, file="NEmat2.dat")
         NEmat = 0d0
         do izz = 2, Ns
-            call CalcNE_analytical2(izz, Evec, NEmat)
+            call CalcNE_analytical2(izz, Evec, NEmat,particle)
             ! if (izz < 50 .and. z(izz) > zMin(1000*mec2, z(50))) then
             !     write(40, *) z(izz)/z0, factorIntegrante(z(izz)/z(50), z(50)/z0, 1000d0)
             ! endif
@@ -163,13 +169,14 @@ contains
    !============================================================================
    ! CalcNE (START)
    !============================================================================
-    subroutine CalcNE(Kinj,EFF,Ecut,NE)
+    subroutine CalcNE(Kinj,EFF,Ecut,NE,particle)
    !============================================================================
    ! Calculate the numerical particle distribution by evolving each cut as a 
    ! 1-zone
    !============================================================================
     real(dp), intent(in) :: Kinj,EFF,Ecut
     real(dp), intent(out) :: NE(Ns)
+    character(1), intent(in) :: particle
     real(dp) :: tlossFF,E0i,E0f,E0(Ns),backD,dtpast,prod,BB,ee,zz,de,zm, dttFF
     integer :: NN(Ns), jj, izz
     !Initialization of the current energy distribution
@@ -200,10 +207,10 @@ contains
             if (backD > (z(i)-z(n))) n = n - 1
             
             !Selection of the adequate time steps for each position (dtpast already in the FF)
-            dtpast = Setdt(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i))
+            dtpast = Setdt(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i),particle)
             
             !Increase in the energy
-            E0(i) = E0(i) - TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i))*dtpast
+            E0(i) = E0(i) - TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0(i),particle)*dtpast
             ! E0(i) = Echar(z(n), z(i), )
 
             !Condition to find the point where the segment i was at the current position of segment j
@@ -213,8 +220,8 @@ contains
                 E0f = E0(i)
 
                 !Product of the quotient of the losses
-                prod = prod * TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0f)/        &
-                &             TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0i)
+                prod = prod * TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0f,particle)/        &
+                &             TLosses(BFF(n),rj(n),vnorm(n),EphMFF(n),Kappa(n),E0i,particle)
 
                 !Lower energy limit at the segment j-1 position
                 E0i = E0(i)
@@ -230,7 +237,7 @@ contains
         enddo
         
         !Cooling time for energy E0 and segment i
-        tlossFF = E0(i)/abs(TLosses(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i),E0(i)))
+        tlossFF = E0(i)/abs(TLosses(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i),E0(i),particle))
 
         !Energy distribution for each segment, corrected when tloss' < dt' for a given energy (to avoid 
         !overestimation at high energies due to the 1st segment being too long)
@@ -272,43 +279,49 @@ contains
     !============================================================================
     ! CalcNE_analytical (START)
     !============================================================================
-    subroutine CalcNE_analytical(EFF, i3, NEmatrix, p)
+    subroutine CalcNE_analytical(EFF, i3, NEmatrix, particle)
     !============================================================================
     ! Calculate the electron energy distribution by analytical methods
     !============================================================================
         use globals
         integer, intent(in) :: i3
-        character(15), intent(in) :: p
+        character(1), intent(in) :: particle
         real(dp), intent(in) :: EFF
         real(dp), intent(inout) :: NEmatrix(nIn, Ns)
         real(dp) :: tlossFF, sum, ee, zz, zm, dttFF, BB, rr, vlat, gammap, restEnergy
+        real(dp) :: gj_, bj_, gjz, one_gjbz
         integer :: jj, izz
         !Initialization of the current energy distribution
 
-        if ( p == 'electron') then
+        if ( particle == 'e') then
             restEnergy = mec2
-        else if ( p == 'proton') then
+        else if ( particle == 'p') then
             restEnergy = mpc2
         endif
 
         gammap = EFF / restEnergy
         do izz = 1, Ns
-            zm = zMin(EFF, z(izz))
+            zm = zMin(EFF, z(izz), particle)
             zz = min(z(izz), zmax_inj)
             jj = max(min(izz, Ninj) - 1, 1)
             sum = 0d0
+            gjz = lorentzFactor(z(izz))
+            one_gjbz = 1d0 / (sqrt(gjz**2 - 1d0))
             do while (zz >= max(z0, zm))
                 !print*,'jj=',jj
                 if (zz < z(jj)) jj = max(jj - 1, 1)
-                ee = Echar(zz, EFF, z(izz))
+                ee = Echar(zz, EFF, z(izz), particle)
                 BB = BFF_fun(zz)
                 rr = r_fun(zz)
                 vlat = v_lat(zz)
-                tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee, p))
+                tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee, particle))
                 dttFF = max(min(0.01 * tlossFF, deltatFF(jj)), 1d-10)
-                sum = sum + dQ_Edz(ee, zz, BB, rr, vlat, p) * dttFF * factorIntegrante(zz/z(izz), z(izz)/z0, gammap)
+                gj_ = lorentzFactor(zz)
+                bj_ = sqrt(1d0 - 1d0/gj_**2)
+                sum = sum + dQ_Edz(ee, zz, BB, rr, vlat, particle) * dttFF * (gj_ * bj_ * one_gjbz) * &
+                        factorIntegrante(zz/z(izz), z(izz)/z0, gammap, particle)
                 !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, gammap)
-                zz = zz - vj*gj*dttFF
+                zz = zz - bj_*c*gj_*dttFF
             enddo
             NEmatrix(i3, izz) = sum * deltaZ(izz)
         enddo
@@ -323,8 +336,9 @@ contains
     !   Numerical particle distribution by analytical methods
     !*************************************************************************************************************
     !subroutine CalcNE_analytical(EFF,z,BFF,rj,vnorm,EphMFF,Kappa,NE)
-    subroutine CalcNE_analytical2(izz, Evec, NEmat)
+    subroutine CalcNE_analytical2(izz, Evec, NEmat, particle)
         real(dp), intent(in) :: Evec(nIn)
+        character(1), intent(in) :: particle
         integer, intent(in) :: izz
         real(dp), intent(inout) :: NEmat(Ns, nIn)
         real(dp) :: NEprev_vec(nIn)
@@ -340,10 +354,10 @@ contains
         count1 = 0
         count2 = 0
         do i2=1, nIn
-            zm = zMin(Evec(i2), z(izz))
+            zm = zMin(Evec(i2), z(izz), particle)
             zp = z(izz-1)
             if (zm < zp) then
-                ee_prev = Echar(zp, Evec(i2), z(izz))
+                ee_prev = Echar(zp, Evec(i2), z(izz), particle)
                 Ne_prev = Interpol1d(ee_prev, Evec, NEprev_vec)
             else
                 Ne_prev = 0d0
@@ -365,20 +379,20 @@ contains
             ! enddo
 
             do while (zp < min(z(izz), zmax_inj))
-                ee = Echar(zp, Evec(i2), z(izz))
+                ee = Echar(zp, Evec(i2), z(izz), particle)
                 BB = BFF_fun(zp)
                 rr = r_fun(zp)
                 vlat = v_lat(zp)
-                tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee))
+                tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee, particle))
                 dttFF = min(zp, (min(z(izz), zmax_inj)-zp)) / (vj*gj)
                 dttFF = max(min(0.1 * tlossFF, dttFF), 1d-10)
-                sum = sum + dQ_Edz(ee, zp, BB, rr, vlat) * dttFF * factorIntegrante(zp/z(izz), z(izz)/z0, Evec(i2)/mec2)
+                sum = sum + dQ_Edz(ee, zp, BB, rr, vlat, particle) * dttFF * factorIntegrante(zp/z(izz), z(izz)/z0, Evec(i2)/mec2, particle)
                 !sum = sum + dQ_Edz(ee, zp, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zp/z0, Evec(i2)/mec2)
                 zp = zp + vj*gj*dttFF
             enddo
            ! write(*,*) factorIntegrante(z(izz-1)/z(izz), z(izz)/z0, Evec(i2)/mec2) * factorIntegrante(1.1*max(z0, zMin(ee_prev, z(izz-1)))/z(izz-1), z(izz-1)/z0, ee_prev/mec2), &
             !factorIntegrante(max(z0, zMin(ee_prev, z(izz-1)))*1.1/z(izz), z(izz)/z0, Evec(i2)/mec2)
-            NEmat(izz, i2) = deltaZ(izz) * (sum + Ne_prev * factorIntegrante(z(izz-1)/z(izz), z(izz)/z0, Evec(i2)/mec2))
+            NEmat(izz, i2) = deltaZ(izz) * (sum + Ne_prev * factorIntegrante(z(izz-1)/z(izz), z(izz)/z0, Evec(i2)/mec2, particle))
             !NEmat(izz, i2) = deltaZ(izz) * (sum + Ne_prev * factorIntegrante2(z(izz)/z0, z(izz-1)/z0, Evec(i2)/mec2))
         enddo
 
@@ -388,11 +402,12 @@ contains
     !*************************************************************************************************************
     !   Setting of an appropriate time step for the N(E) computation
     !*************************************************************************************************************
-    real(dp) function Setdt(B,r_j,v_norm,Eph,Kapp,E)
+    real(dp) function Setdt(B,r_j,v_norm,Eph,Kapp,E,particle)
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: B,r_j,v_norm,Eph,Kapp,E
     real(dp) :: tloss
     !Characteristic time for losses
-    tloss = abs(E/TLosses(B,r_j,v_norm,Eph,Kapp,E))
+    tloss = abs(E/TLosses(B,r_j,v_norm,Eph,Kapp,E,particle))
     !Set dt according to the characterstic losses and injection times
     Setdt = 0.1d0 * min(tloss,dtFF)
     return
@@ -403,7 +418,7 @@ contains
     !   Determination of the cutoff energy of the particle injection
     !************************************************************************************
     real(dp) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1, particle)
-    character(15), intent(in) :: particle
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: BFF1,rj1,vnorm1,Eph1,Kappa1
     real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,error,check
     !Injected power (erg/s)
@@ -411,11 +426,12 @@ contains
     !Initialization
     lE1 = log10(1d9*eV)  ! log10(Emin [CGS]) ~ 1 GeV
     lE2 = log10(1d14*eV) ! log10(Emax [CGS]) ~ 100 TeV
+    if (particle == 'p') lE2 = log10(1d20*eV)
     error = 1.d-4        ! error < 10^(-4)
     !Maximum particle energy
     do while (abs(lE2-lE1) > error)
         lEmid = (lE1+lE2)/2d0
-        check =  Eacc - abs(TLosses(BFF1,rj1,vnorm1,Eph1,Kappa1,10d0**lEmid))
+        check =  Eacc - abs(TLosses(BFF1,rj1,vnorm1,Eph1,Kappa1,10d0**lEmid, particle))
         if (check == 0d0) then
             lE2 = lEmid
             exit
@@ -450,15 +466,15 @@ contains
     !************************************************************************************
     !   Injection function (for multiple injection cells?)
     !************************************************************************************
-    real(dp) function Q_Ez (E, iz, p)
-    character(15), intent(in) :: p
+    real(dp) function Q_Ez (E, iz, particle)
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: E
     integer, intent(in) :: iz
     real(dp) :: Ecut, Kinj
-    Ecut = CutE(BFF(iz),rj(iz),vnorm(iz),EphMFF(iz),Kappa(iz),p)!Cutoff energy for Q(E) in the FF
-    Kinj = NormKz(Ecut,p)                                       !Normalization constant for Q(E)
+    Ecut = CutE(BFF(iz),rj(iz),vnorm(iz),EphMFF(iz),Kappa(iz),particle)!Cutoff energy for Q(E) in the FF
+    Kinj = NormKz(Ecut,particle)                                       !Normalization constant for Q(E)
     !Q(E) = 0 if outside the injection energy limits
-    if (E <= EmaxFF2 .and. E >= EminFF2) then
+    if (E <= EmaxFF .and. E >= EminFF) then
         Q_Ez = Kinj*E**(-p) * exp(-E/Ecut)
     else
         Q_Ez = 0d0
@@ -469,16 +485,19 @@ contains
     !************************************************************************************
     !   Injection function (for multiple injection cells)
     !************************************************************************************
-    real(dp) function dQ_Edz(E, zz, BB, rr, vlat, p)
+    real(dp) function dQ_Edz(E, zz, BB, rr, vlat, particle)
     real(dp), intent(in) :: E, zz, BB, rr, vlat
-    real(dp) :: Ecut, Kinj
-    Ecut = CutE(BB, rr, vlat, 1d0, 1d0, p)   !Cutoff energy for Q(E) in the FF
-    Kinj = NormKz(Ecut, p) / (zz * log_zmax_zinj_z0)         !Normalization constant for Q(E)
+    real(dp) :: Ecut, Kinj, EminFF2, EmaxFF2, intInj
+    character(1), intent(in) :: particle
+    Ecut = CutE(BB, rr, vlat, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
+    !Kinj = NormKz(Ecut, particle) / (zz * log(zmax_inj/z0))         !Normalization constant for Q(E)
+    intInj = z0 / (a_inj-1d0) * (1d0 - (z0/zmax_inj)**(a_inj-1d0))
+    Kinj = NormKz(Ecut, particle) * (z0/zz)**a_inj / (intInj)
     !Q(E) = 0 if outside the injection energy limits
-    if (p == 'electron') then
+    if (particle == 'e') then
         EminFF2 = EminFF
         EmaxFF2 = EmaxFF
-    else if (p == 'proton') then
+    else if (particle == 'p') then
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
     endif
@@ -520,17 +539,19 @@ contains
     !************************************************************************************
     !   Injection normalization
     !************************************************************************************  
-    real(dp) function NormKz(Ecut, p)
+    real(dp) function NormKz(Ecut, particle)
     real(dp), intent(in) :: Ecut
-    character(15), intent(in) :: p
-    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2
+    character(1), intent(in) :: particle
+    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2
     integer, parameter :: N = 300   !Number of subintervals for the integral
-    if (p == 'electron') then
+    if (particle == 'e') then
         EminFF2 = EminFF
         EmaxFF2 = EmaxFF
-    else if (p == 'proton') then
+        LnTFF2 = LnTFF
+    else if (particle == 'p') then
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
+        LnTFF2 = LnTpFF
     endif 
     Einc = (EmaxFF2/EminFF2)**(1d0/(N-1))  !Increase factor of the energy
     !Initialization
@@ -547,7 +568,7 @@ contains
         f1 = f2
         E = E2
     end do
-    NormKz = LnTFF/QInt   !Normalization constant
+    NormKz = LnTFF2/QInt   !Normalization constant
 
     return
     end function NormKz
@@ -594,18 +615,25 @@ contains
     !*********************************************************************************
     !  Minimum z for a given characteristic curve ending at (zf, Ef)
     !*********************************************************************************
-    real(dp) function zMin(E, z_)
+    real(dp) function zMin(E, z_, particle)
     real(dp), intent(in) :: E, z_
-    real(dp) :: A, B, D, xi_f, g_f, f, U0
+    character(1), intent(in) :: particle
+    real(dp) :: A, B, D, xi_f, g_f, f, U0, restEnergy, factor
 
+    restEnergy = mec2
+    factor = 1d0
+    if (particle == 'p') then
+        factor = (mec2/mpc2)**2
+        restEnergy = mpc2
+    endif
     U0 = (B0/gj)**2 / (8.d0*pi)
-    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
+    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 * factor / restEnergy
     B = 2.d0/3.d0 * geomIndex
     !B = 2.d0/3.d0 / thetaj
     xi_f = z_/z0
-    g_f = E/mec2
-    f = 2*exp_B
-    D = B + f - 1.d0
+    g_f = E/restEnergy
+    f = 2*exp_B + 3d0 * gammaIndex
+    D = B + f - 1d0
 
     zMin = (1d0 + D/(A*g_f))**(-1d0/D) * z_
 
@@ -616,22 +644,29 @@ contains
     !*********************************************************************************
     !  Analytical function for the characteristic curve
     !*********************************************************************************
-    real(dp) function Echar(z_, Efinal, zfinal)
+    real(dp) function Echar(z_, Efinal, zfinal, particle)
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: z_, Efinal, zfinal
-    real(dp) :: A, B, C1, D, xi_final, g_final, xi, f, U0
+    real(dp) :: A, B, C1, D, xi_final, g_final, xi, f, U0, factor, restEnergy
 
     U0 = (B0/gj)**2 / (8.d0*pi)
-    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
+    factor = 1d0
+    restEnergy = mec2
+    if (particle == 'p') then
+        factor = (mec2/mpc2)**2
+        restEnergy = mpc2
+    endif
+    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / restEnergy * factor
     B = 2.d0/3.d0 * geomIndex
     !B = 2.d0/3.d0 / thetaj
     xi_final = zfinal/z0
-    g_final = Efinal/mec2
+    g_final = Efinal/restEnergy
     xi = z_/z0
-    f = 2*exp_B
-    D = B + f - 1.d0
+    f = 2*exp_B + 3d0*gammaIndex
+    D = B + f - 1d0
     C1 = xi_final**(-(B+f)) * (xi_final**f * D + A * xi_final * g_final) / (D*g_final)
 
-    Echar = mec2 * (D*xi**f / (C1*D*xi**(B+f) - A*xi))
+    Echar = restEnergy * (D*xi**f / (C1*D*xi**(B+f) - A*xi))
   
     return
     end function Echar
@@ -640,16 +675,23 @@ contains
     !*********************************************************************************
     !  Integrating factor 
     !*********************************************************************************
-    real(dp) function factorIntegrante(xp, xi_f, g_f)
+    real(dp) function factorIntegrante(xp, xi_f, g_f, particle)
     real(dp), intent(in) :: xp, g_f, xi_f
-    real(dp) :: A, B, aux, D, f, U0, C1
+    real(dp) :: A, B, aux, D, f, U0, C1, factor, restEnergy
+    character(1), intent(in) :: particle
 
+    restEnergy = mec2
+    factor = 1d0
+    if (particle == 'p') then
+        factor = (mec2/mpc2)**2
+        restEnergy = mpc2
+    endif
     !write(*, *) zp/z0, zf/z0, Ef
     U0 = (B0/gj)**2 / (8.d0*pi)
-    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
+    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 * factor / restEnergy
     B = 2.d0/3.d0 * geomIndex
-    f = 2d0*exp_B
-    D = B + f - 1.d0
+    f = 2d0*exp_B + 3d0*gammaIndex
+    D = B + f - 1d0
     
     C1 = xi_f**(-(B+f)) * (xi_f**f*D + A*xi_f*g_f) / g_f
     factorIntegrante = xp**(-B) * ( (C1-A*xi_f**(-D)) / (C1-A*xi_f**(-D)*xp**(-D)) )**2
@@ -659,15 +701,22 @@ contains
 
     !----------------------------------------------------------------------------------
 
-    real(dp) function factorIntegrante2(xm, xp, ym)
+    real(dp) function factorIntegrante2(xm, xp, ym, particle)
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: xm, ym, xp
-    real(dp) :: A, B, aux, D, f, U0, C1, g
+    real(dp) :: A, B, aux, D, f, U0, C1, g, factor, restEnergy
 
+    restEnergy = mec2
+    factor = 1d0
+    if (particle == 'p') then
+        factor = (mec2/mpc2)**2
+        restEnergy = mpc2
+    endif
     U0 = (B0/gj)**2 / (8.d0*pi)
-    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 / mec2
+    A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 * factor / restEnergy
     B = 2.d0/3.d0 * geomIndex
-    f = 2d0*exp_B
-    D = B + f - 1.d0
+    f = 2d0*exp_B + 3d0*gammaIndex
+    D = B + f - 1d0
 
     C1 = (xm**(-B - f)*(-xm**f + B*xm**f + f*xm**f + A*xm*ym))/(D*ym)
     D = B - 1d0 + f

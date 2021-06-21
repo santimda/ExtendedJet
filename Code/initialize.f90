@@ -23,14 +23,17 @@ MODULE initialize
         ! Initialize values given by free parameters:
    
         Lj = Lj_value 
-        fnT = 1.d-2              !Nonthermal energy fraction
+        fnT = 3.d-2              !Nonthermal energy fraction
         LnT = Lj*fnT             !Available nonthermal luminosity
         LnTFF = LnT!/gj**2       !Available nonthermal luminosity in the FF
 
-        cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
+        cte_inj = LnTFF/( (zmax_inj**(-a_inj+1d0) - z0**(-a_inj+1d0))/(-a_inj+1d0) )
         
         fB = fB_value
-        B0 = sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))
+        B0 = sqrt(fB*8d0*Lj/(vj*r0**2))
+        write(*, *) B0, Lj
+
+        write(*,*) B0
 
         ! Initialize arrays
         if (.not.jet_calc) then 

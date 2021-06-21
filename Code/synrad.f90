@@ -8,12 +8,13 @@ contains
     !============================================================================
     ! SEDsyn (START)
     !============================================================================
-    subroutine SEDsyn(jet)
+    subroutine SEDsyn(jet, particle)
     !============================================================================
     ! This subroutine calculates the synchrotron SED 
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' or 'jet'
+    character(1), intent(in) :: particle
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
@@ -28,16 +29,21 @@ contains
     close(20)
     
     !N(E) of each cut
-    open(30,file='NE_cuts.dat')
+    if (particle == 'e') then
+        open(30,file='NE_cuts.dat')
+        open(40,file='SEDsyn_cuts'//jet//'.dat')
+        open(50,file='SEDsyn_jet'//jet//'.dat')
+    else if (particle == 'p') then
+        open(30,file='Np_cuts.dat')
+        open(40,file='SEDpsyn_cuts'//jet//'.dat')
+        open(50,file='SEDpsyn_jet'//jet//'.dat')
+    endif
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
         enddo
     enddo
     close(30)
-
-    open(40,file='SEDsyn_cuts'//jet//'.dat')
-    open(50,file='SEDsyn_jet'//jet//'.dat')
     
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
@@ -68,7 +74,12 @@ contains
             enddo
 
             !Unabsorbed synchrotron luminosity for each segment
-            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut)
+            if (particle == 'p') then
+                LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
+            else
+                LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
+            endif
+
             Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
 
             !Unabsorbed (de)boosted luminosity for Eph
@@ -82,7 +93,7 @@ contains
         LBolFF = LBolFF + LumFF
                 
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
+        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
         
         do j = 1, Ns
         
@@ -95,12 +106,12 @@ contains
             LumAFF = LumAFF + LumcutAFF(j)*dEphFF(j)
             
             !Jet and c-jet contribution of the segments up to given lengths
-            if (z(j) <= 7.3*R_g) L1 = LumA
-            if (z(j) <= 2.6d1*R_g) L2 = LumA
-            if (z(j) <= 6.5d1*R_g) L3 = LumA
-            if (z(j) <= 1.95d2*R_g) L4 = LumA
-            if (z(j) <= 6.5d2*R_g) L5 = LumA
-            if (z(j) <= 3d5*R_g) L6 = LumA
+            if (z(j) * sin(jo) <= 7.3*R_g) L1 = LumA
+            if (z(j) * sin(jo) <= 2.6d1*R_g) L2 = LumA
+            if (z(j) * sin(jo) <= 6.5d1*R_g) L3 = LumA
+            if (z(j) * sin(jo) <= 1.95d2*R_g) L4 = LumA
+            if (z(j) * sin(jo) <= 6.5d2*R_g) L5 = LumA
+            if (z(j) * sin(jo) <= 3d5*R_g) L6 = LumA
             
         enddo
 
@@ -130,21 +141,24 @@ contains
     !************************************************************************************
     !   Synchrotron luminosity per photon energy unit
     !************************************************************************************
-    real(dp) function SyncLum(B,Eph,E,NE)
+    real(dp) function SyncLum(B,Eph,E,NE,particle)
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
-    real(dp) :: dE, Ec, x, Psync, E_step
+    real(dp) :: dE, Ec, x, Psync, E_step, factor
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
     !Initialization
     SyncLum = 0d0
     !Integral by rectangles
+    factor = 1d0
+    if (particle == 'p') factor = mec2/mpc2
     E_step = E(2)/E(1)
     do i = 1, nIn
         dE = E(i)*(E_step - 1.d0)     !Energy interval
         !Critical photon energy and power emitted for each particle energy
-        Ec = cte_Ec*B*E(i)**2
+        Ec = cte_Ec*B*E(i)**2 * factor**3
         x = Eph/Ec
-        Psync = cte_sy*B * x**(1d0/3d0)*exp(-x)
+        Psync = cte_sy * factor * B * x**(1d0/3d0)*exp(-x)
         !The approximation is only valid for 0.1 < x < 10
         if ((x < 1d-1) .or. (x > 1d1)) Psync = 0d0
         SyncLum = SyncLum + Psync*NE(i)*dE
@@ -155,19 +169,22 @@ contains
     !============================================================================
     ! SSA (start)
     !============================================================================
-    subroutine SSA (B,r_j,sjo,V,Eph,E,NE,Lum,LumA)
+    subroutine SSA (B,r_j,sjo,V,Eph,E,NE,Lum,LumA,particle)
     !============================================================================
     ! Luminosity corrected for synchrotron self-absorption
     !============================================================================
+    character, intent(in) :: particle
     real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn),Lum(Ns)
     real(dp), intent(out) :: LumA(Ns)
-    real(dp) :: K,Ecf,Sf,depth,tau,Ap
+    real(dp) :: K,Ecf,Sf,depth,tau,Ap, mass
 
     !Loop for the segments
     do j = 1, Ns
 
         !Absorption and emission coefficients, and source function, for each segment (Pacholczyck, 1970)
-        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*me*V(j)) * EintSSA(B(j),Eph(j),E,NE)
+        mass = me
+        if (particle == 'p') mass = mpc2/c**2
+        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*mass*V(j)) * EintSSA(B(j),Eph(j),E,NE)
         Ecf = Lum(j)/(4d0*pi*V(j))      !Per stereoradian
         Sf = Ecf/max(K,1.d-30) !!!! CHECK !!!!
 
@@ -281,7 +298,7 @@ contains
     !============================================================================
     ! SEDsyn_data (START)
     !============================================================================
-    subroutine SEDsyn_data(E_data, S_data, jet)
+    subroutine SEDsyn_data(E_data, S_data, jet, particle)
     !============================================================================
     ! This routine calculates the intrinsic synchrotron emission in the fluid frame
     ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
@@ -289,6 +306,7 @@ contains
     ! to be smaller than m_data_max defined in globals.f90.
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
+    character(1), intent(in) :: particle
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
@@ -328,11 +346,11 @@ contains
             EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
             NEcut = NE(:,j)                 !N(E) for the segment j
             !Unabsorbed synchrotron luminosity for each segment
-            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut)
+            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
         enddo
         
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF)
+        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
         do j = 1, Ns

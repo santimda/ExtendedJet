@@ -45,8 +45,8 @@ PROGRAM main
     if (run_sed_calc) then
         allocate( E_data(4) )
         E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8/)
-        fB_value = 1.d-3
-        Lj_value = L_Edd*1d-3
+        fB_value = 1.d-5
+        Lj_value = L_Edd*1d-4
         call sed_model(fB_value, Lj_value, E_data, S_data) ! Energies in cgs
         deallocate( E_data )
     endif
@@ -84,8 +84,7 @@ END PROGRAM main
     ! Calculate everything for the jet first
     if (JET_) then 
         if (verbose) write(*,*) '\n Initialize vectors'    
-        call initialize_allocate(fB, Lj)
-
+        call initialize_allocate(1d-2, Lj)
         !Jet trajectory
         if (verbose .and. jet_calc) write(*,*) '\n Calculating jet trajectory'
         if (jet_calc) call trajectory_calc('') !'' = jet 
@@ -98,21 +97,31 @@ END PROGRAM main
         !Particle distribution
         if (NE_calc) then 
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
-            call Edist()        ! Calculate the particle energy distribution
+            call Edist('e')        ! Calculate the particle energy distribution
             call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
             if (verbose) write(*,*) '\n Creating the tloss files for plots'
-            call Print_tloss(1)
-            call Print_tloss(Ns/3)
-            call Print_tloss(Ns)
+            call Print_tloss(1, 'e')
+            call Print_tloss(Ns/3, 'e')
+            call Print_tloss(Ns, 'e')
+        endif
+
+        if (Np_calc) then
+            call Edist('p')
+            call execute_command_line('./SortNp.sh '//trim(adjustl(numNE)))   !Sort N(E) file
         endif
 
         !Synchrotron SED
         if (radsyn_calc) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
-            call SEDsyn('')      ! Calculate synchrotron SED
+            call SEDsyn('', 'e')      ! Calculate synchrotron SED
             call execute_command_line('./SortSEDsyn.sh '//trim(adjustl(numSED))) !Sort SED file
             call Calc_Usyn('')   ! Calculate the energy density of synchrotron photons
+        endif
+
+        if (radpsyn_calc) then
+            call SEDsyn('', 'p')
+            call execute_command_line('./SortSEDpsyn.sh '//trim(adjustl(numSED))) !Sort SED file
         endif
         
         !IC SED     
@@ -140,20 +149,20 @@ END PROGRAM main
         !Particle distribution
         if (NE_calc .and. (.not. JET_)) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
-            call Edist('electron')        ! Calculate the particle energy distribution
-            !call Edist('proton')
+            call Edist('e')        ! Calculate the particle energy distribution
+            !call Edist('p')
             call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
             if (verbose) write(*,*) '\n Creating the tloss files for plots'
-            call Print_tloss(1)
-            call Print_tloss(Ns/3)
-            call Print_tloss(Ns)
+            call Print_tloss(1, 'e')
+            call Print_tloss(Ns/3, 'e')
+            call Print_tloss(Ns, 'e')
         endif
 
         !Synchrotron SED
         if (radsyn_calc) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
-            call SEDsyn('CJ')      ! Calculate synchrotron SED
+            call SEDsyn('CJ', 'e')      ! Calculate synchrotron SED
             call execute_command_line('./SortSEDsyn.sh '//trim(adjustl(numSED))) !Sort SED file
             call Calc_Usyn('CJ')   ! Calculate the energy density of synchrotron photons
         endif
@@ -213,10 +222,10 @@ END PROGRAM main
         call Quantities('')       ! jet 
 
         !Particle distribution
-        call Edist()   
+        call Edist('e')   
 
         !Synchrotron SED at the given values
-        call SEDsyn_data(E_data, S_data_J, '')   
+        call SEDsyn_data(E_data, S_data_J, '', 'e')   
         
         call initialize_deallocate 
         S_data = S_data_J
@@ -236,11 +245,11 @@ END PROGRAM main
 
         !Particle distribution
         if (.not. JET_) then
-            call Edist()        ! Calculate the particle energy distribution
+            call Edist('e')        ! Calculate the particle energy distribution
         endif
 
         !Synchrotron SED at the given values
-        call SEDsyn_data(E_data, S_data_CJ, 'CJ')
+        call SEDsyn_data(E_data, S_data_CJ, 'CJ', 'e')
         S_data = S_data + S_data_CJ
         if (verbose) write(*,*) 'S_data[cgs] =', S_data
         
@@ -286,15 +295,15 @@ END PROGRAM main
     call initialize_allocate(fB_value, Lj_value )
     call trajectory_calc('')  
     call Quantities('')    
-    call Edist()   
-    call SEDsyn_data(E_data, S_data_J, '')   
+    call Edist('e')   
+    call SEDsyn_data(E_data, S_data_J, '', 'e')   
     call initialize_deallocate 
 
     ! Calculate everything for the counter-jet next
     call initialize_allocate(fB_value, Lj_value)
     call trajectory_calc('CJ')  
     call Quantities('CJ')       
-    call SEDsyn_data(E_data, S_data_CJ, 'CJ')
+    call SEDsyn_data(E_data, S_data_CJ, 'CJ', 'e')
     call initialize_deallocate 
 
     S_data = S_data_J + S_data_CJ
