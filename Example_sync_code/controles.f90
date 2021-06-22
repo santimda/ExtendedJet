@@ -8,9 +8,11 @@ public
 logical, parameter :: no = .FALSE.
 logical, parameter :: yes = .TRUE.
 
-logical, parameter :: dist = yes
-logical, parameter :: radsyn = yes
-logical, parameter :: radssc = yes
+logical, parameter :: write_files = no!yes 
+
+logical, parameter :: dist_calc = yes
+logical, parameter :: radsyn_calc = yes
+logical, parameter :: radssc_calc = yes
 logical, parameter :: radsyn_data = yes
 
 !===================================================

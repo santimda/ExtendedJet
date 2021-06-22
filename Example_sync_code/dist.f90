@@ -1,6 +1,7 @@
 module dist
   use constants
   use global
+  use controles
   implicit none
   private
   public :: diste_run
@@ -15,7 +16,6 @@ module dist
     implicit none
     real(dp), intent(in) :: U_new
     real(dp) :: integral, Ka
-    allocate( N_e(mE_e),E_e(mE_e) )
 
     U = U_new
 
@@ -35,14 +35,14 @@ module dist
     Ka = U*Vol/integral   
     N_e = Ka*N_e       
 
-    ! Save the particle energy distribution
-    open(79,file='dist_e.dat')
-    do i = 1, mE_e
-      write(79,*) E_e(i)/eV, N_e(i)
-    enddo
-    close(79)
-
-    deallocate( N_e,E_e ) 
+    if (write_files) then
+      ! Save the particle energy distribution
+      open(79,file='dist_e.dat')
+      do i = 1, mE_e
+        write(79,*) E_e(i)/eV, N_e(i)
+      enddo
+      close(79)
+    endif
 
   END subroutine diste_run
 

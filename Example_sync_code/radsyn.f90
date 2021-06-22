@@ -1,6 +1,7 @@
 module radsyn
   use constants
   use global
+  use controles
   
   implicit none
   private
@@ -21,8 +22,6 @@ contains
     real(dp), intent(out) :: L_sy_tot
     real(dp) :: eps(m_nu), dEps, eps_int, gamma_e(mE_e), x
     real(dp) :: nuc, nuc_max, nu_min, nu_max, sum, sum_sy, cte_Psy, a, B_par
-    allocate( N_e(mE_e), E_e(mE_e) )
-    allocate( nu(m_nu), Lsy(m_nu) )
 
     B = B_new
     B_par = B*sqrt(2./3.) ! Assuming isotropy
@@ -30,13 +29,15 @@ contains
     !------------------------------------------------------------------------
     !  Reading information here  
 
-    ! N_e(i) = number of e- with energy E_e(i) per unit energy
-    open (14,file='dist_e.dat')
-    do i = 1, mE_e
-       read(14,*) E_e(i), N_e(i)
-       E_e(i) = E_e(i)*eV    !   [erg]
-    enddo
-    close(14) 
+    if (.not. dist_calc ) then
+      ! N_e(i) = number of e- with energy E_e(i) per unit energy
+      open (14,file='dist_e.dat')
+      do i = 1, mE_e
+        read(14,*) E_e(i), N_e(i)
+        E_e(i) = E_e(i)*eV    !   [erg]
+      enddo
+      close(14) 
+    endif
     Eint_e = E_e(2)/E_e(1)
     gamma_e = E_e/mec2
 
@@ -77,11 +78,13 @@ contains
     enddo  ! eps(i),nu(i)
     L_sy_tot = sum_sy
 
-    open(17,file='radsyn.dat')
-    do i = 1, m_nu
-       write(17,*) eps(i)/eV, Lsy(i) ! L(E) for the SED
-    enddo
-    close(17)
+    !if (write_files) then
+      open(17,file='radsyn.dat')
+      do i = 1, m_nu
+         write(17,*) eps(i)/eV, Lsy(i) ! L(E) for the SED
+      enddo
+      close(17)
+    !endif
 
     ! Make an ecsv file containing a header, E, F(E), F(E)_error
     a = 4.d0*pi*d**2
@@ -102,8 +105,6 @@ contains
     enddo
     close(17)
 
-    deallocate( nu,Lsy )
-    deallocate( N_e,E_e )
     
   END subroutine radsyn_run
    
@@ -126,7 +127,6 @@ contains
     real(dp) :: gamma_e(mE_e), x
     real(dp) :: nuc, sum, cte_Psy, a, B_par
     integer :: m_data
-    allocate( N_e(mE_e), E_e(mE_e) )
 
     B = B_new
     B_par = B*sqrt(2./3.) ! Assuming isotropy
@@ -134,13 +134,15 @@ contains
     !------------------------------------------------------------------------
     !  Reading information here  
 
-    ! N_e(i) = number of e- with energy E_e(i) per unit energy
-    open (14,file='dist_e.dat')
-    do i = 1, mE_e
-       read(14,*) E_e(i), N_e(i)
-       E_e(i) = E_e(i)*eV    !   [erg]
-    enddo
-    close(14) 
+    if (.not. dist_calc ) then
+      ! N_e(i) = number of e- with energy E_e(i) per unit energy
+      open (14,file='dist_e.dat')
+      do i = 1, mE_e
+        read(14,*) E_e(i), N_e(i)
+        E_e(i) = E_e(i)*eV    !   [erg]
+      enddo
+      close(14) 
+    endif
     Eint_e = E_e(2)/E_e(1)
     gamma_e = E_e/mec2
 
@@ -152,8 +154,8 @@ contains
       print*, 'Too many points to fit, make m_data_max larger in global.f90!'
       stop
     endif
-    allocate( nu(m_data), Lsy(m_data) )
-    nu = E_data/h             ! [nu] = Hz 
+    allocate( nu_data(m_data), Lsy_data(m_data) )
+    nu_data = E_data/h             ! [nu] = Hz 
 
     cte_Psy = 1.85*sqrt(3.)*qe**3*B_par/h/mec2 !4.39d-22*B_par/h
     ! Calculate the luminosity at each value of the photon energy E_data(i)
@@ -165,7 +167,7 @@ contains
        
        do j = 1, mE_e             ! N_e(j), nuc(j), gamma_e(j)
           nuc = 4.22d6*B_par*gamma_e(j)**2 ! synchrotron characteristic frequency from Eq. (5.38)
-          x = nu(i)/nuc       ! 0.1 < x = nu/nu_c < 10 --> Use approximation from Eq. (5.41)
+          x = nu_data(i)/nuc       ! 0.1 < x = nu/nu_c < 10 --> Use approximation from Eq. (5.41)
           if (x <= 12.d0) then
              ! Calculate P_eps [erg/s/Hz] and transform to erg/s/erg dividing by h
              P_eps = cte_Psy * x**(1.d0/3.d0) * exp(-x) ! Eq. (5.37)
@@ -174,7 +176,7 @@ contains
              sum = dP_eps + sum
           endif
        enddo                ! N_e 
-       Lsy(i) = sum         ! [erg/s/erg]
+       Lsy_data(i) = sum         ! [erg/s/erg]
        
     enddo  ! eps(i),nu(i)
     !!!!!!!!!   HACER UNA PRUEBA CON OPENMP ACA   !!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -184,11 +186,10 @@ contains
     S_data = 0.d0
     a = 4.d0*pi*d**2
     do i = 1, m_data
-      S_data(i) = Lsy(i)/a
+      S_data(i) = Lsy_data(i)/a
     enddo
 
-    deallocate( nu, Lsy )
-    deallocate( N_e, E_e )
+    deallocate( nu_data, Lsy_data )
     
   END subroutine radsyn_data_run
    

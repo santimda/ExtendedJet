@@ -1,6 +1,7 @@
 module radssc
    use constants
    use global
+   use controles
 
    implicit none
    private
@@ -26,29 +27,37 @@ module radssc
       end function f
       end interface
 
-      allocate( N_e(mE_e), E_e(mE_e), Lsy(m_nu) )
-
       !------------------------------------------------------------------------
       !  Reading information here  
 
-      ! N_e(i) = number of e- with energy E_e(i) per unit energy
-      open (14,file='dist_e.dat')
-      do i = 1, mE_e
-         read(14,*) E_e(i), N_e(i)
-         E_e(i) = E_e(i)*eV    !   [erg]
-      enddo
-      close(14) 
+      if (.not. dist_calc ) then
+         ! N_e(i) = number of e- with energy E_e(i) per unit energy
+         open (14,file='dist_e.dat')
+         do i = 1, mE_e
+            read(14,*) E_e(i), N_e(i)
+            E_e(i) = E_e(i)*eV    !   [erg]
+         enddo
+         close(14) 
+      endif
       Eint_e = E_e(2)/E_e(1)
 
-      ! Lsy(i) = luminosity emitted with energy Eph(i) per unit energy
-      open (14,file='radsyn.dat')
-      do i = 1, m_nu
-         read(14,*) Eph(i), Lsy(i)
-         Eph(i) = Eph(i)*eV ! Convert from eV to cgs
-         ! dotNsy(i) = photon rate emitted with energy Eph(i) per unit energy
-         dotNsy(i) = Lsy(i)/Eph(i)
-      enddo
-      close(14) 
+      if (.not. radsyn_calc) then
+         ! Lsy(i) = luminosity emitted with energy Eph(i) per unit energy
+         open (14,file='radsyn.dat')
+         do i = 1, m_nu
+            read(14,*) Eph(i), Lsy(i)
+            Eph(i) = Eph(i)*eV ! Convert from eV to cgs
+            ! dotNsy(i) = photon rate emitted with energy Eph(i) per unit energy
+            dotNsy(i) = Lsy(i)/Eph(i)
+         enddo
+         close(14) 
+      else 
+         Eph = h * nu
+         do i = 1, m_nu
+            ! dotNsy(i) = photon rate emitted with energy Eph(i) per unit energy
+            dotNsy(i) = Lsy(i)/Eph(i)
+         enddo
+      endif
       Eint_ph = Eph(2)/Eph(1)
       nph = dotNsy/(4.d0*pi*R**2*c) * 2.24d0  ! Same as naima
 
@@ -82,7 +91,6 @@ module radssc
       L_SSC_tot = Lic_tot
       close(17)
 
-      deallocate ( N_e, E_e, Lsy )
 
    END subroutine radssc_run
 
@@ -108,8 +116,6 @@ module radssc
       end function f
       end interface
 
-      allocate( N_e(mE_e), E_e(mE_e), Lsy(m_nu) )
-      
       !------------------------------------------------------------------------
       !  Reading information here  
 
@@ -170,7 +176,6 @@ module radssc
       enddo
 
       deallocate( Eg, Lic )
-      deallocate( N_e, E_e, Lsy )
 
    END subroutine radssc_data_run
 
