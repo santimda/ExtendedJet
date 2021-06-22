@@ -119,13 +119,15 @@ module radssc
       !------------------------------------------------------------------------
       !  Reading information here  
 
-      ! N_e(i) = number of e- with energy E_e(i) per unit energy
-      open (14,file='dist_e.dat')
-      do i = 1, mE_e
-         read(14,*) E_e(i), N_e(i)
-         E_e(i) = E_e(i)*eV    !   [erg]
-      enddo
-      close(14) 
+      if (.not. dist_calc ) then
+         ! N_e(i) = number of e- with energy E_e(i) per unit energy
+         open (14,file='dist_e.dat')
+         do i = 1, mE_e
+            read(14,*) E_e(i), N_e(i)
+            E_e(i) = E_e(i)*eV    !   [erg]
+         enddo
+         close(14) 
+      endif
       Eint_e = E_e(2)/E_e(1)
 
       ! Lsy(i) = luminosity emitted with energy Eph(i) per unit energy
