@@ -33,8 +33,6 @@ MODULE initialize
         B0 = sqrt(fB*8d0*Lj/(vj*r0**2))
         write(*, *) B0, Lj
 
-        write(*,*) B0
-
         ! Initialize arrays
         if (.not.jet_calc) then 
             ! Initialize using the values from a previous run (if the file exists)

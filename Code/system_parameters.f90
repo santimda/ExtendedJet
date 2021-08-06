@@ -23,7 +23,7 @@ module system_parameters
    real(dp), parameter :: z0 = 3d0*R_g           !Jet launching height
    !real(dp), parameter :: z0 = 40*R_g 
    real(dp), parameter :: zmax = 3d5 * R_g           !Jet maximum height
-   real(dp), parameter :: zmax_inj = 3d4*R_g      !Jet maximum cell of injection
+   real(dp), parameter :: zmax_inj = 3d5*R_g      !Jet maximum cell of injection
    real(dp), parameter :: vj = sqrt(gj**2-1d0)*c/gj!Fluid bulk speed
    real(dp), parameter :: Bj = vj/c                !Beta
    real(dp), parameter :: thetaj = 0.6d0           !Half opening angle (rad)  
@@ -52,7 +52,7 @@ module system_parameters
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 1d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d20*eV     !Maximum proton energy in the FF
-   real(dp), parameter :: p = 2.12d0            !Power law exponent for Q(E) = cte * E**-p
+   real(dp), parameter :: p = 2.d0            !Power law exponent for Q(E) = cte * E**-p
    real(dp), parameter :: a_inj = 1.01d0       !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
    real(dp), parameter :: gammaIndex = 0.16d0   !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
@@ -65,19 +65,31 @@ module system_parameters
       !*************************************************************************************
       real(dp) function r_fun(zz)
          real(dp), intent(in) :: zz
-         real(dp) :: zz_
-         zz_ = abs(zz)
-         r_fun = r0 * (zz_/z0)**geomIndex
+         r_fun = r0 * (abs(zz)/z0)**geomIndex
          return
       end function
       !*************************************************************************************
-      !   Jet radius as a function of z
+      !   Jet Beta times Lorentz factor as a function of z
+      !*************************************************************************************
+      real(dp) function betaGamma(zz)
+         real(dp), intent(in) :: zz
+         betaGamma = 0.37 * (abs(zz)/R_g)**gammaIndex
+         return
+      end function
+      !*************************************************************************************
+      !   Jet Lorentz factor as a function of z
       !*************************************************************************************
       real(dp) function lorentzFactor(zz)
          real(dp), intent(in) :: zz
-         real(dp) :: zz_
-         zz_ = abs(zz)
-         lorentzFactor = gj * (zz_/z0)**gammaIndex
+         lorentzFactor = sqrt(1d0 + betaGamma(abs(zz))**2)
+         return
+      end function
+      !*************************************************************************************
+      !   Jet normalized velocity as a function of z
+      !*************************************************************************************
+      real(dp) function betaJet(zz)
+         real(dp), intent(in) :: zz
+         betaJet = betaGamma(zz) / lorentzFactor(zz)
          return
       end function
       !*************************************************************************************
@@ -85,11 +97,9 @@ module system_parameters
       !*************************************************************************************
       real(dp) function BFF_fun(zz)
          real(dp), intent(in) :: zz
-         real(dp) :: rr, zz_
-         !print*,B0
-         zz_ = abs(zz)
-         rr = r_fun(zz_)
-         BFF_fun = (B0/gj) * (r0/rr)**exp_B
+         real(dp) :: rr
+         rr = r_fun(abs(zz))
+         BFF_fun = (B0/lorentzFactor(z0)) * (r0/rr)**exp_B
          return
       end function
       !*************************************************************************************
@@ -97,9 +107,7 @@ module system_parameters
       !*************************************************************************************
       real(dp) function v_lat(zz)
          real(dp), intent(in) :: zz
-         real(dp) :: zz_
-         zz_ = abs(zz)
-         v_lat = vj * (r0/z0) * geomIndex * (z0/zz_)**(1d0-geomIndex)
+         v_lat = betaJet(zz) * c * (r0/z0) * geomIndex * (z0/abs(zz))**(1d0-geomIndex)
          return
       end function
 

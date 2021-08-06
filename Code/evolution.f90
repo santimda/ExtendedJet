@@ -39,7 +39,7 @@ MODULE evolution
          if (abs(z(i)) < zmax_inj) Ninj = i
 
          gj_ = lorentzFactor(z(i))
-         bj_ = sqrt(1d0-1d0/gj_**2)
+         bj_ = betaJet(z(i))
          deltaZ(i) = abs(z(i)) * (sqrt(dlogZ)-1d0/sqrt(dlogZ)) ! Added abs value for CJ
          deltatFF(i) = deltaZ(i) / (c*bj_*gj_)
          !print*, (deltaZ(i)/gj)/rj(i), z(i)/rj(i)/gj

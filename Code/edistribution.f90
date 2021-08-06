@@ -289,7 +289,7 @@ contains
         real(dp), intent(in) :: EFF
         real(dp), intent(inout) :: NEmatrix(nIn, Ns)
         real(dp) :: tlossFF, sum, ee, zz, zm, dttFF, BB, rr, vlat, gammap, restEnergy
-        real(dp) :: gj_, bj_, gjz, one_gjbz
+        real(dp) :: bgj_, one_gjbz
         integer :: jj, izz
         !Initialization of the current energy distribution
 
@@ -305,8 +305,8 @@ contains
             zz = min(z(izz), zmax_inj)
             jj = max(min(izz, Ninj) - 1, 1)
             sum = 0d0
-            gjz = lorentzFactor(z(izz))
-            one_gjbz = 1d0 / (sqrt(gjz**2 - 1d0))
+            one_gjbz = 1d0 / betaGamma(z(izz))
+            !one_gjbz = 1d0 / (sqrt(gjz**2 - 1d0))
             do while (zz >= max(z0, zm))
                 !print*,'jj=',jj
                 if (zz < z(jj)) jj = max(jj - 1, 1)
@@ -315,13 +315,13 @@ contains
                 rr = r_fun(zz)
                 vlat = v_lat(zz)
                 tlossFF = ee/abs(TLosses(BB, rr, vlat, 1d0, 1d0, ee, particle))
-                dttFF = max(min(0.01 * tlossFF, deltatFF(jj)), 1d-10)
-                gj_ = lorentzFactor(zz)
-                bj_ = sqrt(1d0 - 1d0/gj_**2)
-                sum = sum + dQ_Edz(ee, zz, BB, rr, vlat, particle) * dttFF * (gj_ * bj_ * one_gjbz) * &
-                        factorIntegrante(zz/z(izz), z(izz)/z0, gammap, particle)
-                !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat) * dttFF * factorIntegrante2(z(izz)/z0, zz/z0, gammap)
-                zz = zz - bj_*c*gj_*dttFF
+                dttFF = max(min(0.001 * tlossFF, deltatFF(jj)), 1d-10)
+                bgj_ = betaGamma(zz)
+                !sum = sum + dQ_Edz(ee, zz, BB, rr, vlat, particle) * dttFF * (gj_ * bj_ * one_gjbz) * &
+                !        factorIntegrante(zz/z(izz), z(izz)/z0, gammap, particle)
+                sum = sum + dQ_Edz(ee, zz, BB, rr, vlat, particle) * dttFF * (bgj_ * one_gjbz) * & 
+                        factorIntegrante2(z(izz)/z0, zz/z0, gammap, particle)
+                zz = zz - bgj_*c*dttFF
             enddo
             NEmatrix(i3, izz) = sum * deltaZ(izz)
         enddo
@@ -501,8 +501,9 @@ contains
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
     endif
-    if (E <= EmaxFF2 .and. E >= EminFF2) then
-        dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut)
+    !if (E <= EmaxFF2 .and. E >= EminFF2) then
+    if (E >= EminFF2) then
+        dQ_Edz = Kinj*E**(-p) !* exp(-E/Ecut)
     else
         dQ_Edz = 0d0
     endif
@@ -716,12 +717,12 @@ contains
     A = 4.d0/3.d0 * sigma_T * (U0/gj) * z0 * factor / restEnergy
     B = 2.d0/3.d0 * geomIndex
     f = 2d0*exp_B + 3d0*gammaIndex
-    D = B + f - 1d0
-
-    C1 = (xm**(-B - f)*(-xm**f + B*xm**f + f*xm**f + A*xm*ym))/(D*ym)
-    D = B - 1d0 + f
     g = B + f
-    factorIntegrante2 = (C1*D - A*xm**(1d0-g)) / (C1*D - A*xp**(1d0-g))
+    D = g - 1d0
+
+    C1 = xm**(-g) * (D*xm**f + A*xm*ym) / (D*ym)
+
+    factorIntegrante2 = ( (C1*D - A*xm**(-D)) / (C1*D - A*xp**(-D)) )**2 * (xm/xp)**B
 
     return
     end function
