@@ -5,10 +5,10 @@ global.o: global.f90 constants.o
 
 controles.o: controles.f90
 
-dist.o: dist.f90 global.o
+dist.o: dist.f90 global.o controles.o
 
-radsyn.o: radsyn.f90 global.o
+radsyn.o: radsyn.f90 global.o controles.o
 
-radssc.o: radssc.f90 global.o
+radssc.o: radssc.f90 global.o controles.o
 
 main.o: main.f90 global.o controles.o dist.o radsyn.o radssc.o
