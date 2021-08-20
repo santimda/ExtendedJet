@@ -14,14 +14,14 @@ contains
   !=============================================================================
   ! This routine calculates the intrinsic synchrotron emission in the fluid frame
   !-----------------------------------------------------------------------------
-  subroutine radsyn_run(B_new, L_sy_tot)
+  subroutine radsyn_run(B_new, E_sy, L_sy)
     !$ use omp_lib
     implicit none
-    ! mEe -> electrons, m_nu -> emitted photons
     real(dp), intent(in) :: B_new
-    real(dp), intent(out) :: L_sy_tot
-    real(dp) :: eps(m_nu), dEps, eps_int, gamma_e(mE_e), x
-    real(dp) :: nuc, nuc_max, nu_min, nu_max, sum, sum_sy, cte_Psy, a, B_par
+    real(dp), intent(out) :: E_sy(mE_sy), L_sy(mE_sy)
+    real(dp) :: E_sy_min, E_sy_max, dE_sy, E_sy_int, gamma_e(mE_e), x
+    real(dp) :: nuc, nuc_max, sum, cte_P_sy, P_sy, a, B_par
+    logical :: write_ecsv = .False.
 
     B = B_new
     B_par = B*sqrt(2./3.) ! Assuming isotropy
@@ -44,72 +44,66 @@ contains
     !------------------------------------------------------------------------
     !  Radiative calculations start here  
     
-    ! Define nu_min and nu_max:
+    ! Define the limits of the photon energies and create an energy vector
     nuc_max = 4.22d6*B_par*gamma_e(mE_e)**2
-    nu_max = 10.d0*nuc_max ! 
-    nu_min = 10.d6          ! 10 MHz
-    ! Define a vector with the photon energies epsilon: eps(i) = h*nu(i)
-    call vector_log(h*nu_min, h*nu_max, eps_int, eps)
-    nu = eps/h             ! [nu] = Hz 
+    E_sy_max = 10.d0*h*nuc_max  ! 
+    E_sy_min = 10.d6*h          ! 10 MHz
+    call vector_log(E_sy_min, E_sy_max, E_sy_int, E_sy)
 
-    cte_Psy = 1.85*sqrt(3.)*qe**3*B_par/h/mec2 !4.39d-22*B_par/h
-    sum_sy = 0.d0 ! To estimate the total luminosity: L_sy = int P_sy(eps) dEps
-    ! We calculate the luminosity at each value of the photon energy eps(i) between eps_min and eps_max
-    do i = 1, m_nu           ! eps(i), or nu(i)
-       dEps = eps(i)*(eps_int-1.d0)
+    ! Calculate the L_sy at each photon energy E_sy(i) 
+    cte_P_sy = 1.85*sqrt(3.)*qe**3*B_par/h/mec2 !4.39d-22*B_par/h
+    L_sy_tot = 0.d0               ! Total luminosity: L_sy = int P_sy(E_sy) dE_sy
+    do i = 1, mE_sy              ! E_sy(i), or nu(i)
+       dE_sy = E_sy(i)*(E_sy_int-1.d0)
        sum = 0.d0
        
-       ! P(eps) = integral_E_e(min)^E_e(max) N_e(E_e) P(E_e,eps) dE_e [erg/s/erg]
-       ! Define: N_e(E_e)*P(E_e,eps)*dE_e = dP_eps , so that P(eps) = integral_E_e dP_eps
+       ! L_sy(E_sy) = integral_E_e(min)^E_e(max) N_e(E_e) P_sy(E_e,E_sy) dE_e [erg/s/erg]
        do j = 1, mE_e             ! N_e(j), nuc(j), gamma_e(j)
           nuc = 4.22d6*B_par*gamma_e(j)**2 ! synchrotron characteristic frequency from Eq. (5.38)
-          x = nu(i)/nuc       ! 0.1 < x = nu/nu_c < 10 --> Use approximation from Eq. (5.41)
+          x = E_sy(i)/(h*nuc)     ! 0.1 < x = nu/nu_c < 10 --> Use approximation from Eq. (5.41)
           if (x <= 12.d0) then
-             ! Calculate P_eps [erg/s/Hz] and transform to erg/s/erg dividing by h
-             P_eps = cte_Psy * x**(1.d0/3.d0) * exp(-x) ! Eq. (5.37)
-             dE_e = E_e(j)*(Eint_e - 1.d0)
-             dP_eps = N_e(j)*P_eps*dE_e
-             sum = dP_Eps + sum
+            P_sy = cte_P_sy * x**(1.d0/3.d0) * exp(-x) ! Eq. (5.37)
+            dE_e = E_e(j) * (Eint_e - 1.d0)
+            sum = N_e(j) * P_sy * dE_e + sum
           endif
        enddo                ! N_e 
-       Lsy(i) = sum         ! [erg/s/erg]
-       sum_sy = sum_sy + Lsy(i)*dEps
+       L_sy(i) = sum         ! [erg/s/erg]
+       L_sy_tot = L_sy_tot + L_sy(i)*dE_sy
        
-    enddo  ! eps(i),nu(i)
-    L_sy_tot = sum_sy
+    enddo  ! E_sy(i),nu(i)
 
-    !if (write_files) then
+    if (write_files) then
       open(17,file='radsyn.dat')
-      do i = 1, m_nu
-         write(17,*) eps(i)/eV, Lsy(i) ! L(E) for the SED
+      do i = 1, mE_sy
+        write(17,*) E_sy(i)/eV, L_sy(i) ! L(E) for the SED
       enddo
       close(17)
-    !endif
+    endif
 
     ! Make an ecsv file containing a header, E, F(E), F(E)_error
-    a = 4.d0*pi*d**2
-    open(18,file='data2.ecsv')
-    write(18, *) '# %ECSV 0.9'
-    write(18, *) '# ---'
-    write(18, *) '# datatype:'
-    write(18, *) '# - {name: energy, unit: eV, datatype: float64}'
-    write(18, *) '# - {name: flux, unit: 1 / (cm2 s erg), datatype: float64}'
-    write(18, *) '# - {name: flux_error, unit: 1 / (cm2 s erg), datatype: float64}'
-    write(18, *) '# meta: !!omap'
-    write(18, *) '# - keywords: !!omap'
-    write(18, *) '#   - cl: {value: 0.64}'
-    write(18, *) 'energy flux flux_error '
-    do i = 1, m_nu, int(m_nu/16) ! Just some values in the SED, assume errors of ~30%
-       write(18,*) eps(i)/eV, Lsy(i)/a/eps(i), 0.3*Lsy(i)/a/eps(i) 
-       !write(18,*) eps(i)/eV, Lsy(i)/a, 0.1*Lsy(i)/a 
-    enddo
-    close(17)
-
+    if (write_ecsv) then
+      a = 4.d0*pi*d**2
+      open(18,file='data2.ecsv')
+      write(18, *) '# %ECSV 0.9'
+      write(18, *) '# ---'
+      write(18, *) '# datatype:'
+      write(18, *) '# - {name: energy, unit: eV, datatype: float64}'
+      write(18, *) '# - {name: flux, unit: 1 / (cm2 s erg), datatype: float64}'
+      write(18, *) '# - {name: flux_error, unit: 1 / (cm2 s erg), datatype: float64}'
+      write(18, *) '# meta: !!omap'
+      write(18, *) '# - keywords: !!omap'
+      write(18, *) '#   - cl: {value: 0.64}'
+      write(18, *) 'energy flux flux_error '
+      do i = 1, mE_sy, int(mE_sy/16) ! Just some values in the SED, assume errors of ~30%
+        write(18,*) E_sy(i)/eV, L_sy(i)/a/E_sy(i), 0.3*L_sy(i)/a/E_sy(i) 
+        !write(18,*) E_sy(i)/eV, L_sy(i)/a, 0.1*L_sy(i)/a 
+      enddo
+      close(17)
+    endif
     
   END subroutine radsyn_run
    
-  
-!==============================
+
 
   !=============================================================================
   ! radsyn_data_run
@@ -120,12 +114,11 @@ contains
   subroutine radsyn_data_run(B_new, E_data, S_data)
     !$ use omp_lib
     implicit none
-    ! mEe -> electrons, m_nu -> emitted photons
     real(dp), intent(in) :: B_new
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: gamma_e(mE_e), x
-    real(dp) :: nuc, sum, cte_Psy, a, B_par
+    real(dp) :: nuc, sum, P_sy, cte_P_sy, a, B_par
     integer :: m_data
 
     B = B_new
@@ -154,31 +147,28 @@ contains
       print*, 'Too many points to fit, make m_data_max larger in global.f90!'
       stop
     endif
-    allocate( nu_data(m_data), Lsy_data(m_data) )
-    nu_data = E_data/h             ! [nu] = Hz 
+    allocate( L_sy_data(m_data) )
 
-    cte_Psy = 1.85*sqrt(3.)*qe**3*B_par/h/mec2 !4.39d-22*B_par/h
-    ! Calculate the luminosity at each value of the photon energy E_data(i)
-    
+    cte_P_sy = 1.85*sqrt(3.)*qe**3*B_par/h/mec2 !4.39d-22*B_par/h
+
+    ! Calculate the L_sy at each photon energy E_sy(i)     
     !-----------------------------------------------------------------------
     !!!!!!!!!   HACER UNA PRUEBA CON OPENMP ACA   !!!!!!!!!!!!!!!!!!!!!!!!!!
-    do i = 1, m_data           ! eps(i), or nu(i)
+    do i = 1, m_data           ! E_sy(i), or nu(i)
        sum = 0.d0
        
        do j = 1, mE_e             ! N_e(j), nuc(j), gamma_e(j)
           nuc = 4.22d6*B_par*gamma_e(j)**2 ! synchrotron characteristic frequency from Eq. (5.38)
-          x = nu_data(i)/nuc       ! 0.1 < x = nu/nu_c < 10 --> Use approximation from Eq. (5.41)
+          x = E_data(i)/(h*nuc)       ! 0.1 < x = nu/nu_c < 10 --> Use approximation from Eq. (5.41)
           if (x <= 12.d0) then
-             ! Calculate P_eps [erg/s/Hz] and transform to erg/s/erg dividing by h
-             P_eps = cte_Psy * x**(1.d0/3.d0) * exp(-x) ! Eq. (5.37)
-             dE_e = E_e(j)*(Eint_e - 1.d0)
-             dP_eps = N_e(j)*P_eps*dE_e
-             sum = dP_eps + sum
+            P_sy = cte_P_sy * x**(1.d0/3.d0) * exp(-x) ! Eq. (5.37)
+            dE_e = E_e(j) * (Eint_e - 1.d0)
+            sum = N_e(j) * P_sy * dE_e + sum
           endif
        enddo                ! N_e 
-       Lsy_data(i) = sum         ! [erg/s/erg]
+       L_sy_data(i) = sum         ! [erg/s/erg]
        
-    enddo  ! eps(i),nu(i)
+    enddo  ! E_sy(i),nu(i)
     !!!!!!!!!   HACER UNA PRUEBA CON OPENMP ACA   !!!!!!!!!!!!!!!!!!!!!!!!!!
     !-----------------------------------------------------------------------
 
@@ -186,10 +176,10 @@ contains
     S_data = 0.d0
     a = 4.d0*pi*d**2
     do i = 1, m_data
-      S_data(i) = Lsy_data(i)/a
+      S_data(i) = L_sy_data(i)/a
     enddo
 
-    deallocate( nu_data, Lsy_data )
+    deallocate( L_sy_data )
     
   END subroutine radsyn_data_run
    

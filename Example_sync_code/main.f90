@@ -47,21 +47,20 @@ END PROGRAM main
     implicit none
     real(dp), intent(in) :: B_value, U_value
     logical, intent(in) :: verbose
-    real(dp) :: L_sy_tot, L_SSC_tot
 
-    allocate( N_e(mE_e), E_e(mE_e), nu(m_nu), Lsy(m_nu) )
+    allocate( N_e(mE_e), E_e(mE_e) )
 
     if (verbose) write(*,*) '\nJET_CALC started'
     if (dist_calc .and. verbose) write(*,*) '\n Calculate the NT electron distribution'
     if (dist_calc) call diste_run(U_value)
  
     if (radsyn_calc .and. verbose) write(*,*) 'Calculate the synchrotron SED'
-    if (radsyn_calc) call radsyn_run(B_value, L_sy_tot)
+    if (radsyn_calc .or. radssc_calc) call radsyn_run(B_value, E_sy, L_sy)
     if (radsyn_calc .and. verbose) write(*,'(A10,X,Es10.2)') 'L_sy =', L_sy_tot
 
     if (radssc_calc .and. verbose) write(*,*) 'Calculate the SSC SED'
-    if (radssc_calc) call radssc_run(L_SSC_tot)
-    if (radssc_calc .and. verbose) write(*,'(A10,X,Es10.2)') 'L_SSC =', L_SSC_tot
+    if (radssc_calc) call radssc_run(E_sy, L_sy, E_ic, L_ic)
+    if (radssc_calc .and. verbose) write(*,'(A10,X,Es10.2)') 'L_SSC =', L_ic_tot
 
     if (verbose) then
       write(*,*) 'B [uG] = ', B_value*1.d6
@@ -70,7 +69,7 @@ END PROGRAM main
       write(*,*) '\nJET_CALC finished\n'
     endif
 
-    deallocate( N_e, E_e, nu, Lsy )
+    deallocate( N_e, E_e )
 
   end subroutine jet_calc
 
@@ -96,19 +95,18 @@ END PROGRAM main
     real(dp) :: S_data_syn(m_data_max), S_data_ssc(m_data_max)
     logical, parameter :: verbose=.False.
 
-    allocate( N_e(mE_e), E_e(mE_e), nu(m_nu), Lsy(m_nu) )
+    allocate( N_e(mE_e), E_e(mE_e) )
 
     call diste_run(U_value)
 
     call radsyn_data_run(B_value, E_data, S_data_syn)
-    call radsyn_run(B_value, dummy) ! Don't need L_sy_tot, just L_sy for L_SSC
-    call radssc_data_run(E_data, S_data_ssc)
+    call radssc_data_run(B_value, E_data, S_data_ssc)
     S_data = S_data_syn + S_data_ssc
 
     if(verbose) write(*,*) 'E_data[eV] =', E_data/eV
     if(verbose) write(*,*) 'S_data[cgs] =', S_data
 
-    deallocate( N_e, E_e, nu, Lsy ) 
+    deallocate( N_e, E_e ) 
 
   end subroutine sed_model
 

@@ -2,6 +2,7 @@ module radssc
    use constants
    use global
    use controles
+   use radsyn
 
    implicit none
    private
@@ -14,11 +15,12 @@ module radssc
    !============================================================================
    ! This routine calculates the intrinsic SSC emission in the fluid frame
    !-----------------------------------------------------------------------------
-   subroutine radssc_run(L_SSC_tot)  
+   subroutine radssc_run(E_sy, L_sy, E_ic, L_ic)  
       implicit none
-      real(dp), intent(out) :: L_SSC_tot
-      real(dp) :: Lic(mE_f), Eg(mE_f), Eg_int, dEg, f, q_gamma, P_g, Lic_tot
-      real(dp) :: cte_ic, dotNsy(m_nu), nph(m_nu), Eph(m_nu), dEph, Eint_ph
+      real(dp), intent(in) :: E_sy(mE_sy), L_sy(mE_sy)
+      real(dp), intent(out) :: E_ic(mE_ph), L_ic(mE_ph)
+      real(dp) :: E_ic_int, dE_ic, f, q_gamma, P_g, cte_ic
+      real(dp) :: dotNsy(mE_sy), n_sy(mE_sy), dE_sy, Eint_sy
       integer :: i2
 
       interface
@@ -41,25 +43,15 @@ module radssc
       endif
       Eint_e = E_e(2)/E_e(1)
 
-      if (.not. radsyn_calc) then
-         ! Lsy(i) = luminosity emitted with energy Eph(i) per unit energy
-         open (14,file='radsyn.dat')
-         do i = 1, m_nu
-            read(14,*) Eph(i), Lsy(i)
-            Eph(i) = Eph(i)*eV ! Convert from eV to cgs
-            ! dotNsy(i) = photon rate emitted with energy Eph(i) per unit energy
-            dotNsy(i) = Lsy(i)/Eph(i)
-         enddo
-         close(14) 
-      else 
-         Eph = h * nu
-         do i = 1, m_nu
-            ! dotNsy(i) = photon rate emitted with energy Eph(i) per unit energy
-            dotNsy(i) = Lsy(i)/Eph(i)
-         enddo
-      endif
-      Eint_ph = Eph(2)/Eph(1)
-      nph = dotNsy/(4.d0*pi*R**2*c) * 2.24d0  ! Same as naima
+      !------------------------------------------------------------------------
+      ! Obtain the synchrotron SED 
+
+      do i = 1, mE_sy
+         ! dotNsy(i) = photon rate emitted with energy E_sy(i) per unit energy
+         dotNsy(i) = L_sy(i)/E_sy(i)
+      enddo
+      Eint_sy = E_sy(2)/E_sy(1)
+      n_sy = dotNsy/(4.d0*pi*R**2*c) * 2.24d0  ! Same as naima
 
       !===========================================================
       !       Inverse Compton (isotropic)
@@ -67,29 +59,33 @@ module radssc
 
       cte_ic = 8.d0*pi*re**2*c
 
-      call vector_log(max(1.d3*Eph(1),1.d1*eV), E_e(mE_e), Eg_int, Eg)
+      call vector_log(max(1.d3*E_sy(1),1.d1*eV), E_e(mE_e), E_ic_int, E_ic)
 
-      open(17,file='radssc.dat')
-      Lic_tot = 0.d0
-      do i = 1, mE_f    ! E_f(emitidos)
+      L_ic_tot = 0.d0
+      do i = 1, mE_ph    ! E_f(emitidos)
          q_gamma = 0.d0
          do j = 1, mE_e ! E_e
             dE_e = E_e(j)*(Eint_e-1.d0)
             P_g = 0.d0
-            do i2 = 1, m_nu
-               dEph = Eph(i2)*(Eint_ph-1.d0)  
-               P_g = P_g + cte_ic * f(Eg(i), E_e(j), Eph(i2)) * nph(i2)*dEph
+            do i2 = 1, mE_sy
+               dE_sy = E_sy(i2)*(Eint_sy-1.d0)  
+               P_g = P_g + cte_ic * f(E_ic(i), E_e(j), E_sy(i2)) * n_sy(i2)*dE_sy
             enddo
             q_gamma = q_gamma + N_e(j)*P_g*dE_e
          enddo
-         Lic(i) = Eg(i)*q_gamma 
-         write (17,*) Eg(i)/eV, Lic(i)
+         L_ic(i) = E_ic(i)*q_gamma 
 
-         dEg = Eg(i)*(Eg_int-1.d0)
-         Lic_tot = Lic_tot + Lic(i)*dEg
+         dE_ic = E_ic(i)*(E_ic_int-1.d0)
+         L_ic_tot = L_ic_tot + L_ic(i)*dE_ic
       enddo
-      L_SSC_tot = Lic_tot
-      close(17)
+
+      if (write_files) then
+         open(17,file='radssc.dat')
+         do i = 1, mE_ph
+            write(17,*) E_ic(i)/eV, L_ic(i)
+         enddo
+         close(17)
+      endif
 
 
    END subroutine radssc_run
@@ -101,13 +97,13 @@ module radssc
    ! This routine calculates the intrinsic SSC emission in the fluid frame
    ! at the energies E_data, and returns the flux at each of those energies
    !-----------------------------------------------------------------------------
-   subroutine radssc_data_run(E_data, S_data)
+   subroutine radssc_data_run(B_new, E_data, S_data)
       implicit none
+      real(dp), intent(in) :: B_new
       real(dp), intent(in) :: E_data(:)
       real(dp), intent(out) :: S_data(m_data_max)
-      real(dp), allocatable :: Eg(:), Lic(:)
       real(dp) :: f, q_gamma, P_g, a
-      real(dp) :: cte_ic, dotNsy(m_nu), nph(m_nu), Eph(m_nu), dEph, Eint_ph
+      real(dp) :: cte_ic, dotNsy(mE_sy), n_sy(mE_sy), E_sy(mE_sy), dE_sy, Eint_sy
       integer :: i2, m_data
 
       interface
@@ -130,17 +126,19 @@ module radssc
       endif
       Eint_e = E_e(2)/E_e(1)
 
-      ! Lsy(i) = luminosity emitted with energy Eph(i) per unit energy
-      open (14,file='radsyn.dat')
-      do i = 1, m_nu
-         read(14,*) Eph(i), Lsy(i)
-         Eph(i) = Eph(i)*eV ! Convert from eV to cgs
-         ! dotNsy(i) = photon rate emitted with energy Eph(i) per unit energy
-         dotNsy(i) = Lsy(i)/Eph(i)
+      !------------------------------------------------------------------------
+      ! Obtain the synchrotron SED 
+
+      call radsyn_run(B_new, E_sy, L_sy) 
+
+      ! L_sy(i) = luminosity emitted with energy E_sy(i) per unit energy
+      do i = 1, mE_sy
+         ! dotNsy(i) = photon rate emitted with energy E_sy(i) per unit energy
+         dotNsy(i) = L_sy(i)/E_sy(i)
       enddo
       close(14) 
-      Eint_ph = Eph(2)/Eph(1)
-      nph = dotNsy/(4.d0*pi*R**2*c) * 2.24d0  ! Same as naima
+      Eint_sy = E_sy(2)/E_sy(1)
+      n_sy = dotNsy/(4.d0*pi*R**2*c) * 2.24d0  ! Same as naima
 
       !------------------------------------------------------------------------
       !  Radiative calculations start here  
@@ -150,8 +148,7 @@ module radssc
          print*, 'Too many points to fit, make m_data_max larger in global.f90!'
          stop
       endif
-      allocate( Eg(m_data), Lic(m_data) )
-      Eg = E_data
+      allocate( L_ic_data(m_data) )
 
       cte_ic = 8.d0*pi*re**2*c
 
@@ -160,24 +157,24 @@ module radssc
          do j = 1, mE_e ! E_e
             dE_e = E_e(j)*(Eint_e-1.d0)
             P_g = 0.d0
-            do i2 = 1, m_nu
-               dEph = Eph(i2)*(Eint_ph-1.d0)  
-               P_g = P_g + cte_ic * f(Eg(i), E_e(j), Eph(i2)) * nph(i2)*dEph
+            do i2 = 1, mE_sy
+               dE_sy = E_sy(i2)*(Eint_sy-1.d0)  
+               P_g = P_g + cte_ic * f(E_data(i), E_e(j), E_sy(i2)) * n_sy(i2)*dE_sy
             enddo
             q_gamma = q_gamma + N_e(j)*P_g*dE_e
          enddo
-         Lic(i) = Eg(i)*q_gamma 
-         !write (*,*) Eg(i)/eV, Lic(i)
+         L_ic_data(i) = E_data(i)*q_gamma 
+         !write (*,*) E_ic(i)/eV, L_ic(i)
       enddo
 
       ! Define the output vector for the first m_data positions
       S_data = 0.d0
       a = 4.d0*pi*d**2
       do i = 1, m_data
-         S_data(i) = Lic(i)/a
+         S_data(i) = L_ic_data(i)/a
       enddo
 
-      deallocate( Eg, Lic )
+      deallocate( L_ic_data )
 
    END subroutine radssc_data_run
 
@@ -187,10 +184,10 @@ module radssc
 END module radssc
 
 !====================================================================================
-real(dp) function f(Eg, Ee, Eph)     !f from Eq. 5.86 
+real(dp) function f(E_ic, Ee, Eph)     !f from Eq. 5.86 
 use constants
-real(dp) :: Eg, Ee, Eph, z, b_, t_  !Eg = gamma photon, Ee = electron, Eph = target
-z = Eg/Ee                      
+real(dp) :: E_ic, Ee, Eph, z, b_, t_  !E_ic = gamma photon, Ee = electron, Eph = target
+z = E_ic/Ee                      
 b_ = (4.d0*Eph*Ee)/(mec2**2)    
 t_ = z/(1.-z)
 if( ((Eph/Ee) <= z) .and. (z <= (b_/(1.d0+b_))) ) then    ! Eq. 5.87
