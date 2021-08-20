@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # First compile with make and then create the wrapper as: 
-# f2py -c constants.f90 global.f90 dist.f90 radsyn.f90 radssc.f90 main.f90 -m jet
+# f2py -c constants.f90 global.f90 controles.f90 dist.f90 radsyn.f90 radssc.f90 main.f90 -m jet
 
 import jet
 import numpy as np
