@@ -8,14 +8,24 @@ contains
     !**********************************************************************************************
     !   Total losses
     !**********************************************************************************************
-    real(dp) function TLosses(B_FF, rj, v_norm, Eph_MFF, Kapp, EFF, particle)
+    real(dp) function TLosses(B_FF, z_, v_norm, Eph_MFF, Kapp, EFF, particle)
     character(1), intent(in) :: particle
-    real(dp), intent(in) :: B_FF, rj, v_norm, Eph_MFF, Kapp, EFF
+    real(dp), intent(in) :: B_FF, Eph_MFF, Kapp, EFF, z_, v_norm
 
-    TLosses = SyncLoss(B_FF,EFF,particle) + AdLoss(rj, v_norm, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
-
+    TLosses = SyncLoss(B_FF,EFF,particle) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
+    
     return
     end function TLosses
+
+    real(dp) function TLosses_mod(B_FF, z_, Eph_MFF, Kapp, EFF, particle, Ng_)
+    character(1), intent(in) :: particle
+    real(dp), intent(in) :: B_FF, Eph_MFF, Kapp, EFF, z_, Ng_
+
+    !TLosses = SyncLoss(B_FF,EFF,particle) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
+    TLosses_mod = SyncLoss_mod(B_FF, EFF, z_, Ng_) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
+
+    return
+    end function TLosses_mod
 
     !**********************************************************************************************
     !   Synchrotron losses
@@ -32,11 +42,33 @@ contains
         factor = 2.966d-7    ! (me/mp)^2
         Lgamma = EFF/mpc2
     endif
-    !Synchrotron losses in erg/s
-    SyncLoss = - 1.05804d-15 * factor * B_FF**2 * Lgamma**2   !4/9*c*re^2 * B^2 * gamma^2
 
+    !Synchrotron losses in erg/s
+    SyncLoss = - 1.05804d-15 * factor * B_FF**2 * (Lgamma**2-1d0)   !4/9*c*re^2 * B^2 * gamma^2
+    
     return
     end function SyncLoss
+
+    !**********************************************************************************************
+    !   Synchrotron losses modified
+    !**********************************************************************************************
+    real(dp) function SyncLoss_mod(B_FF, EFF, zz_, Ng_)
+    real(dp), intent(in) :: B_FF, EFF, zz_, Ng_
+    real(dp) :: Lgamma, factor, alpha, B_cr, eps, tau
+
+    !Lorentz factor of the particles in the fluid frame
+    Lgamma = EFF/mec2
+
+    B_cr = 4.4e13
+    eps = B_FF / B_cr * Lgamma**2
+    alpha = 137d0 / 2d0 * pi * sigma_T * B_FF/B_cr / eps**2 * Ng_
+    tau = alpha * r_fun(zz_)
+
+    !Synchrotron losses in erg/s
+    SyncLoss_mod = - 1.05804d-15 * B_FF**2 * (Lgamma**2-1d0) / (1d0 + tau)  !4/9*c*re^2 * B^2 * gamma^2
+    
+    return
+    end function SyncLoss_mod
     
     !**********************************************************************************************
     !   Inverse Compton losses (Eq. (36) in Khangulyan 2014)                    
@@ -58,12 +90,14 @@ contains
     !**********************************************************************************************
     !   Adiabatic losses
     !**********************************************************************************************
-    real(dp) function AdLoss(r_j, v_norm, EFF)
-    real(dp), intent(in) :: r_j, v_norm, EFF
+    real(dp) function AdLoss(z_, EFF)
+    real(dp), intent(in) :: z_, EFF
+    real(dp) :: gg
 
     !Adiabatic losses
-    AdLoss = - 2d0/3d0 * v_norm/r_j * EFF * gj    !E/t = E'/t' = ct
-
+    gg = EFF - mec2**2/EFF
+    AdLoss = - 2d0/3d0 * geomIndex * lorentzFactor(z_) * c * betaJet(z_) / z_ * gg
+    
     end function AdLoss
         
     !**********************************************************************************************
@@ -92,8 +126,8 @@ contains
         !Cooling time for each process for segment segN
         tSyn = EFF/abs(SyncLoss(BFF(segN),EFF, 'e'))
         tIC = EFF/abs(ICLoss(EphMFF(segN),Kappa(segN),EFF))
-        tAd = EFF/abs(AdLoss(rj(segN),vnorm(segN),EFF))
-        tTot = EFF/abs(TLosses(BFF(segN),rj(segN),vnorm(segN),EphMFF(segN),Kappa(segN),EFF, particle))
+        tAd = EFF/abs(AdLoss(z(segN),EFF))
+        tTot = EFF/abs(TLosses(BFF(segN),z(segN),vnorm(segN),EphMFF(segN),Kappa(segN),EFF, particle))
         tacc = EFF/(facc*BFF(segN)*qe*c)                    !Acceleration timescale
         tdiff = 3d0*qe*BFF(segN)*rj(segN)**2/(2d0*c*EFF)    !Diffusion timescale
         write(20,*) EFF/eV, tSyn, tIC, tAd, tTot, tcell, tacc, tdiff, tconv

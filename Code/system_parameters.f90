@@ -20,16 +20,16 @@ module system_parameters
    !===JET PROPERTIES============================================================================================
    
    real(dp), parameter :: gj = 1.01d0               !Lorentz factor  (Algaba+2021: Gamma ~ 1-3)
-   real(dp), parameter :: z0 = 3d0*R_g           !Jet launching height
+   real(dp), parameter :: z0 = 10d0*R_g           !Jet launching height
    !real(dp), parameter :: z0 = 40*R_g 
    real(dp), parameter :: zmax = 3d5 * R_g           !Jet maximum height
-   real(dp), parameter :: zmax_inj = 3d5*R_g      !Jet maximum cell of injection
+   real(dp), parameter :: zmax_inj = 1d3*R_g      !Jet maximum cell of injection
    real(dp), parameter :: vj = sqrt(gj**2-1d0)*c/gj!Fluid bulk speed
    real(dp), parameter :: Bj = vj/c                !Beta
    real(dp), parameter :: thetaj = 0.6d0           !Half opening angle (rad)  
-   real(dp), parameter :: r0 = 5d0*R_g            !Jet launching radius (Kim+2018)
+   real(dp), parameter :: r0 = 10d0*R_g            !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: exp_B = 1.d0             !B = B0*(r/r0)^exp_B
+   real(dp), parameter :: exp_B = 1.5d0             !B = B0*(r/r0)^exp_B
 
    !===FREE PARAMETERS=========================================================================================
 
@@ -52,8 +52,8 @@ module system_parameters
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 1d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d20*eV     !Maximum proton energy in the FF
-   real(dp), parameter :: p = 2.d0            !Power law exponent for Q(E) = cte * E**-p
-   real(dp), parameter :: a_inj = 1.01d0       !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
+   real(dp), parameter :: p = 2.01d0            !Power law exponent for Q(E) = cte * E**-p
+   real(dp), parameter :: a_inj = 1.001d0       !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
    real(dp), parameter :: gammaIndex = 0.16d0   !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
    !============================================================================
@@ -73,7 +73,8 @@ module system_parameters
       !*************************************************************************************
       real(dp) function betaGamma(zz)
          real(dp), intent(in) :: zz
-         betaGamma = 0.37 * (abs(zz)/R_g)**gammaIndex
+        ! betaGamma = 0.37 * (abs(zz)/R_g)**gammaIndex
+         betaGamma = betaJet(zz) * lorentzFactor(zz)
          return
       end function
       !*************************************************************************************
@@ -81,7 +82,8 @@ module system_parameters
       !*************************************************************************************
       real(dp) function lorentzFactor(zz)
          real(dp), intent(in) :: zz
-         lorentzFactor = sqrt(1d0 + betaGamma(abs(zz))**2)
+         !lorentzFactor = sqrt(1d0 + betaGamma(abs(zz))**2)
+         lorentzFactor = 1.01 * (abs(zz)/z0)**gammaIndex
          return
       end function
       !*************************************************************************************
@@ -89,7 +91,8 @@ module system_parameters
       !*************************************************************************************
       real(dp) function betaJet(zz)
          real(dp), intent(in) :: zz
-         betaJet = betaGamma(zz) / lorentzFactor(zz)
+         !betaJet = betaGamma(zz) / lorentzFactor(zz)
+         betaJet = sqrt(1d0 - 1d0/lorentzFactor(zz)**2)
          return
       end function
       !*************************************************************************************
@@ -99,7 +102,8 @@ module system_parameters
          real(dp), intent(in) :: zz
          real(dp) :: rr
          rr = r_fun(abs(zz))
-         BFF_fun = (B0/lorentzFactor(z0)) * (r0/rr)**exp_B
+         BFF_fun = B0 * (r0/rr)**exp_B / lorentzFactor(zz)
+
          return
       end function
       !*************************************************************************************
