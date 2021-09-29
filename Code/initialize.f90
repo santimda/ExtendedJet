@@ -9,11 +9,11 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (START)
     !============================================================================
-    subroutine initialize_allocate(fB_value, Lj_value)
+    subroutine initialize_allocate(fB_value, Lj_value, z0_value)
     !============================================================================
     ! allocate and initialize vectors 
     !============================================================================
-        real(dp), intent(in) :: fB_value, Lj_value
+        real(dp), intent(in) :: fB_value, Lj_value, z0_value
         logical :: fexist
 
         allocate( z(Ns), rj(Ns) )
@@ -21,18 +21,24 @@ MODULE initialize
         allocate( deltaZ(Ns), deltatFF(Ns) )
 
         ! Initialize values given by free parameters:
-   
-        Lj = Lj_value 
-        fnT = 0.5d-2              !Nonthermal energy fraction
-        LnT = Lj*fnT             !Available nonthermal luminosity
-        LnTFF = LnT!/gj**2       !Available nonthermal luminosity in the FF
+        fB = fB_value         !Update the value of fB (default value defined in system_parameters.f90)
+        Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
+        z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
 
+        LnT = Lj*fnT          !Available nonthermal luminosity
+        LnTFF = LnT!/gj**2    !Available nonthermal luminosity in the FF
         cte_inj = LnTFF/( (zmax_inj**(-a_inj+1d0) - z0**(-a_inj+1d0))/(-a_inj+1d0) )
         
-        fB = fB_value
-        fB = 1d0
         B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
-        write(*, *) B0, Lj
+        
+        dl = (zmax-z0)/Ns    !Segment length
+        dlogz = (zmax/z0)**(1d0/(Ns-1d0))
+        cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
+        dt = dl/vj           !Segment advection time for constant velocity
+        dtFF = dt/gj         !Advection time in the FF
+
+        write(*,'(A,Es9.2)') 'B0[G] = ', B0
+        write(*,'(A,Es9.2)') 'Lj[erg/s] = ', Lj
 
         ! Initialize arrays
         if (.not.jet_calc) then 

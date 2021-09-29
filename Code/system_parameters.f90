@@ -19,32 +19,22 @@ module system_parameters
    
    !===JET PROPERTIES============================================================================================
    
-   real(dp), parameter :: gj = 1.01d0               !Lorentz factor  (Algaba+2021: Gamma ~ 1-3)
-   real(dp), parameter :: z0 = 10d0*R_g           !Jet launching height
-   !real(dp), parameter :: z0 = 40*R_g 
-   real(dp), parameter :: zmax = 3d5 * R_g           !Jet maximum height
-   real(dp), parameter :: zmax_inj = 1d3*R_g      !Jet maximum cell of injection
+   real(dp), parameter :: gj = 1.01d0              !Lorentz factor  (Algaba+2021: Gamma ~ 1-3)
+   real(dp), parameter :: zmax = 3d3*R_g           !Jet maximum height
+   real(dp), parameter :: zmax_inj = 1d3*R_g       !Jet maximum cell of injection
    real(dp), parameter :: vj = sqrt(gj**2-1d0)*c/gj!Fluid bulk speed
    real(dp), parameter :: Bj = vj/c                !Beta
    real(dp), parameter :: thetaj = 0.6d0           !Half opening angle (rad)  
    real(dp), parameter :: r0 = 10d0*R_g            !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: exp_B = 1.5d0             !B = B0*(r/r0)^exp_B
-
-   !===FREE PARAMETERS=========================================================================================
-
-   real(dp) :: Lj = 1d43            !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp) :: fnT != 1.d-2               !Nonthermal energy fraction
-   real(dp) :: LnT != Lj*fnT              !Available nonthermal luminosity
-   real(dp) :: LnTFF != LnT!/gj**2        !Available nonthermal luminosity in the FF
-   real(dp) :: LnTpFF = L_Edd * 1d-4
-
-   real(dp) :: fB = 1d-1                                 !Fraction of magnetic energy in the jet
-   real(dp) :: B0 != sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
+   real(dp), parameter :: exp_B = 1.5d0            !B = B0*(r/r0)^exp_B
+   real(dp), parameter :: gammaIndex = 0.16d0      !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
    !===NONTHERMAL PARTICLES======================================================================================
 
    !Particle injection
+   real(dp), parameter :: LnTpFF = L_Edd * 1d-4
+   real(dp), parameter :: fnT = 5.d-2           !Nonthermal energy fraction
    real(dp), parameter :: facc = 1d-1           !Acceleration efficiency
    real(dp), parameter :: EminFF = 1d6*eV       !Minimum electron energy in the FF
    real(dp), parameter :: Emin_injFF = 1d6*eV   !Minimum electron energy of injected particles in the FF
@@ -54,9 +44,27 @@ module system_parameters
    real(dp), parameter :: EpmaxFF = 1d20*eV     !Maximum proton energy in the FF
    real(dp), parameter :: p = 2.01d0            !Power law exponent for Q(E) = cte * E**-p
    real(dp), parameter :: a_inj = 1.001d0       !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
-   real(dp), parameter :: gammaIndex = 0.16d0   !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
-   !============================================================================
+   !===FREE PARAMETERS=========================================================================================
+
+   real(dp) :: Lj = 1d43                           !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: fB = 1d-1                           !Fraction of magnetic energy in the jet
+   real(dp) :: z0 = 10d0*R_g            !Jet launching height
+
+   !===GLOBAL VARIABLES (TIED TO FREE PARAMETERS)================================================================
+
+   real(dp) :: B0 != sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
+   real(dp) :: LnT != Lj*fnT              !Available nonthermal luminosity
+   real(dp) :: LnTFF != LnT!/gj**2        !Available nonthermal luminosity in the FF
+
+   real(dp) :: dl != (zmax-z0)/Ns    !Segment length
+   real(dp) :: dlogz != (zmax/z0)**(1d0/(Ns-1d0))
+   ! L(z) = cte_inj * z**-a_inj --> LnTFF = integral L(z) dz = log(zmax_inj/z0) iif a_inj == 1.d0, else: 
+   real(dp) :: cte_inj != LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
+   real(dp) :: dt != dl/vj           !Segment advection time for constant velocity
+   real(dp) :: dtFF != dt/gj         !Advection time in the FF
+
+   !==============================================================================================================
 
    contains
 
