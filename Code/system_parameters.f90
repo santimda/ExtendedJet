@@ -43,13 +43,13 @@ module system_parameters
    real(dp), parameter :: Epmin_injFF = 1d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d20*eV     !Maximum proton energy in the FF
    real(dp), parameter :: p = 2.01d0            !Power law exponent for Q(E) = cte * E**-p
-   real(dp), parameter :: a_inj = 1.001d0       !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
 
    !===FREE PARAMETERS=========================================================================================
 
-   real(dp) :: Lj = 1d43                           !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp) :: fB = 1d-1                           !Fraction of magnetic energy in the jet
-   real(dp) :: z0 = 10d0*R_g            !Jet launching height
+   real(dp) :: Lj = 1d43                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: fB = 1d-1                        !Fraction of magnetic energy in the jet
+   real(dp) :: z0 = 10d0*R_g                    !Jet launching height
+   real(dp) :: a_inj = 1.001d0                  !Power law exponent for L(z) = cte_inj * z**-a_inj, a_inj =/ 1.d0 (else error!)
 
    !===GLOBAL VARIABLES (TIED TO FREE PARAMETERS)================================================================
 

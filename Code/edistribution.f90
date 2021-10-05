@@ -1017,7 +1017,6 @@ contains
 
         real(dp), intent(in) :: Evec(nIn)
         real(dp), intent(out) :: NEmatrix(nIn, Ns)
-        integer :: numbins, numdt
         real(dp), allocatable, dimension(:) :: t, Ntot, gg, dt, dg, zz, Ee
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
         real(dp) :: Ecut, tlossFF, dttFF, dzz
@@ -1025,8 +1024,6 @@ contains
         real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope, Ng
         real(dp) :: g_min, g_max
         
-        numbins = 300
-        numdt = 100000
         allocate(t(0:numdt), Ntot(numdt), dt(numdt), dg(numbins), zz(0:numdt))
         allocate(nn(numbins, 0:numdt), dotg(numbins, 0:numdt), gg(numbins), &
                 Qinj(numbins, 0:numdt), Ee(numbins), Ddiff(numbins, 0:numdt))
@@ -1083,7 +1080,7 @@ contains
                 Qinj(:, jz) = 0d0
             end if
 
-            write(*, *) jz, zz(jz) / R_g
+            !write(*, *) jz, zz(jz) / R_g
 
         end do z_loop
 
@@ -1225,7 +1222,7 @@ contains
             z_phys = zz*R_g
             Ecut = CutE(BFF_fun(z_phys), r_fun(z_phys), v_lat(z_phys), 1d0, 1d0, 'e')
             tlossFF = Ecut/abs(TLosses(BFF_fun(z_phys), r_fun(z_phys), v_lat(z_phys), 1d0, 1d0, Ecut, 'e'))
-            dttFF = max(min(10*tlossFF, z_phys/(betaGamma(z_phys)*c)), 1d-10)
+            dttFF = max(min(10*tlossFF, z_phys/(betaGamma(z_phys)*c)), dttFF_min)
             dzz = dttFF * betaGamma(z_phys) * c / R_g
             aa = 0d0
             bb = 0d0
