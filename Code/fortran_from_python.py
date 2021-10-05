@@ -7,24 +7,35 @@
 import JetCode
 import numpy as np
 
+#Constants
+mJy = 1.0e-26
+dist = 16.8*3.0856e24  # Distance to the source = 16.8 Mpc
+h = 6.6260755e-27     # erg.seg
+eV = 1.602176e-12     # 1 eV = 1.602176e-12 erg
+a = 4.0*np.pi*dist**2    
+M_BH = 6.5e9             #Black hole mass [Msun] (EHT+2018?)
+R_g = 1.477e5*M_BH       #Gravitational radius (M_BH [Msun])
+
+# Define the energy range for the SED
+E_min = 1.e-7 * eV #Aprox 20 MHz
+E_max = 1.e10 * eV
+n_points = 10
+E_data = np.geomspace(E_min, E_max, n_points)
+
 # Correr el codigo completo
 JetCode.run_jet(True)
+
+#Syn + SSC:
+fB = 1.e-2
+Lj = 1.e43
+z0 = R_g * 10.0 
+S_data = JetCode.sed_model(fB, Lj, z0, E_data)[:len(E_data)]
+print(S_data)
 
 
 # Solo syn:
 fB = 1.e-2
 Lj = 1.e43
-z0 = (6.5e9 * 1.477e5) * 10.0 
-E_data = np.array([1e-19, 1e-16, 1e-13, 1.e-10, 1.e-7, 1e-4])
-S_data2 = E_data # only needs to have the same dimension
+z0 = R_g * 10.0 
 S_data2 = JetCode.syn_model(fB, Lj, z0, E_data)
 print(S_data2)
-
-#Syn + SSC:
-fB = 1.e-2
-Lj = 1.e43
-z0 = (6.5e9 * 1.477e5) * 10.0 
-E_data = np.array([1e-19, 1e-16, 1e-13, 1.e-10, 1.e-7, 1e-4])
-S_data = E_data # only needs to have the same dimension
-S_data = JetCode.sed_model(fB, Lj, z0, E_data)
-print(S_data)
