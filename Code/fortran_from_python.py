@@ -29,7 +29,8 @@ JetCode.run_jet(True)
 fB = 1.e-2
 Lj = 1.e43
 z0 = R_g * 10.0 
-S_data = JetCode.sed_model(fB, Lj, z0, E_data)[:len(E_data)]
+a_inj = 1.5
+S_data = JetCode.sed_model(fB, Lj, z0, a_inj, E_data)
 print(S_data)
 
 
@@ -37,5 +38,6 @@ print(S_data)
 fB = 1.e-2
 Lj = 1.e43
 z0 = R_g * 10.0 
-S_data2 = JetCode.syn_model(fB, Lj, z0, E_data)
+a_inj = 1.5
+S_data2 = JetCode.syn_model(fB, Lj, z0, a_inj, E_data)
 print(S_data2)
