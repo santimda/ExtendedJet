@@ -4,7 +4,7 @@ PROGRAM main
     use controls
     implicit none
     real(dp) :: fB_value, Lj_value, z0_value, a_inj_value
-    real(dp), allocatable :: E_data(:)
+    real(dp), allocatable :: E_data(:), z_data(:)
     real(dp) :: S_data(m_data_max)
     logical, parameter :: verbose = .False.
 
@@ -15,21 +15,22 @@ PROGRAM main
     end interface
 
     interface
-        subroutine sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_vector, S_vector) 
+        subroutine sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_vector, z_vector, S_vector) 
             use globals
             use constants
             real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
-            real(dp), intent(in) :: E_vector(:)
+            real(dp), intent(in) :: E_vector(:), z_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
         end subroutine sed_model
     end interface 
 
     interface
-        subroutine syn_model(fB_value, Lj_value, z0_value, a_inj_value, E_vector, S_vector) 
+        subroutine syn_model(fB_value, Lj_value, z0_value, a_inj_value, E_vector, z_vector, S_vector) 
             use globals
             use constants
             real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
             real(dp), intent(in) :: E_vector(:)
+            real(dp), intent(in) :: z_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
         end subroutine syn_model
     end interface 
@@ -40,17 +41,19 @@ PROGRAM main
     if (run_jet_calc) call run_jet(verbose)   
 
     !----------------------------------------------------------------
-    ! Short version to calculate specific fluxes, used for fitting SEDs
+    ! Short version to calculate specific fluxes integrated up to 
+    ! certain jet heights. Used for fitting SEDs.
     
     if (run_sed_calc) then
-        allocate( E_data(4) )
+        allocate( E_data(4), z_data(4) )
         E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8/)
+        z_data = (/5d2*R_g, 1d2*R_g, 3d1*R_g, 1.5d1*R_g/)
         fB_value = 1.d-5
         Lj_value = L_Edd*1d-4
         z0_value = 10.d0*R_g
         a_inj_value = 1.0001d0
-        call sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, S_data) ! Energies in cgs
-        deallocate( E_data )
+        call sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data) ! Energies in cgs
+        deallocate( E_data, z_data )
     endif
 
 
@@ -189,10 +192,11 @@ END PROGRAM main
   !============================================================================
   ! sed_model(START)
   !============================================================================
-  subroutine sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, S_data)
+  subroutine sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron + SSC SED at specific energies
-  ! for the given input parameters. Calculates both J and CJ
+  ! integrated up to certain heights for the given input parameters. 
+  ! Calculates both J and CJ
   !===================================================================
     use controls
     use constants
@@ -207,7 +211,7 @@ END PROGRAM main
 
     implicit none
     real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
-    real(dp), intent(in) :: E_data(:)
+    real(dp), intent(in) :: E_data(:), z_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .False.
@@ -227,7 +231,7 @@ END PROGRAM main
         call Edist('e')   
 
         !Synchrotron SED at the given values
-        call SEDsyn_data(E_data, S_data_J, '', 'e')   
+        call SEDsyn_z_data(E_data, z_data, S_data_J, '', 'e')   
         
         call initialize_deallocate 
         S_data = S_data_J
@@ -249,7 +253,7 @@ END PROGRAM main
         if (.not. JET_) call Edist('e')  ! Calculate the particle energy distribution
 
         !Synchrotron SED at the given values
-        call SEDsyn_data(E_data, S_data_CJ, 'CJ', 'e')
+        call SEDsyn_z_data(E_data, z_data, S_data_CJ, 'CJ', 'e')
         S_data = S_data + S_data_CJ
         if (verbose) write(*,*) 'S_data[cgs] =', S_data
         
@@ -258,6 +262,7 @@ END PROGRAM main
 
     if (verbose) then
         write(*,*) 'E_data[eV] =', E_data/eV
+        write(*,*) 'z_data[Rg] =', z_data/R_g
         write(*,*) 'S_data[cgs] =', S_data
     endif
 
