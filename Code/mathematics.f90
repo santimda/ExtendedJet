@@ -1,5 +1,4 @@
 module mathematics
-    implicit none
     use constants
 contains
 

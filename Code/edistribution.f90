@@ -54,7 +54,6 @@ contains
     call vector_log(EminFF2, EmaxFF2, Ein, Evec ) 
 
     NEE = 0d0
-
     NEmatrix = 0d0
     call calcNE_paramo(Evec, NEmatrix)
     

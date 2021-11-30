@@ -14,7 +14,9 @@ evolution.o: evolution.f90 globals.o
 
 losses.o: losses.f90 globals.o
 
-edistribution.o: edistribution.f90 globals.o losses.o
+mathematics.o: mathematics.f90 constants.o
+
+edistribution.o: edistribution.f90 globals.o losses.o mathematics.o
 
 synrad.o: synrad.f90 globals.o
 
