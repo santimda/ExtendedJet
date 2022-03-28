@@ -120,16 +120,16 @@ contains
     real(dp) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1, particle)
     character(1), intent(in) :: particle
     real(dp), intent(in) :: BFF1,rj1,vnorm1,Eph1,Kappa1
-    real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,error,check
-    !Injected power (erg/s)
-    Eacc = facc*qe*BFF1*c
+    real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,check
+    real(dp), parameter :: error_tolerance = 1.d-3 ! log(1 + DE/E) ~ |DE|/E <= error_tolerance
+    
     !Initialization
     lE1 = log10(1d9*eV)  ! log10(Emin [CGS]) ~ 1 GeV
     lE2 = log10(1d14*eV) ! log10(Emax [CGS]) ~ 100 TeV
-    if (particle == 'p') lE2 = log10(1d20*eV)
-    error = 1.d-4        ! error < 10^(-4)
-    !Maximum particle energy
-    do while (abs(lE2-lE1) > error)
+    if (particle == 'p') lE2 = log10(1d20*eV) !Maximum particle energy    
+
+    Eacc = facc*qe*BFF1*c ! energy gain: dE/dt_acc [erg/s]
+    do while (abs(lE2-lE1) > error_tolerance)
         lEmid = (lE1+lE2)/2d0
         check =  Eacc - abs(TLosses(BFF1,rj1,vnorm1,Eph1,Kappa1,10d0**lEmid, particle))
         if (check == 0d0) then
