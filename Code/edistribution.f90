@@ -35,14 +35,14 @@ contains
         EmaxFF2 = EpmaxFF
         restEnergy = mpc2
     else
-        write(*,*) "FATAL ERROR: WRONG PARTICLE CLASS!!!"
+        print *, "FATAL ERROR: WRONG PARTICLE CLASS!!!"
     endif
 
     do i = 1,Ns
         !Quantities at each segment
         Ecut = CutE(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
         if (Ecut > EmaxFF2/3.d0) then
-            write(*,*) 'EmaxFF in globals.f90 is too low!'
+            print *, 'EmaxFF in globals.f90 is too low!'
             stop
         else
             write(11,*) i, z(i), Ecut/eV
@@ -69,7 +69,7 @@ contains
         do i2 = 1, nIn
             Nparticles = Nparticles + NEmatrix(i2, izz) * Evec(i2) * (sqrt(Ein) - 1d0/sqrt(Ein))
             Eparticles = Eparticles + NEmatrix(i2, izz) * Evec(i2)**2 * (sqrt(Ein)-1d0/sqrt(Ein))
-            dEdt = 4d0/3d0 * sigma_T * c * (BFF_fun(z(izz))**2d0/(8d0*pi)) * (Evec(i2)/mec2)**2d0
+            dEdt = 4d0/3d0 * sigma_T * c * (BFF_fun(z(izz))**2/(8d0*pi)) * (Evec(i2)/mec2)**2
             Lsy = Lsy + NEmatrix(i2, izz) * dEdt * Evec(i2) * (sqrt(Ein) - 1d0/sqrt(Ein))
         enddo
         vol = pi * r_fun(z(izz))**2 * deltaZ(izz)
@@ -123,7 +123,6 @@ contains
     tloss = abs(E/TLosses(B,r_j,v_norm,Eph,Kapp,E,particle))
     !Set dt according to the characterstic losses and injection times
     Setdt = 0.1d0 * min(tloss,dtFF)
-    return
     end function
     
 
@@ -238,7 +237,6 @@ contains
     end do
     NormKz = LnTFF2/QInt   !Normalization constant
 
-    return
     end function NormKz
 
 
@@ -273,7 +271,6 @@ contains
         enddo
         close(28)
 
-        return
     end subroutine Calc_Ue
     !============================================================================
     ! Calc_Ue (END)

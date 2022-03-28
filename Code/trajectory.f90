@@ -24,16 +24,12 @@ MODULE trajectory
     elseif (jet == 'CJ') then
       dir = -1.d0
     else
-      write(*,*) 'Invalid jet type'
+      print *, 'Invalid jet type'
       stop
     endif
 
     z(1) = dir*z0               ! jet height
     rj(1) = r0
-    !equidistant spacing in z + conical jet
-    !do i = 1, Ns-1
-    !  z(i+1) = z(i) + dir*vj*dt
-    !enddo
     do i = 1, Ns-1
       z(i+1) = z(i) * dlogZ
       rj(i+1) = r_fun(z(i+1))

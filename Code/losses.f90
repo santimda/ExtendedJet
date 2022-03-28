@@ -5,74 +5,65 @@ MODULE losses
 
 contains
 
-    !**********************************************************************************************
+    !============================================================================
     !   Total losses
-    !**********************************************************************************************
+    !============================================================================
     real(dp) function TLosses(B_FF, z_, v_norm, Eph_MFF, Kapp, EFF, particle)
     character(1), intent(in) :: particle
     real(dp), intent(in) :: B_FF, Eph_MFF, Kapp, EFF, z_, v_norm
 
     TLosses = SyncLoss(B_FF,EFF,particle) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
-    
-    return
+
     end function TLosses
 
+    !============================================================================
+    !   Total losses (modified)
+    !============================================================================
     real(dp) function TLosses_mod(B_FF, z_, Eph_MFF, Kapp, EFF, particle, Ng_)
     character(1), intent(in) :: particle
     real(dp), intent(in) :: B_FF, Eph_MFF, Kapp, EFF, z_, Ng_
 
-    !TLosses = SyncLoss(B_FF,EFF,particle) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
     TLosses_mod = SyncLoss_mod(B_FF, EFF, z_, Ng_) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
 
-    return
     end function TLosses_mod
 
-    !**********************************************************************************************
+    !============================================================================
     !   Synchrotron losses
-    !**********************************************************************************************
+    !============================================================================
     real(dp) function SyncLoss(B_FF, EFF, particle)
     real(dp), intent(in) :: B_FF, EFF
     character(1), intent(in) :: particle
     real(dp) :: Lgamma, factor
 
-    !Lorentz factor of the particles in the fluid frame
-    Lgamma = EFF/mec2
+    Lgamma = EFF/mec2    !Lorentz factor of the particles in the fluid frame
     factor = 1d0
     if (particle == 'p') then
         factor = 2.966d-7    ! (me/mp)^2
         Lgamma = EFF/mpc2
     endif
+    SyncLoss = - 1.05804d-15 * factor * B_FF**2 * (Lgamma**2-1d0)   !4/9*c*re^2 * B^2 * gamma^2 [erg/s]
 
-    !Synchrotron losses in erg/s
-    SyncLoss = - 1.05804d-15 * factor * B_FF**2 * (Lgamma**2-1d0)   !4/9*c*re^2 * B^2 * gamma^2
-    
-    return
     end function SyncLoss
 
-    !**********************************************************************************************
-    !   Synchrotron losses modified
-    !**********************************************************************************************
+    !============================================================================
+    !   Synchrotron losses (modified)
+    !============================================================================
     real(dp) function SyncLoss_mod(B_FF, EFF, zz_, Ng_)
     real(dp), intent(in) :: B_FF, EFF, zz_, Ng_
     real(dp) :: Lgamma, factor, alpha, B_cr, eps, tau
 
-    !Lorentz factor of the particles in the fluid frame
-    Lgamma = EFF/mec2
-
+    Lgamma = EFF/mec2    !Lorentz factor of the particles in the fluid frame
     B_cr = 4.4e13
     eps = B_FF / B_cr * Lgamma**2
     alpha = 137d0 / 2d0 * pi * sigma_T * B_FF/B_cr / eps**2 * Ng_
     tau = alpha * r_fun(zz_)
-
-    !Synchrotron losses in erg/s
-    SyncLoss_mod = - 1.05804d-15 * B_FF**2 * (Lgamma**2-1d0) / (1d0 + tau)  !4/9*c*re^2 * B^2 * gamma^2
-    
-    return
+    SyncLoss_mod = -1.05804d-15 * B_FF**2 * (Lgamma**2-1d0) / (1d0 + tau)  !4/9*c*re^2 * B^2 * gamma^2 [erg/s]
+ 
     end function SyncLoss_mod
     
-    !**********************************************************************************************
+    !============================================================================
     !   Inverse Compton losses (Eq. (36) in Khangulyan 2014)                    
-    !**********************************************************************************************
+    !============================================================================
     real(dp) function ICLoss(Eph_MFF, Kapp, EFF)
     real(dp), intent(in) :: Eph_MFF, Kapp, EFF
     real(dp) :: TFF, t_iso, Eiso_ct
@@ -80,29 +71,25 @@ contains
     TFF = Eph_MFF/(2.7d0*mec2)   !Dimensionless stellar temperature in the FF (EphMFF = 2.7*kB*TFF)
     t_iso = 4d0*TFF*(EFF/mec2)
     Eiso_ct = cte_IC_K*Kapp*TFF**2
-    
-    !IC losses (in erg/s due to the mec2 multiplying)
-    ICLoss = - Eiso_ct*F_iso(t_iso)*mec2
+    ICLoss = - Eiso_ct*F_iso(t_iso)*mec2    ![erg/s]
 
-    return
     end function ICLoss
 
-    !**********************************************************************************************
+    !============================================================================
     !   Adiabatic losses
-    !**********************************************************************************************
+    !============================================================================
     real(dp) function AdLoss(z_, EFF)
     real(dp), intent(in) :: z_, EFF
     real(dp) :: gg
 
-    !Adiabatic losses
     gg = EFF - mec2**2/EFF
     AdLoss = - 2d0/3d0 * geomIndex * lorentzFactor(z_) * c * betaJet(z_) / z_ * gg
     
     end function AdLoss
         
-    !**********************************************************************************************
-    !   Write the different cooling times for a given segment
-    !**********************************************************************************************
+    !============================================================================
+    !   Save to a file the different cooling times for a given segment
+    !============================================================================
     subroutine Print_tloss(segN, particle)
     integer, intent(in) :: segN
     character(1), intent(in) :: particle
@@ -137,5 +124,7 @@ contains
     close(20)
 
     end subroutine Print_tloss
+  
+    !============================================================================
 
 END MODULE losses

@@ -208,7 +208,6 @@ contains
         !print*, tau, Lum(j), 4d0*pi*Ap*Sf*(1d0-exp(-tau))
     enddo
 
-    return
     end subroutine SSA
     !============================================================================
     ! SSA (END)

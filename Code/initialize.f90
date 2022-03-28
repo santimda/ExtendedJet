@@ -45,7 +45,7 @@ MODULE initialize
             ! Initialize using the values from a previous run (if the file exists)
             inquire(file='quant_FF.dat',exist=fexist)
             if (.not. fexist) then
-                print*,'You first have to run trajectory and evolution modules at least once!'
+                print *,'You first have to run trajectory and evolution modules at least once!'
                 stop
             else
                 open(30,file='quant_FF.dat')  
