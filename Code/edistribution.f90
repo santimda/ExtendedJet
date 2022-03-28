@@ -18,6 +18,7 @@ contains
     real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
     real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
     real(dp) :: NEE(Ns), Nparticles, flux, Eparticles, energyFlux, vol, fluxp, eFluxp, Ljett, magnetization
+    real(dp) :: sqrt_factor, dEdt_factor
     integer :: izz
 
     if (particle == 'e') then
@@ -36,6 +37,7 @@ contains
         restEnergy = mpc2
     else
         print *, "FATAL ERROR: WRONG PARTICLE CLASS!!!"
+        stop
     endif
 
     do i = 1,Ns
@@ -44,9 +46,8 @@ contains
         if (Ecut > EmaxFF2/3.d0) then
             print *, 'EmaxFF in globals.f90 is too low!'
             stop
-        else
-            write(11,*) i, z(i), Ecut/eV
         endif
+        write(11,*) i, z(i), Ecut/eV
     enddo
     close(11)
     
@@ -59,18 +60,19 @@ contains
     
     flux = 0d0
     energyFlux = 0d0
-
+    sqrt_factor = sqrt(Ein) - 1d0/sqrt(Ein)
     ! PLOT SOME QUANTITIES
     open(50, file='Quantities.dat')
     do izz = 1, Ns
         Nparticles = 0d0
         Eparticles = 0d0
         Lsy = 0d0
+        dEdt_factor = 4d0/3d0 * sigma_T * c * (BFF_fun(z(izz))**2/(8d0*pi))
         do i2 = 1, nIn
-            Nparticles = Nparticles + NEmatrix(i2, izz) * Evec(i2) * (sqrt(Ein) - 1d0/sqrt(Ein))
-            Eparticles = Eparticles + NEmatrix(i2, izz) * Evec(i2)**2 * (sqrt(Ein)-1d0/sqrt(Ein))
-            dEdt = 4d0/3d0 * sigma_T * c * (BFF_fun(z(izz))**2/(8d0*pi)) * (Evec(i2)/mec2)**2
-            Lsy = Lsy + NEmatrix(i2, izz) * dEdt * Evec(i2) * (sqrt(Ein) - 1d0/sqrt(Ein))
+            Nparticles = Nparticles + NEmatrix(i2, izz) * Evec(i2) * sqrt_factor
+            Eparticles = Eparticles + NEmatrix(i2, izz) * Evec(i2)**2 * sqrt_factor
+            dEdt = dEdt_factor * (Evec(i2)/mec2)**2
+            Lsy = Lsy + NEmatrix(i2, izz) * dEdt * Evec(i2) * sqrt_factor
         enddo
         vol = pi * r_fun(z(izz))**2 * deltaZ(izz)
         Ljett = pi*r_fun(z(izz))**2*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
@@ -82,7 +84,7 @@ contains
         eFluxp = energyFlux
         flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
         energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
-        write(*, *) "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", & 
+        print *, "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", & 
                            fluxp/flux, "RatioE = ", eFluxp/energyFlux
     enddo
     close(50)
@@ -110,21 +112,7 @@ contains
     close(30)
     
     end subroutine Edist
-    
-
-    !*************************************************************************************************************
-    !   Setting of an appropriate time step for the N(E) computation
-    !*************************************************************************************************************
-    real(dp) function Setdt(B,r_j,v_norm,Eph,Kapp,E,particle)
-    character(1), intent(in) :: particle
-    real(dp), intent(in) :: B,r_j,v_norm,Eph,Kapp,E
-    real(dp) :: tloss
-    !Characteristic time for losses
-    tloss = abs(E/TLosses(B,r_j,v_norm,Eph,Kapp,E,particle))
-    !Set dt according to the characterstic losses and injection times
-    Setdt = 0.1d0 * min(tloss,dtFF)
-    end function
-    
+        
 
     !************************************************************************************
     !   Determination of the cutoff energy of the particle injection
@@ -195,9 +183,9 @@ contains
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
     endif
-    !if (E <= EmaxFF2 .and. E >= EminFF2) then
-    if (E >= EminFF2 .and. E <= Ecut) then
-        dQ_Edz = Kinj*E**(-p) !* exp(-E/Ecut)
+
+    if (E >= EminFF2 .and. E <= 10.d0*Ecut) then
+        dQ_Edz = Kinj*E**(-p) * exp(-E/Ecut)
     else
         dQ_Edz = 0d0
     endif
@@ -307,6 +295,9 @@ contains
   
     end subroutine FP_FinDif_cool
 
+    !============================================================================
+    ! calcNE_paramo (START)
+    !============================================================================
     subroutine calcNE_paramo(Evec, NEmatrix)
 
         real(dp), intent(in) :: Evec(nIn)
@@ -413,5 +404,9 @@ contains
         enddo
 
     end subroutine
+    !============================================================================
+    ! calcNE_paramo (END)
+    !============================================================================
+    
 
 END MODULE edistribution
