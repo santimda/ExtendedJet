@@ -88,6 +88,20 @@ contains
     end function AdLoss
         
     !============================================================================
+    !   Cell convection time
+    !============================================================================
+    real(dp) function t_cell(segN)
+    integer, intent(in) :: segN
+
+    if (segN==Ns) then
+        t_cell = (z(segN) - z(segN-1))/vj/gj
+    else   
+        t_cell = (z(segN+1) - z(segN))/vj/gj
+    endif
+    
+    end function t_cell
+        
+    !============================================================================
     !   Save to a file the different cooling times for a given segment
     !============================================================================
     subroutine Print_tloss(segN, particle)
@@ -102,11 +116,7 @@ contains
     
     write(num_seg,'(I3)') segN
     open(20,file='losses_'//trim(adjustl(num_seg))//'.dat')  
-    if (segN==Ns) then
-        tcell = (z(segN) - z(segN-1))/vj/gj
-    else   
-        tcell = (z(segN+1) - z(segN))/vj/gj
-    endif
+    tcell = t_cell(segN)
     tconv = z(segN)/vj/gj
 
     do i = 1, nIn
