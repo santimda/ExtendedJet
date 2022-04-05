@@ -21,7 +21,7 @@ MODULE initialize
         allocate( deltaZ(Ns), deltatFF(Ns) )
 
         ! Initialize values given by free parameters:
-        fB = fB_value         !Update the value of fB (default value defined in system_parameters.f90)
+        !fB = fB_value         !Update the value of fB (default value defined in system_parameters.f90)
         Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
         z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
         a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
@@ -29,15 +29,19 @@ MODULE initialize
         LnT = Lj*fnT          !Available nonthermal luminosity
         LnTFF = LnT!/gj**2    !Available nonthermal luminosity in the FF
         
-        B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
+        mu = gj * (sigma_0 + 1d0)
+        Mdot_j = Lj / (c**2 * gj * (sigma_0 + 1d0))
+        max_enthalpy = 1d0 + LnT / (mu/1.12d0 * Mdot_j * c**2)
+        !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
         
+        write(*, *) " B0 = ", BFF_fun(z0)
         dl = (zmax-z0)/Ns    !Segment length
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
         cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
         dt = dl/vj           !Segment advection time for constant velocity
         dtFF = dt/gj         !Advection time in the FF
 
-        write(*,'(A,Es9.2)') 'B0[G] = ', B0
+        !write(*,'(A,Es9.2)') 'B0[G] = ', B0
         write(*,'(A,Es9.2)') 'Lj[erg/s] = ', Lj
 
         ! Initialize arrays

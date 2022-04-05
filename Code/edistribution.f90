@@ -169,23 +169,62 @@ contains
     real(dp), intent(in) :: K,Ecut,E
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
-        Q_E = K*E**(-p) * exp(-E/Ecut)
+        Q_E = K*(E/EminFF)**(-p) * exp(-E/Ecut)
     else
         Q_E = 0d0
     endif
     end function Q_E
 
     !************************************************************************************
+    !   Injection normalization
+    !************************************************************************************  
+    real(dp) function Norm_q0p(Ecut, zz, particle)
+    real(dp), intent(in) :: Ecut, zz
+    character(1), intent(in) :: particle
+    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2
+    integer, parameter :: N = 300   !Number of subintervals for the integral
+    if (particle == 'e') then
+        EminFF2 = EminFF
+        EmaxFF2 = EmaxFF
+        LnTFF2 = LnTFF
+    else if (particle == 'p') then
+        EminFF2 = EpminFF
+        EmaxFF2 = EpmaxFF
+        LnTFF2 = LnTpFF
+    endif 
+    Einc = (EmaxFF2/EminFF2)**(1d0/(N-1d0))  !Increase factor of the energy
+    !Initialization
+    E = EminFF2
+    QInt = 0d0
+    ! The integral is solved with the trapezoid method
+    f1 = E * Q_E(1.d0,Ecut,E)
+    do i = 1, N-1 
+        dE = E*(Einc-1d0)                    !Energy interval
+        E2 = E*Einc
+        f2 = E2 * Q_E(1.d0,Ecut,E2)
+        f = (f1 + f2)/2.d0
+        QInt = QInt + f*dE
+        f1 = f2
+        E = E2
+    end do
+    Norm_q0p = dLe_dz(zz)/(QInt*lorentzFactor(zz)*pi*r_fun(zz)**2)   !Normalization constant
+
+    return
+    end function Norm_q0p
+
+    !************************************************************************************
     !   Injection function (for multiple injection cells)
     !************************************************************************************
-    real(dp) function dQ_Edz(E, zz, BB, rr, vlat, particle)
+    real(dp) function qp_E(E, zz, BB, rr, vlat, particle)
     real(dp), intent(in) :: E, zz, BB, rr, vlat
-    real(dp) :: Ecut, Kinj, EminFF2, EmaxFF2, intInj
+    real(dp) :: Ecut, Kinj, EminFF2, EmaxFF2, intInj, q0p
     character(1), intent(in) :: particle
     Ecut = CutE(BB, rr, vlat, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
+
     !Kinj = NormKz(Ecut, particle) / (zz * log(zmax_inj/z0))         !Normalization constant for Q(E)
-    intInj = z0 / (a_inj-1d0) * (1d0 - (z0/zmax_inj)**(a_inj-1d0))
-    Kinj = NormKz(Ecut, particle) * (z0/zz)**a_inj / intInj
+    !intInj = z0 / (a_inj-1d0) * (1d0 - (z0/zmax_inj)**(a_inj-1d0))
+    !Kinj = NormKz(Ecut, particle) * (z0/zz)**a_inj / intInj
+    q0p = Norm_q0p(Ecut, zz, particle)
     !intInj = z0 / (a_inj - 1d0 - geomIndex) * (1d0 - (z0/zmax_inj)**(a_inj - 1d0 - geomIndex))
     !Kinj = NormKz(Ecut, particle) * (r0/r_fun(zz))**a_inj / intInj
     !Q(E) = 0 if outside the injection energy limits
@@ -196,13 +235,12 @@ contains
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
     endif
-    !if (E <= EmaxFF2 .and. E >= EminFF2) then
-    if (E >= EminFF2 .and. E <= Ecut) then
-        dQ_Edz = Kinj*E**(-p) !* exp(-E/Ecut)
+    if (E >= EminFF2 .and. E <= EmaxFF2) then
+        qp_E = q0p*(E/EminFF2)**(-p) * exp(-E/Ecut)
     else
-        dQ_Edz = 0d0
+        qp_E = 0d0
     endif
-    end function dQ_Edz
+    end function qp_E
 
     !************************************************************************************
     !   Injection normalization
@@ -333,13 +371,14 @@ contains
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
             Ee(k) = gg(k) * mec2
             dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, 1d0, Ee(k), 'e')) / mec2
-            dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0))*c)
+            dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)
             if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
         end do build_g
         dg(1) = dg(2)
 
         build_Q: do k = 1, numbins
-            Qinj(k, 0) = dQ_Edz(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), 'e') * mec2
+            !Qinj(k, 0) = dQ_Edz(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), 'e') * mec2
+            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), 'e') * mec2 * pi * r_fun(zz(0))**2
         end do build_Q
 
         nn(:, 0) = 0d0
@@ -371,7 +410,8 @@ contains
 
             if (zz(jz) < zmax_inj) then
                 build_Qin: do k = 1, numbins
-                    Qinj(k, jz) = dQ_Edz(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 'e') * mec2
+                    !Qinj(k, jz) = dQ_Edz(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 'e') * mec2
+                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 'e') * mec2 * pi * r_fun(zz(jz))**2
                 end do build_Qin
             else
                 Qinj(:, jz) = 0d0

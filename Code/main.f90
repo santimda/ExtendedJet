@@ -97,7 +97,7 @@ END PROGRAM main
         !Evolution of different quantities
         if (verbose .and. jet_calc) write(*,*) '\n Calculating the evolution of quantities along the jet'
         if (jet_calc) call Quantities('') !'' = jet 
-        if (verbose) write(*,'(2X,A12,F8.4)') 'B0_FF[G] = ', B0/gj
+        !if (verbose) write(*,'(2X,A12,F8.4)') 'B0_FF[G] = ', B0/gj
 
         !Particle distribution
         if (NE_calc) then 
