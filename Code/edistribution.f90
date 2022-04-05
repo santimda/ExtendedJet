@@ -15,8 +15,8 @@ contains
    ! This subroutine calculates the electron energy distribution at each segment
    !============================================================================
     character(1), intent(in) :: particle
-    real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
-    real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
+    real(dp) :: Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
+    real(dp) :: NEmatrix(nIn, Ns), Evec(nIn)
     real(dp) :: NEE(Ns), Nparticles, flux, Eparticles, energyFlux, vol, fluxp, eFluxp, Ljett, magnetization
     real(dp) :: sqrt_factor, dEdt_factor
     integer :: izz
@@ -264,7 +264,7 @@ contains
         real(dp), intent(in) :: dt, tesc
         real(dp), intent(in), dimension(:) :: g, nin, gdot, QQ
         real(dp), intent(out), dimension(:) :: nout
-        integer :: Ng, Ng1, k
+        integer :: Ng, Ng1
         real(dp), dimension(size(g)) :: dx, dxp2, dxm2, BBp2, BBm2, a, b, c, r
   
         Ng = size(g)
@@ -302,7 +302,7 @@ contains
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
         real(dp) :: Ecut, tlossFF, dttFF, dzz
         integer :: jz, k, m, izz
-        real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope, Ng
+        real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
         real(dp) :: g_min, g_max
         
         allocate(t(0:numdt), Ntot(numdt), dt(numdt), dg(numbins), zz(0:numdt))
