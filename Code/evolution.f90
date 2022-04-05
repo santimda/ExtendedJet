@@ -29,7 +29,7 @@ MODULE evolution
       elseif (jet == 'CJ') then
          dir = -1.d0
       else
-         write(*,*) 'Invalid jet type'
+         print *, 'Invalid jet type'
          stop
       endif
 

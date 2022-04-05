@@ -88,14 +88,14 @@ END PROGRAM main
 
     ! Calculate everything for the jet first
     if (JET_) then 
-        if (verbose) write(*,*) '\n Initialize vectors'    
+        if (verbose) print *, '\n Initialize vectors'    
         call initialize_allocate(fB, Lj, z0, a_inj)
         !Jet trajectory
-        if (verbose .and. jet_calc) write(*,*) '\n Calculating jet trajectory'
+        if (verbose .and. jet_calc) print *, '\n Calculating jet trajectory'
         if (jet_calc) call trajectory_calc('') !'' = jet 
         
         !Evolution of different quantities
-        if (verbose .and. jet_calc) write(*,*) '\n Calculating the evolution of quantities along the jet'
+        if (verbose .and. jet_calc) print *, '\n Calculating the evolution of quantities along the jet'
         if (jet_calc) call Quantities('') !'' = jet 
         !if (verbose) write(*,'(2X,A12,F8.4)') 'B0_FF[G] = ', B0/gj
 
@@ -105,7 +105,7 @@ END PROGRAM main
             call Edist('e')        ! Calculate the particle energy distribution
             call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
-            if (verbose) write(*,*) '\n Creating the tloss files for plots'
+            if (verbose) print *, '\n Creating the tloss files for plots'
             call Print_tloss(1, 'e')
             call Print_tloss(Ns/3, 'e')
             call Print_tloss(Ns, 'e')
@@ -139,16 +139,16 @@ END PROGRAM main
     ! Calculate everything for the counter-jet next
     if (CJ_) then
         if (.not. JET_) then
-            if (verbose) write(*,*) '\n Initialize vectors'    
+            if (verbose) print *, '\n Initialize vectors'    
             call initialize_allocate(fB,Lj,z0,a_inj)
         endif
 
         !Jet trajectory
-        if (verbose .and. jet_calc) write(*,*) '\n Calculating counter-jet trajectory'
+        if (verbose .and. jet_calc) print *, '\n Calculating counter-jet trajectory'
         if (jet_calc) call trajectory_calc('CJ')
         
         !Evolution of different quantities
-        if (verbose .and. jet_calc) write(*,*) '\n Calculating the evolution of quantities along the counter-jet'
+        if (verbose .and. jet_calc) print *, '\n Calculating the evolution of quantities along the counter-jet'
         if (jet_calc) call Quantities('CJ')
 
         !Particle distribution
@@ -158,7 +158,7 @@ END PROGRAM main
             !call Edist('p')
             call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
-            if (verbose) write(*,*) '\n Creating the tloss files for plots'
+            if (verbose) print *, '\n Creating the tloss files for plots'
             call Print_tloss(1, 'e')
             call Print_tloss(Ns/3, 'e')
             call Print_tloss(Ns, 'e')
@@ -179,10 +179,10 @@ END PROGRAM main
         if (radssc_calc) call SEDssc('CJ')  ! Calculate the SSC SED
     endif
 
-    if (verbose) write(*,*) '\n Deallocate vectors'    
+    if (verbose) print *, '\n Deallocate vectors'    
     call initialize_deallocate
     
-    if (verbose) write(*,*) '\n Program finished'    
+    if (verbose) print *, '\n Program finished'    
 
   end subroutine run_jet
 
@@ -235,7 +235,7 @@ END PROGRAM main
         
         call initialize_deallocate 
         S_data = S_data_J
-        if (verbose) write(*,*) 'S_data[cgs] =', S_data
+        if (verbose) print *, 'S_data[cgs] =', S_data
     endif 
 
 
@@ -255,15 +255,15 @@ END PROGRAM main
         !Synchrotron SED at the given values
         call SEDsyn_z_data(E_data, z_data, S_data_CJ, 'CJ', 'e')
         S_data = S_data + S_data_CJ
-        if (verbose) write(*,*) 'S_data[cgs] =', S_data
+        if (verbose) print *, 'S_data[cgs] =', S_data
         
         call initialize_deallocate 
     endif
 
     if (verbose) then
-        write(*,*) 'E_data[eV] =', E_data/eV
-        write(*,*) 'z_data[Rg] =', z_data/R_g
-        write(*,*) 'S_data[cgs] =', S_data
+        print *, 'E_data[eV] =', E_data/eV
+        print *, 'z_data[Rg] =', z_data/R_g
+        print *, 'S_data[cgs] =', S_data
     endif
 
   end subroutine sed_model

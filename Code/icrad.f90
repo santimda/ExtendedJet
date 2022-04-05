@@ -21,7 +21,7 @@ contains
     logical, intent(in) :: aniso 
     allocate( delta_obs(Ns) )
 
-    write(*,*) '\n Calculating the IC SED along the jet'
+    print *, '\n Calculating the IC SED along the jet'
         
     !Quantities at each segment
     open(20,file='deltas.dat')

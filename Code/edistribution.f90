@@ -15,10 +15,12 @@ contains
    ! This subroutine calculates the electron energy distribution at each segment
    !============================================================================
     character(1), intent(in) :: particle
-    real(dp) :: Kinj, Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
-    real(dp) :: NEmatrix(nIn, Ns), NEmat(Ns, nIn), Evec(nIn)
+    real(dp) :: Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
+    real(dp) :: NEmatrix(nIn, Ns), Evec(nIn)
     real(dp) :: NEE(Ns), Nparticles, flux, Eparticles, energyFlux, vol, fluxp, eFluxp, Ljett, magnetization
+    real(dp) :: sqrt_factor, dEdt_factor
     integer :: izz
+    logical :: print_quantities = .False.
 
     if (particle == 'e') then
         open(11,file='Emax_FF.dat')
@@ -35,67 +37,66 @@ contains
         EmaxFF2 = EpmaxFF
         restEnergy = mpc2
     else
-        write(*,*) "FATAL ERROR: WRONG PARTICLE CLASS!!!"
+        print *, "FATAL ERROR: WRONG PARTICLE CLASS!!!"
+        stop
     endif
-
+        
+    ! Calculate the cutoff energy for particle injection at each segment
     do i = 1,Ns
-        !Quantities at each segment
         Ecut = CutE(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
         if (Ecut > EmaxFF2/3.d0) then
-            write(*,*) 'EmaxFF in globals.f90 is too low!'
+            print *, 'EmaxFF in globals.f90 is too low!'
             stop
-        else
-            write(11,*) i, z(i), Ecut/eV
         endif
+        write(11,*) i, z(i), Ecut/eV
     enddo
     close(11)
     
-    ! Calculate logarithmically-spaced energy vector
+    ! Build a logarithmically-spaced energy vector
     call vector_log(EminFF2, EmaxFF2, Ein, Evec ) 
 
     NEE = 0d0
     NEmatrix = 0d0
-    call calcNE_paramo(Evec, NEmatrix)
-    
-    flux = 0d0
-    energyFlux = 0d0
+    call calcNE_paramo(Evec, NEmatrix, particle)
 
-    ! PLOT SOME QUANTITIES
-    open(50, file='Quantities.dat')
-    do izz = 1, Ns
-        Nparticles = 0d0
-        Eparticles = 0d0
-        Lsy = 0d0
-        do i2 = 1, nIn
-            Nparticles = Nparticles + NEmatrix(i2, izz) * Evec(i2) * (sqrt(Ein) - 1d0/sqrt(Ein))
-            Eparticles = Eparticles + NEmatrix(i2, izz) * Evec(i2)**2 * (sqrt(Ein)-1d0/sqrt(Ein))
-            dEdt = 4d0/3d0 * sigma_T * c * (BFF_fun(z(izz))**2d0/(8d0*pi)) * (Evec(i2)/mec2)**2d0
-            Lsy = Lsy + NEmatrix(i2, izz) * dEdt * Evec(i2) * (sqrt(Ein) - 1d0/sqrt(Ein))
-        enddo
-        vol = pi * r_fun(z(izz))**2 * deltaZ(izz)
-        Ljett = pi*r_fun(z(izz))**2*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
-         + BFF_fun(z(izz))**2/(8d0*pi) + Lsy/(4d0*r_fun(z(izz))**2d0*c))
-        magnetization = BFF_fun(z(izz))**2/(8d0*pi*Eparticles/vol)
-        write(50, *) z(izz)/R_g, Eparticles/(vol*lorentzFactor(z(izz))), BFF_fun(z(izz))**2/(8d0*pi), Ljett/Lj, magnetization, &
-                        (Ljett + Lsy)/Lj
-        fluxp = flux
-        eFluxp = energyFlux
-        flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
-        energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
-        write(*, *) "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", & 
-                           fluxp/flux, "RatioE = ", eFluxp/energyFlux
-    enddo
-    close(50)
-    ! !$OMP END DO
-    ! !$OMP END PARALLEL
-
-    EFF = EminFF2                        !Initialization
-    do i2 = 1, nIn
-        NEtot = 0.d0    ! Initialization
+    if (print_quantities) then
+        flux = 0d0
+        energyFlux = 0d0
+        sqrt_factor = sqrt(Ein) - 1d0/sqrt(Ein)
+        open(50, file='Quantities.dat')
         do izz = 1, Ns
+            Nparticles = 0d0
+            Eparticles = 0d0
+            Lsy = 0d0
+            dEdt_factor = 4d0/3d0 * sigma_T * c * (BFF_fun(z(izz))**2/(8d0*pi))
+            do i2 = 1, nIn
+                Nparticles = Nparticles + NEmatrix(i2, izz) * Evec(i2) * sqrt_factor
+                Eparticles = Eparticles + NEmatrix(i2, izz) * Evec(i2)**2 * sqrt_factor
+                dEdt = dEdt_factor * (Evec(i2)/mec2)**2
+                Lsy = Lsy + NEmatrix(i2, izz) * dEdt * Evec(i2) * sqrt_factor
+            enddo
+            vol = pi * r_fun(z(izz))**2 * deltaZ(izz)
+            Ljett = pi*r_fun(z(izz))**2*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
+             + BFF_fun(z(izz))**2/(8d0*pi) + Lsy/(4d0*r_fun(z(izz))**2*c))
+            magnetization = BFF_fun(z(izz))**2/(8d0*pi*Eparticles/vol)
+            write(50, *) z(izz)/R_g, Eparticles/(vol*lorentzFactor(z(izz))), BFF_fun(z(izz))**2/(8d0*pi), Ljett/Lj, magnetization, &
+                            (Ljett + Lsy)/Lj
+            fluxp = flux
+            eFluxp = energyFlux
+            flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
+            energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
+            print *, "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", & 
+                               fluxp/flux, "RatioE = ", eFluxp/energyFlux
+        enddo
+        close(50)
+    endif
 
-            write(20,*) EFF, NEmatrix(i2, izz), izz   !E and N(E) for each jet cut
-            NEtot = NEtot + NEmatrix(i2, izz)   !Sum for all the jet segments
+    EFF = EminFF2       !Initialization
+    do i2 = 1, nIn
+        NEtot = 0.d0    !Initialization
+        do izz = 1, Ns
+            write(20,*) EFF, NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
+            NEtot = NEtot + NEmatrix(i2, izz)           !Sum for all the jet segments
             NEE(izz) = NEE(izz) + NEmatrix(i2, izz) * EFF * (Ein-1d0)
 
             !Contribution of the segments up to given lengths
@@ -103,29 +104,14 @@ contains
             if (z(izz) <= 0.1d0*zmax) NE2 = NEtot
         enddo
         write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
-        EFF = EFF*Ein   !Exponential energy increase
+        EFF = EFF*Ein   !Increase the energy of the loop
     enddo
 
     close(20)
     close(30)
     
     end subroutine Edist
-    
-
-    !*************************************************************************************************************
-    !   Setting of an appropriate time step for the N(E) computation
-    !*************************************************************************************************************
-    real(dp) function Setdt(B,r_j,v_norm,Eph,Kapp,E,particle)
-    character(1), intent(in) :: particle
-    real(dp), intent(in) :: B,r_j,v_norm,Eph,Kapp,E
-    real(dp) :: tloss
-    !Characteristic time for losses
-    tloss = abs(E/TLosses(B,r_j,v_norm,Eph,Kapp,E,particle))
-    !Set dt according to the characterstic losses and injection times
-    Setdt = 0.1d0 * min(tloss,dtFF)
-    return
-    end function
-    
+        
 
     !************************************************************************************
     !   Determination of the cutoff energy of the particle injection
@@ -133,16 +119,16 @@ contains
     real(dp) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1, particle)
     character(1), intent(in) :: particle
     real(dp), intent(in) :: BFF1,rj1,vnorm1,Eph1,Kappa1
-    real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,error,check
-    !Injected power (erg/s)
-    Eacc = facc*qe*BFF1*c
+    real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,check
+    real(dp), parameter :: error_tolerance = 1.d-3 ! log(1 + DE/E) ~ |DE|/E <= error_tolerance
+    
     !Initialization
     lE1 = log10(1d9*eV)  ! log10(Emin [CGS]) ~ 1 GeV
     lE2 = log10(1d14*eV) ! log10(Emax [CGS]) ~ 100 TeV
-    if (particle == 'p') lE2 = log10(1d20*eV)
-    error = 1.d-4        ! error < 10^(-4)
-    !Maximum particle energy
-    do while (abs(lE2-lE1) > error)
+    if (particle == 'p') lE2 = log10(1d20*eV) !Maximum particle energy    
+
+    Eacc = facc*qe*BFF1*c ! energy gain: dE/dt_acc [erg/s]
+    do while (abs(lE2-lE1) > error_tolerance)
         lEmid = (lE1+lE2)/2d0
         check =  Eacc - abs(TLosses(BFF1,rj1,vnorm1,Eph1,Kappa1,10d0**lEmid, particle))
         if (check == 0d0) then
@@ -163,10 +149,10 @@ contains
 
 
     !************************************************************************************
-    !   Injection function (only one injection cell)
+    !   Injection function (at a specific injection cell)
     !************************************************************************************
-    real(dp) function Q_E (K,Ecut,E)
-    real(dp), intent(in) :: K,Ecut,E
+    real(dp) function Q_E (K, Ecut, E, EminFF2, EmaxFF2)
+    real(dp), intent(in) :: K, Ecut, E, EminFF2, EmaxFF2
     !Q(E) = 0 if outside the injection energy limits
     if (E <= EmaxFF .and. E >= EminFF) then
         Q_E = K*(E/EminFF)**(-p) * exp(-E/Ecut)
@@ -227,7 +213,6 @@ contains
     q0p = Norm_q0p(Ecut, zz, particle)
     !intInj = z0 / (a_inj - 1d0 - geomIndex) * (1d0 - (z0/zmax_inj)**(a_inj - 1d0 - geomIndex))
     !Kinj = NormKz(Ecut, particle) * (r0/r_fun(zz))**a_inj / intInj
-    !Q(E) = 0 if outside the injection energy limits
     if (particle == 'e') then
         EminFF2 = EminFF
         EmaxFF2 = EmaxFF
@@ -264,11 +249,11 @@ contains
     E = EminFF2
     QInt = 0.d0
     ! The integral is solved with the trapezoid method
-    f1 = E * Q_E(1.d0,Ecut,E)
+    f1 = E * Q_E(1.d0,Ecut,E,EminFF2,EmaxFF2)
     do i = 1, N-1 
         dE = E*(Einc-1d0)                    !Energy interval
         E2 = E*Einc
-        f2 = E2 * Q_E(1.d0,Ecut,E2)
+        f2 = E2 * Q_E(1.d0,Ecut,E2,EminFF2, EmaxFF2)
         f = (f1 + f2)/2.d0
         QInt = QInt + f*dE
         f1 = f2
@@ -276,7 +261,6 @@ contains
     end do
     NormKz = LnTFF2/QInt   !Normalization constant
 
-    return
     end function NormKz
 
 
@@ -311,7 +295,6 @@ contains
         enddo
         close(28)
 
-        return
     end subroutine Calc_Ue
     !============================================================================
     ! Calc_Ue (END)
@@ -322,7 +305,7 @@ contains
         real(dp), intent(in) :: dt, tesc
         real(dp), intent(in), dimension(:) :: g, nin, gdot, QQ
         real(dp), intent(out), dimension(:) :: nout
-        integer :: Ng, Ng1, k
+        integer :: Ng, Ng1
         real(dp), dimension(size(g)) :: dx, dxp2, dxm2, BBp2, BBm2, a, b, c, r
   
         Ng = size(g)
@@ -348,21 +331,30 @@ contains
   
     end subroutine FP_FinDif_cool
 
-    subroutine calcNE_paramo(Evec, NEmatrix)
+    !============================================================================
+    ! calcNE_paramo (START)
+    !============================================================================
+    subroutine calcNE_paramo(Evec, NEmatrix, particle)
 
         real(dp), intent(in) :: Evec(nIn)
+        character(1), intent(in) :: particle
         real(dp), intent(out) :: NEmatrix(nIn, Ns)
         real(dp), allocatable, dimension(:) :: t, Ntot, gg, dt, dg, zz, Ee
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
         real(dp) :: Ecut, tlossFF, dttFF, dzz
         integer :: jz, k, m, izz
-        real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope, Ng
+        real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
         real(dp) :: g_min, g_max
         
         allocate(t(0:numdt), Ntot(numdt), dt(numdt), dg(numbins), zz(0:numdt))
         allocate(nn(numbins, 0:numdt), dotg(numbins, 0:numdt), gg(numbins), &
                 Qinj(numbins, 0:numdt), Ee(numbins), Ddiff(numbins, 0:numdt))
         
+        if (particle .ne. 'e') then 
+            print *, 'ONLY ELECTRONS!' ! --> UPDATE THIS!
+            stop
+        endif
+
         t(0) = 0d0
         zz(0) = z0*1.001
         g_min = EminFF / mec2
@@ -456,5 +448,9 @@ contains
         enddo
 
     end subroutine
+    !============================================================================
+    ! calcNE_paramo (END)
+    !============================================================================
+    
 
 END MODULE edistribution
