@@ -154,8 +154,8 @@ contains
     real(dp) function Q_E (K, Ecut, E, EminFF2, EmaxFF2)
     real(dp), intent(in) :: K, Ecut, E, EminFF2, EmaxFF2
     !Q(E) = 0 if outside the injection energy limits
-    if (E <= EmaxFF .and. E >= EminFF) then
-        Q_E = K*(E/EminFF)**(-p) * exp(-E/Ecut)
+    if (E <= EmaxFF2 .and. E >= EminFF2) then
+        Q_E = K*(E/EminFF2)**(-p) * exp(-E/Ecut)
     else
         Q_E = 0d0
     endif
@@ -183,12 +183,12 @@ contains
     E = EminFF2
     QInt = 0d0
     ! The integral is solved with the trapezoid method
-    f1 = E * Q_E(1.d0,Ecut,E)
+    f1 = E * Q_E(1d0, Ecut, E, EminFF2, EmaxFF2)
     do i = 1, N-1 
         dE = E*(Einc-1d0)                    !Energy interval
         E2 = E*Einc
-        f2 = E2 * Q_E(1.d0,Ecut,E2)
-        f = (f1 + f2)/2.d0
+        f2 = E2 * Q_E(1d0, Ecut, E2, EminFF2, EmaxFF2)
+        f = (f1 + f2)/2d0
         QInt = QInt + f*dE
         f1 = f2
         E = E2
@@ -230,38 +230,38 @@ contains
     !************************************************************************************
     !   Injection normalization
     !************************************************************************************  
-    real(dp) function NormKz(Ecut, particle)
-    real(dp), intent(in) :: Ecut
-    character(1), intent(in) :: particle
-    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2
-    integer, parameter :: N = 300   !Number of subintervals for the integral
-    if (particle == 'e') then
-        EminFF2 = EminFF
-        EmaxFF2 = EmaxFF
-        LnTFF2 = LnTFF
-    else if (particle == 'p') then
-        EminFF2 = EpminFF
-        EmaxFF2 = EpmaxFF
-        LnTFF2 = LnTpFF
-    endif 
-    Einc = (EmaxFF2/EminFF2)**(1d0/(N-1))  !Increase factor of the energy
+    !real(dp) function NormKz(Ecut, particle)
+    !real(dp), intent(in) :: Ecut
+    !character(1), intent(in) :: particle
+    !real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2
+    !integer, parameter :: N = 300   !Number of subintervals for the integral
+    !if (particle == 'e') then
+    !    EminFF2 = EminFF
+    !    EmaxFF2 = EmaxFF
+    !    LnTFF2 = LnTFF
+    !else if (particle == 'p') then
+    !    EminFF2 = EpminFF
+    !    EmaxFF2 = EpmaxFF
+    !    LnTFF2 = LnTpFF
+    !endif 
+    !Einc = (EmaxFF2/EminFF2)**(1d0/(N-1))  !Increase factor of the energy
     !Initialization
-    E = EminFF2
-    QInt = 0.d0
+    !E = EminFF2
+    !QInt = 0.d0
     ! The integral is solved with the trapezoid method
-    f1 = E * Q_E(1.d0,Ecut,E,EminFF2,EmaxFF2)
-    do i = 1, N-1 
-        dE = E*(Einc-1d0)                    !Energy interval
-        E2 = E*Einc
-        f2 = E2 * Q_E(1.d0,Ecut,E2,EminFF2, EmaxFF2)
-        f = (f1 + f2)/2.d0
-        QInt = QInt + f*dE
-        f1 = f2
-        E = E2
-    end do
-    NormKz = LnTFF2/QInt   !Normalization constant
-
-    end function NormKz
+    !f1 = E * Q_E(1.d0,Ecut,E,EminFF2,EmaxFF2)
+    !do i = 1, N-1 
+    !    dE = E*(Einc-1d0)                    !Energy interval
+    !    E2 = E*Einc
+    !    f2 = E2 * Q_E(1.d0,Ecut,E2,EminFF2, EmaxFF2)
+    !    f = (f1 + f2)/2.d0
+    !    QInt = QInt + f*dE
+    !    f1 = f2
+    !    E = E2
+    !end do
+    !NormKz = LnTFF2/QInt   !Normalization constant
+!
+    !end function NormKz
 
 
     !============================================================================
@@ -341,7 +341,7 @@ contains
         real(dp), intent(out) :: NEmatrix(nIn, Ns)
         real(dp), allocatable, dimension(:) :: t, Ntot, gg, dt, dg, zz, Ee
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
-        real(dp) :: Ecut, tlossFF, dttFF, dzz
+        real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2
         integer :: jz, k, m, izz
         real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
         real(dp) :: g_min, g_max
@@ -350,19 +350,24 @@ contains
         allocate(nn(numbins, 0:numdt), dotg(numbins, 0:numdt), gg(numbins), &
                 Qinj(numbins, 0:numdt), Ee(numbins), Ddiff(numbins, 0:numdt))
         
-        if (particle .ne. 'e') then 
-            print *, 'ONLY ELECTRONS!' ! --> UPDATE THIS!
-            stop
+        if (particle == 'e') then
+            EminFF2 = EminFF
+            EmaxFF2 = EmaxFF
+            mc2 = mec2
+        else if (particle == 'p') then
+            EminFF2 = EpminFF
+            EmaxFF2 = EpmaxFF
+            mc2 = mpc2
         endif
 
         t(0) = 0d0
         zz(0) = z0*1.001
-        g_min = EminFF / mec2
-        g_max = EmaxFF / mec2
+        g_min = EminFF / mc2
+        g_max = EmaxFF / mc2
         build_g: do k = 1, numbins
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
-            Ee(k) = gg(k) * mec2
-            dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, 1d0, Ee(k), 'e')) / mec2
+            Ee(k) = gg(k) * mc2
+            dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, 1d0, Ee(k), particle)) / mc2
             dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)
             if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
         end do build_g
@@ -370,7 +375,7 @@ contains
 
         build_Q: do k = 1, numbins
             !Qinj(k, 0) = dQ_Edz(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), 'e') * mec2
-            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), 'e') * mec2 * pi * r_fun(zz(0))**2
+            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2
         end do build_Q
 
         nn(:, 0) = 0d0
@@ -378,8 +383,8 @@ contains
 
         jz = 0
         z_loop: do while (zz(jz) < zmax)
-            Ecut = CutE(BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 1d0, 1d0, 'e')
-            tlossFF = Ecut/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, 1d0, Ecut, 'e'))
+            Ecut = CutE(BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 1d0, 1d0, particle)
+            tlossFF = Ecut/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, 1d0, Ecut, particle))
             dttFF = min(1e4*tlossFF, 1d-3*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
             
@@ -395,7 +400,7 @@ contains
             &                   1d200)
 
             build_dotg: do k = 1, numbins
-                dotg(k, jz) = -abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, 1d0, Ee(k), 'e'))/mec2!, &
+                dotg(k, jz) = -abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, 1d0, Ee(k), particle))/mc2!, &
                                      !nn(k, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
                 dotg(k, jz) = dotg(k, jz) / (betaGamma(zz(jz))*c)
             end do build_dotg
@@ -403,7 +408,7 @@ contains
             if (zz(jz) < zmax_inj) then
                 build_Qin: do k = 1, numbins
                     !Qinj(k, jz) = dQ_Edz(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 'e') * mec2
-                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 'e') * mec2 * pi * r_fun(zz(jz))**2
+                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2
                 end do build_Qin
             else
                 Qinj(:, jz) = 0d0
@@ -443,7 +448,7 @@ contains
                 slope = (N2-N1)/log10(E2/E1)
                 !NEmatrix(i2, izz) = nn(m, jz)
                 NEmatrix(i2, izz) = N1 + slope * log10(Evec(i2)/E1)
-                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) * deltaZ(izz) / (betaGamma(z(izz)) * c * mec2)
+                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) * deltaZ(izz) / (betaGamma(z(izz)) * c * mc2)
             enddo
         enddo
 

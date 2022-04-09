@@ -89,7 +89,7 @@ END PROGRAM main
     ! Calculate everything for the jet first
     if (JET_) then 
         if (verbose) print *, '\n Initialize vectors'    
-        call initialize_allocate(fB, Lj, z0, a_inj)
+        call initialize_allocate(sigma_0, Lj, z0, a_inj)
         !Jet trajectory
         if (verbose .and. jet_calc) print *, '\n Calculating jet trajectory'
         if (jet_calc) call trajectory_calc('') !'' = jet 
@@ -140,7 +140,7 @@ END PROGRAM main
     if (CJ_) then
         if (.not. JET_) then
             if (verbose) print *, '\n Initialize vectors'    
-            call initialize_allocate(fB,Lj,z0,a_inj)
+            call initialize_allocate(sigma_0,Lj,z0,a_inj)
         endif
 
         !Jet trajectory

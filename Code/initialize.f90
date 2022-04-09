@@ -9,11 +9,11 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (START)
     !============================================================================
-    subroutine initialize_allocate(fB_value, Lj_value, z0_value, a_inj_value)
+    subroutine initialize_allocate(sigma_value, Lj_value, z0_value, a_inj_value)
     !============================================================================
     ! allocate and initialize vectors 
     !============================================================================
-        real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
+        real(dp), intent(in) :: sigma_value, Lj_value, z0_value, a_inj_value
         logical :: fexist
 
         allocate( z(Ns), rj(Ns) )
@@ -21,7 +21,7 @@ MODULE initialize
         allocate( deltaZ(Ns), deltatFF(Ns) )
 
         ! Initialize values given by free parameters:
-        !fB = fB_value         !Update the value of fB (default value defined in system_parameters.f90)
+        sigma_0 = sigma_value         !Update the value of fB (default value defined in system_parameters.f90)
         Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
         z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
         a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
