@@ -30,9 +30,9 @@ contains
         EmaxFF2 = EmaxFF
         restEnergy = mec2
     else if (particle == 'p') then
+        open(11,file='Epmax_FF.dat')
         open(20,file='Np_cuts.dat')
         open(30,file='Np_jet.dat')
-        open(11, file='Epmax_FF.dat')
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
         restEnergy = mpc2
@@ -42,8 +42,8 @@ contains
     endif
         
     ! Calculate the cutoff energy for particle injection at each segment
-    do i = 1,Ns
-        Ecut = CutE(BFF(i),rj(i),vnorm(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
+    do i = 1, Ns
+        Ecut = CutE(BFF(i),rj(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
         if (Ecut > EmaxFF2/3.d0) then
             print *, 'EmaxFF in globals.f90 is too low!'
             stop
@@ -116,9 +116,9 @@ contains
     !************************************************************************************
     !   Determination of the cutoff energy of the particle injection
     !************************************************************************************
-    real(dp) function CutE (BFF1,rj1,vnorm1,Eph1,Kappa1, particle)
+    real(dp) function CutE (BFF1,rj1,Eph1,Kappa1, particle)
     character(1), intent(in) :: particle
-    real(dp), intent(in) :: BFF1,rj1,vnorm1,Eph1,Kappa1
+    real(dp), intent(in) :: BFF1,rj1,Eph1,Kappa1
     real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,check
     real(dp), parameter :: error_tolerance = 1.d-3 ! log(1 + DE/E) ~ |DE|/E <= error_tolerance
     
@@ -201,11 +201,11 @@ contains
     !************************************************************************************
     !   Injection function (for multiple injection cells)
     !************************************************************************************
-    real(dp) function qp_E(E, zz, BB, rr, vlat, particle)
-    real(dp), intent(in) :: E, zz, BB, rr, vlat
+    real(dp) function qp_E(E, zz, BB, rr, particle)
+    real(dp), intent(in) :: E, zz, BB, rr
     real(dp) :: Ecut, Kinj, EminFF2, EmaxFF2, intInj, q0p
     character(1), intent(in) :: particle
-    Ecut = CutE(BB, rr, vlat, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
+    Ecut = CutE(BB, rr, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
 
     !Kinj = NormKz(Ecut, particle) / (zz * log(zmax_inj/z0))         !Normalization constant for Q(E)
     !intInj = z0 / (a_inj-1d0) * (1d0 - (z0/zmax_inj)**(a_inj-1d0))
@@ -375,7 +375,7 @@ contains
 
         build_Q: do k = 1, numbins
             !Qinj(k, 0) = dQ_Edz(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), 'e') * mec2
-            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2
+            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2
         end do build_Q
 
         nn(:, 0) = 0d0
@@ -383,7 +383,7 @@ contains
 
         jz = 0
         z_loop: do while (zz(jz) < zmax)
-            Ecut = CutE(BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 1d0, 1d0, particle)
+            Ecut = CutE(BFF_fun(zz(jz)), r_fun(zz(jz)), 1d0, 1d0, particle)
             tlossFF = Ecut/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ecut, particle))
             dttFF = min(1e4*tlossFF, 1d-3*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
@@ -408,7 +408,7 @@ contains
             if (zz(jz) < zmax_inj) then
                 build_Qin: do k = 1, numbins
                     !Qinj(k, jz) = dQ_Edz(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 'e') * mec2
-                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2
+                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2
                 end do build_Qin
             else
                 Qinj(:, jz) = 0d0
