@@ -8,22 +8,22 @@ contains
     !============================================================================
     !   Total losses
     !============================================================================
-    real(dp) function TLosses(B_FF, z_, v_norm, Eph_MFF, Kapp, EFF, particle)
+    real(dp) function TLosses(B_FF, z_, Eph_MFF, Kapp, EFF, particle)
     character(1), intent(in) :: particle
-    real(dp), intent(in) :: B_FF, Eph_MFF, Kapp, EFF, z_, v_norm
+    real(dp), intent(in) :: B_FF, Eph_MFF, Kapp, EFF, z_
 
-    TLosses = SyncLoss(B_FF,EFF,particle) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
+    TLosses = SyncLoss(B_FF, EFF, particle) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
 
     end function TLosses
 
     !============================================================================
     !   Total losses (modified)
     !============================================================================
-    real(dp) function TLosses_mod(B_FF, z_, Eph_MFF, Kapp, EFF, particle, Ng_)
+    real(dp) function TLosses_mod(B_FF, z_, Eph_MFF, Kapp, EFF, Ng_, particle)
     character(1), intent(in) :: particle
     real(dp), intent(in) :: B_FF, Eph_MFF, Kapp, EFF, z_, Ng_
 
-    TLosses_mod = SyncLoss_mod(B_FF, EFF, z_, Ng_) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
+    TLosses_mod = SyncLoss_mod(B_FF, EFF, z_, Ng_, particle) + AdLoss(z_, EFF)! + ICLoss(Eph_MFF,Kapp,EFF)
 
     end function TLosses_mod
 
@@ -48,16 +48,22 @@ contains
     !============================================================================
     !   Synchrotron losses (modified)
     !============================================================================
-    real(dp) function SyncLoss_mod(B_FF, EFF, zz_, Ng_)
+    real(dp) function SyncLoss_mod(B_FF, EFF, zz_, Ng_, particle)
     real(dp), intent(in) :: B_FF, EFF, zz_, Ng_
+    character(1), intent(in) :: particle
     real(dp) :: Lgamma, factor, alpha, B_cr, eps, tau
 
     Lgamma = EFF/mec2    !Lorentz factor of the particles in the fluid frame
+    factor = 1d0
+    if (particle == 'p') then
+        factor = 2.966d-7    ! (me/mp)^2
+        Lgamma = EFF/mpc2
+    endif
     B_cr = 4.4e13
     eps = B_FF / B_cr * Lgamma**2
     alpha = 137d0 / 2d0 * pi * sigma_T * B_FF/B_cr / eps**2 * Ng_
     tau = alpha * r_fun(zz_)
-    SyncLoss_mod = -1.05804d-15 * B_FF**2 * (Lgamma**2-1d0) / (1d0 + tau)  !4/9*c*re^2 * B^2 * gamma^2 [erg/s]
+    SyncLoss_mod = -1.05804d-15 * factor * B_FF**2 * (Lgamma**2-1d0) / (1d0 + tau)  !4/9*c*re^2 * B^2 * gamma^2 [erg/s]
  
     end function SyncLoss_mod
     
@@ -121,10 +127,10 @@ contains
 
     do i = 1, nIn
         !Cooling time for each process for segment segN
-        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF, 'e'))
+        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF,particle))
         tIC = EFF/abs(ICLoss(EphMFF(segN),Kappa(segN),EFF))
         tAd = EFF/abs(AdLoss(z(segN),EFF))
-        tTot = EFF/abs(TLosses(BFF(segN),z(segN),vnorm(segN),EphMFF(segN),Kappa(segN),EFF, particle))
+        tTot = EFF/abs(TLosses(BFF(segN),z(segN),EphMFF(segN),Kappa(segN),EFF,particle))
         tacc = EFF/(facc*BFF(segN)*qe*c)                    !Acceleration timescale
         tdiff = 3d0*qe*BFF(segN)*rj(segN)**2/(2d0*c*EFF)    !Diffusion timescale
         write(20,*) EFF/eV, tSyn, tIC, tAd, tTot, tcell, tacc, tdiff, tconv

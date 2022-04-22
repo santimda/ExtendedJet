@@ -275,7 +275,7 @@ END PROGRAM main
   !============================================================================
   ! syn_model(START)
   !============================================================================
-  subroutine syn_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, S_data)
+  subroutine syn_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron SED at specific energies
   ! for the given input parameters. 
@@ -292,7 +292,7 @@ END PROGRAM main
     use sscrad
     implicit none
     real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
-    real(dp), intent(in) :: E_data(:)
+    real(dp), intent(in) :: E_data(:), z_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
         

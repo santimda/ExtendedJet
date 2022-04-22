@@ -130,7 +130,7 @@ contains
     Eacc = facc*qe*BFF1*c ! energy gain: dE/dt_acc [erg/s]
     do while (abs(lE2-lE1) > error_tolerance)
         lEmid = (lE1+lE2)/2d0
-        check =  Eacc - abs(TLosses(BFF1,rj1,vnorm1,Eph1,Kappa1,10d0**lEmid, particle))
+        check =  Eacc - abs(TLosses(BFF1,rj1,Eph1,Kappa1,10d0**lEmid, particle))
         if (check == 0d0) then
             lE2 = lEmid
             exit
@@ -367,7 +367,7 @@ contains
         build_g: do k = 1, numbins
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
             Ee(k) = gg(k) * mc2
-            dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, 1d0, Ee(k), particle)) / mc2
+            dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, Ee(k), particle)) / mc2
             dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)
             if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
         end do build_g
@@ -384,7 +384,7 @@ contains
         jz = 0
         z_loop: do while (zz(jz) < zmax)
             Ecut = CutE(BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 1d0, 1d0, particle)
-            tlossFF = Ecut/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, 1d0, Ecut, particle))
+            tlossFF = Ecut/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ecut, particle))
             dttFF = min(1e4*tlossFF, 1d-3*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
             
@@ -400,7 +400,7 @@ contains
             &                   1d200)
 
             build_dotg: do k = 1, numbins
-                dotg(k, jz) = -abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, 1d0, Ee(k), particle))/mc2!, &
+                dotg(k, jz) = -abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ee(k), particle))/mc2!, &
                                      !nn(k, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
                 dotg(k, jz) = dotg(k, jz) / (betaGamma(zz(jz))*c)
             end do build_dotg
