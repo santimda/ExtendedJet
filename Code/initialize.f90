@@ -16,7 +16,7 @@ MODULE initialize
         real(dp), intent(in) :: sigma_value, Lj_value, z0_value, a_inj_value
         logical :: fexist
 
-        allocate( z(Ns), rj(Ns) )
+        allocate( z(Ns), rj(Ns), gj(Ns), bj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 
         allocate( deltaZ(Ns), deltatFF(Ns) )
 
@@ -27,10 +27,10 @@ MODULE initialize
         a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
 
         LnT = Lj*fnT          !Available nonthermal luminosity
-        LnTFF = LnT!/gj**2    !Available nonthermal luminosity in the FF
+        LnTFF = LnT!/gj0**2    !Available nonthermal luminosity in the FF
         
-        mu = gj * (sigma_0 + 1d0)
-        Mdot_j = Lj / (c**2 * gj * (sigma_0 + 1d0))
+        mu = gj0 * (sigma_0 + 1d0)
+        Mdot_j = Lj / (c**2 * gj0 * (sigma_0 + 1d0))
         max_enthalpy = 1d0 + LnT / (mu/1.12d0 * Mdot_j * c**2)
         !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
         
@@ -38,8 +38,6 @@ MODULE initialize
         dl = (zmax-z0)/Ns    !Segment length
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
         cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
-        dt = dl/vj           !Segment advection time for constant velocity
-        dtFF = dt/gj         !Advection time in the FF
 
         !write(*,'(A,Es9.2)') 'B0[G] = ', B0
         write(*,'(A,Es9.2)') 'Lj[erg/s] = ', Lj
@@ -75,7 +73,7 @@ MODULE initialize
     ! deallocate vectors 
     !============================================================================
 
-        deallocate( z, rj )
+        deallocate( z, rj, gj, bj )
         deallocate( BFF, vnorm, VFF, EphMFF, nfFF, Kappa, sjoFF )
         deallocate( deltaZ, deltatFF )
 

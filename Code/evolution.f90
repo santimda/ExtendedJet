@@ -15,11 +15,10 @@ MODULE evolution
    ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-      real(dp) :: dir, cjo, boost, bj_, gj_
+      real(dp) :: dir, cjo, boost
       allocate( joFF(Ns) )
       allocate( delta_obs(Ns) )
 
-      open(20,file='deltas'//jet//'.dat')
       open(30,file='quant_FF'//jet//'.dat')
       open(31,file='quant_FF_norm'//jet//'.dat')
 
@@ -38,13 +37,13 @@ MODULE evolution
 
          if (abs(z(i)) < zmax_inj) Ninj = i
 
-         gj_ = lorentzFactor(z(i))
-         bj_ = betaJet(z(i))
-         deltaZ(i) = abs(z(i)) * (sqrt(dlogZ)-1d0/sqrt(dlogZ)) ! Added abs value for CJ
-         deltatFF(i) = deltaZ(i) / (c*bj_*gj_)
+         gj(i) = lorentzFactor(z(i))
+         bj(i) = betaJet(z(i))
+         deltaZ(i) = abs( z(i)) * (sqrt(dlogZ) - 1d0/sqrt(dlogZ) ) !abs value for CJ
+         deltatFF(i) = deltaZ(i) / ( c*bj(i)*gj(i) )
          !print*, (deltaZ(i)/gj)/rj(i), z(i)/rj(i)/gj
          !Doppler factor between the jet and the observer
-         delta_obs(i) = 1d0/(gj_*(1d0-dir*bj_*cjo))
+         delta_obs(i) = 1d0 / ( gj(i) * (1d0 - dir*bj(i)*cjo) )
 
          !Magnetic field
          BFF(i) = BFF_fun(z(i))
@@ -60,22 +59,20 @@ MODULE evolution
          vnorm(i) = v_lat(z(i))
 
          !Jet observer angle in the FF
-         joFF(i) = acos( (cjo-bj_)/(1d0-bj_*cjo) )
+         joFF(i) = acos( (cjo - bj(i)) / (1d0 - bj(i)*cjo) )
          sjoFF(i) = sin(joFF(i))        !Sinus of joFF
 
          !Segment volume in the FF
-         VFF(i) = pi*rj(i)**2*(deltaZ(i)/gj_)
+         VFF(i) = pi*rj(i)**2*(deltaZ(i)/gj(i))
 
-         !boost = delta_obs(i)**2/gj  ! CHECK THIS!
-         boost = delta_obs(i)**2  ! CHECK THIS! (delta z defined in LF)
+         !Doppler boosting factor (used to transform FF -> OF); the expression assumes that delta z is defined in the LF
+         boost = delta_obs(i)**2 
 
-         write(20,*) delta_obs(i), boost
          write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
-         write(31,*) z(i)/R_g, (BFF(i)/BFF(1))**2, (vnorm(i)/rj(i))/(vnorm(1)/rj(1)), VFF(i)/VFF(1)
+         write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj(i)/rj(1), VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
 
       end do
 
-      close(20)
       close(30)
       close(31)
 

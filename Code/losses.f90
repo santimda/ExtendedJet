@@ -100,9 +100,9 @@ contains
     integer, intent(in) :: segN
 
     if (segN==Ns) then
-        t_cell = (z(segN) - z(segN-1))/vj/gj
+        t_cell = (z(segN) - z(segN-1))/(c*bj(segN))/gj(segN)
     else   
-        t_cell = (z(segN+1) - z(segN))/vj/gj
+        t_cell = (z(segN+1) - z(segN))/(c*bj(segN))/gj(segN)
     endif
     
     end function t_cell
@@ -123,7 +123,7 @@ contains
     write(num_seg,'(I3)') segN
     open(20,file='losses_'//trim(adjustl(num_seg))//'.dat')  
     tcell = t_cell(segN)
-    tconv = z(segN)/vj/gj
+    tconv = z(segN)/(c*bj(segN))/gj(segN)
 
     do i = 1, nIn
         !Cooling time for each process for segment segN

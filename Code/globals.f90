@@ -44,6 +44,7 @@ MODULE globals
 
   real(dp), dimension(:), allocatable :: delta_obs  !Doppler factor w.r.t. observer
   
+  real(dp), dimension(:), allocatable :: gj, bj     !Jet Lorentz factor and velocity (beta)
   real(dp), dimension(:), allocatable :: BFF, vnorm, VFF !Magnetic field, jet expansion velocity, segment volume
    
   real(dp), dimension(:), allocatable :: Kappa, EphMFF, nfFF !Dilution factor, photon energy and number density in the FF
