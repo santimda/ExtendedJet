@@ -43,13 +43,14 @@ MODULE globals
   real(dp), dimension(:), allocatable :: z, rj      !Jet position, radius
 
   real(dp), dimension(:), allocatable :: delta_obs  !Doppler factor w.r.t. observer
-  
+  real(dp), dimension(:), allocatable :: boost      !Doppler boosting (FF -> OF)
+
   real(dp), dimension(:), allocatable :: gj, bj     !Jet Lorentz factor and velocity (beta)
   real(dp), dimension(:), allocatable :: BFF, vnorm, VFF !Magnetic field, jet expansion velocity, segment volume
    
   real(dp), dimension(:), allocatable :: Kappa, EphMFF, nfFF !Dilution factor, photon energy and number density in the FF
-  real(dp), dimension(:), allocatable :: joFF, sjoFF    !Jet-observer angle and sin(jet-observer angle) in the FF
-  
+  real(dp), dimension(:), allocatable :: joFF, sjoFF      !Jet-observer angle and sin(jet-observer angle) in the FF
+
   logical, parameter :: ani = .True., iso = .False. ! To define isotropic or anisotropic IC
   real(dp), parameter :: cte_IC_K = 2d0*re**2*mec2**3/(pi*h_bar**3*c**2) !IC constant in Khangulyan 2014
   integer, parameter :: N_bands = 5                   !Number of flux bands

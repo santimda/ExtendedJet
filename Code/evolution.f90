@@ -15,9 +15,8 @@ MODULE evolution
    ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-      real(dp) :: dir, cjo, boost
+      real(dp) :: dir, cjo
       allocate( joFF(Ns) )
-      allocate( delta_obs(Ns) )
 
       open(30,file='quant_FF'//jet//'.dat')
       open(31,file='quant_FF_norm'//jet//'.dat')
@@ -66,7 +65,7 @@ MODULE evolution
          VFF(i) = pi*rj(i)**2*(deltaZ(i)/gj(i))
 
          !Doppler boosting factor (used to transform FF -> OF); the expression assumes that delta z is defined in the LF
-         boost = delta_obs(i)**2 
+         boost(i) = delta_obs(i)**2 
 
          write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
          write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj(i)/rj(1), VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
@@ -76,7 +75,6 @@ MODULE evolution
       close(30)
       close(31)
 
-      deallocate( delta_obs )
       deallocate( joFF )
 
    end subroutine Quantities

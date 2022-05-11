@@ -19,6 +19,7 @@ MODULE initialize
         allocate( z(Ns), rj(Ns), gj(Ns), bj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 
         allocate( deltaZ(Ns), deltatFF(Ns) )
+        allocate( delta_obs(Ns), boost(Ns) )
 
         ! Initialize values given by free parameters:
         sigma_0 = sigma_value         !Update the value of fB (default value defined in system_parameters.f90)
@@ -34,7 +35,7 @@ MODULE initialize
         max_enthalpy = 1d0 + LnT / (mu/1.12d0 * Mdot_j * c**2)
         !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
         
-        write(*, *) " B0 = ", BFF_fun(z0)
+        print*, " B0 = ", BFF_fun(z0)
         dl = (zmax-z0)/Ns    !Segment length
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
         cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
@@ -76,6 +77,7 @@ MODULE initialize
         deallocate( z, rj, gj, bj )
         deallocate( BFF, vnorm, VFF, EphMFF, nfFF, Kappa, sjoFF )
         deallocate( deltaZ, deltatFF )
+        deallocate( delta_obs, boost )
 
     end subroutine initialize_deallocate
     !============================================================================

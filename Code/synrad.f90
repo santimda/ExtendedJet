@@ -18,15 +18,6 @@ contains
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
-    real(dp) :: boost(Ns)
-    allocate ( delta_obs(Ns) )
-
-    !Quantities at each segment
-    open(20,file='deltas'//jet//'.dat')
-    do i = 1,Ns
-        read(20,*) delta_obs(i), boost(i)
-    enddo
-    close(20)
     
     !N(E) of each cut
     if (particle == 'e') then
@@ -130,7 +121,6 @@ contains
     close(40)
     close(50)
     
-    deallocate( delta_obs )
     
     end subroutine SEDsyn
     !============================================================================
@@ -247,14 +237,7 @@ contains
         character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet 
         real(dp) :: L_tot(Ns), L_abs(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns)
         real(dp) :: Esy(NSED_sy), Esy_step, dEsy
-        real(dp) :: boost(Ns), U_sy_FF
-
-        ! Read relevant quantities at each segment
-        open(20, file='deltas'//jet//'.dat')
-        do l = 1, Ns
-            read(20,*) dummy, boost(l)
-        enddo
-        close(20)
+        real(dp) :: U_sy_FF
 
         ! Read from a file: Esy(i,l), E*Lsy_unabs(i,l), E*Lsy_abs(i,l), l
         open(27, file='SEDsyn_cuts_ord'//jet//'.dat')
@@ -312,17 +295,9 @@ contains
     real(dp), allocatable :: Eph(:), LumA(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
     real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
-    real(dp) :: boost(Ns), dil
+    real(dp) :: dil
     integer :: m_data
-    allocate( delta_obs(Ns) )
 
-    !Quantities at each segment
-    open(20,file='deltas'//jet//'.dat')
-    do i = 1,Ns
-        read(20,*) delta_obs(i), boost(i)
-    enddo
-    close(20)
-    
     !N(E) of each cut
     open(30,file='NE_cuts.dat')
     do i = 1, nIn
@@ -366,7 +341,6 @@ contains
     enddo
     
     deallocate( Eph, LumA )
-    deallocate( delta_obs )
     
     end subroutine SEDsyn_data
     !============================================================================
@@ -393,17 +367,9 @@ contains
     real(dp), allocatable :: Eph(:), LumA(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
     real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
-    real(dp) :: boost(Ns), dil
+    real(dp) :: dil
     integer :: m_data
-    allocate( delta_obs(Ns) )
 
-    !Quantities at each segment
-    open(20,file='deltas'//jet//'.dat')
-    do i = 1,Ns
-        read(20,*) delta_obs(i), boost(i)
-    enddo
-    close(20)
-    
     !N(E) of each cut
     open(30,file='NE_cuts.dat')
     do i = 1, nIn
@@ -449,7 +415,6 @@ contains
     enddo
     
     deallocate( Eph, LumA )
-    deallocate( delta_obs )
     
     end subroutine SEDsyn_z_data
     !============================================================================
