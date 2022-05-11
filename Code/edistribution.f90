@@ -194,8 +194,6 @@ contains
         E = E2
     end do
     Norm_q0p = dLe_dz(zz)/(QInt*lorentzFactor(zz)*pi*r_fun(zz)**2)   !Normalization constant
-
-    return
     end function Norm_q0p
 
     !************************************************************************************
@@ -226,43 +224,6 @@ contains
         qp_E = 0d0
     endif
     end function qp_E
-
-    !************************************************************************************
-    !   Injection normalization
-    !************************************************************************************  
-    !real(dp) function NormKz(Ecut, particle)
-    !real(dp), intent(in) :: Ecut
-    !character(1), intent(in) :: particle
-    !real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2
-    !integer, parameter :: N = 300   !Number of subintervals for the integral
-    !if (particle == 'e') then
-    !    EminFF2 = EminFF
-    !    EmaxFF2 = EmaxFF
-    !    LnTFF2 = LnTFF
-    !else if (particle == 'p') then
-    !    EminFF2 = EpminFF
-    !    EmaxFF2 = EpmaxFF
-    !    LnTFF2 = LnTpFF
-    !endif 
-    !Einc = (EmaxFF2/EminFF2)**(1d0/(N-1))  !Increase factor of the energy
-    !Initialization
-    !E = EminFF2
-    !QInt = 0.d0
-    ! The integral is solved with the trapezoid method
-    !f1 = E * Q_E(1.d0,Ecut,E,EminFF2,EmaxFF2)
-    !do i = 1, N-1 
-    !    dE = E*(Einc-1d0)                    !Energy interval
-    !    E2 = E*Einc
-    !    f2 = E2 * Q_E(1.d0,Ecut,E2,EminFF2, EmaxFF2)
-    !    f = (f1 + f2)/2.d0
-    !    QInt = QInt + f*dE
-    !    f1 = f2
-    !    E = E2
-    !end do
-    !NormKz = LnTFF2/QInt   !Normalization constant
-!
-    !end function NormKz
-
 
     !============================================================================
     ! Calc_Ue (START)
