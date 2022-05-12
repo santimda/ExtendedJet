@@ -25,7 +25,6 @@ module system_parameters
    real(dp), parameter :: zmax_inj = 1d3*R_g       !Jet maximum cell of injection
    real(dp), parameter :: r0 = 7d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: gammaIndex = 0.16d0      !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
    !===NONTHERMAL PARTICLES======================================================================================
 
@@ -50,6 +49,8 @@ module system_parameters
    real(dp) :: z0 = 10d0*R_g                    !Jet launching height
    real(dp) :: a_inj = 0.1d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
                                                 !a_inj =/ 0 (else error!)
+   real(dp) :: gammaIndex = 0.16d0              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
+
 
    !===GLOBAL VARIABLES (TIED TO FREE PARAMETERS)================================================================
 

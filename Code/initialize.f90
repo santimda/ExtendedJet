@@ -22,7 +22,7 @@ MODULE initialize
         allocate( delta_obs(Ns), boost(Ns) )
 
         ! Initialize values given by free parameters:
-        sigma_0 = sigma_value         !Update the value of fB (default value defined in system_parameters.f90)
+        sigma_0 = sigma_value !Update the value of sigma_0 (default value defined in system_parameters.f90)
         Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
         z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
         a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)

@@ -20,24 +20,24 @@ E_min = 1.e-7 * eV #Aprox 20 MHz
 E_max = 1.e10 * eV
 n_points = 10
 E_data = np.geomspace(E_min, E_max, n_points)
-z_data = np.geomspace(3*R_g, 1e3*R_g, n_points)
+z_data = np.geomspace(10*R_g, 1e3*R_g, n_points)
 
 # Correr el codigo completo
 JetCode.run_jet(True)
 
 #Syn + SSC:
-fB = 1.e-2
+sigma0 = 1.e1
 Lj = 1.e43
 z0 = R_g * 10.0 
 a_inj = 1.5
-S_data = JetCode.sed_model(fB, Lj, z0, a_inj, E_data, z_data)
+S_data = JetCode.sed_model(sigma0, Lj, z0, a_inj, E_data, z_data)
 print(S_data)
 
 
 # Solo syn:
-fB = 1.e-2
+sigma0 = 1.e1
 Lj = 1.e43
 z0 = R_g * 10.0 
 a_inj = 1.5
-S_data2 = JetCode.syn_model(fB, Lj, z0, a_inj, E_data)
+S_data2 = JetCode.syn_model(sigma0, Lj, z0, a_inj, E_data)
 print(S_data2)

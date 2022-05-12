@@ -3,7 +3,7 @@ PROGRAM main
     use globals
     use controls
     implicit none
-    real(dp) :: fB_value, Lj_value, z0_value, a_inj_value
+    real(dp) :: sigma0_value, Lj_value, z0_value, a_inj_value
     real(dp), allocatable :: E_data(:), z_data(:)
     real(dp) :: S_data(m_data_max)
     logical, parameter :: verbose = .False.
@@ -15,20 +15,20 @@ PROGRAM main
     end interface
 
     interface
-        subroutine sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_vector, z_vector, S_vector) 
+        subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_vector, z_vector, S_vector) 
             use globals
             use constants
-            real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
+            real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
             real(dp), intent(in) :: E_vector(:), z_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
         end subroutine sed_model
     end interface 
 
     interface
-        subroutine syn_model(fB_value, Lj_value, z0_value, a_inj_value, E_vector, z_vector, S_vector) 
+        subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_vector, z_vector, S_vector) 
             use globals
             use constants
-            real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
+            real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
             real(dp), intent(in) :: E_vector(:)
             real(dp), intent(in) :: z_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
@@ -46,13 +46,13 @@ PROGRAM main
     
     if (run_sed_calc) then
         allocate( E_data(4), z_data(4) )
-        E_data = (/1d-19, 1d-14, 1.d-10, 2.d-8/)
+        E_data = (/1d-6*eV, 1d-2*eV, 1.d2*eV, 1.d5*eV/)
         z_data = (/5d2*R_g, 1d2*R_g, 3d1*R_g, 1.5d1*R_g/)
-        fB_value = 1.d-5
+        sigma0_value = 1.d1
         Lj_value = L_Edd*1d-4
         z0_value = 10.d0*R_g
         a_inj_value = 1.0001d0
-        call sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data) ! Energies in cgs
+        call sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data) ! Energies in cgs
         deallocate( E_data, z_data )
     endif
 
@@ -192,7 +192,7 @@ END PROGRAM main
   !============================================================================
   ! sed_model(START)
   !============================================================================
-  subroutine sed_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
+  subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron + SSC SED at specific energies
   ! integrated up to certain heights for the given input parameters. 
@@ -210,7 +210,7 @@ END PROGRAM main
     use sscrad
 
     implicit none
-    real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
+    real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
     real(dp), intent(in) :: E_data(:), z_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
@@ -219,7 +219,7 @@ END PROGRAM main
     S_data = 0.d0 ! Initialize
     ! Calculate everything for the jet first
     if (JET_) then  
-        call initialize_allocate(fB_value, Lj_value, z0_value, a_inj_value)
+        call initialize_allocate(sigma0_value, Lj_value, z0_value, a_inj_value)
 
         !Jet trajectory
         call trajectory_calc('')  ! jet 
@@ -241,7 +241,7 @@ END PROGRAM main
 
     ! Calculate everything for the counter-jet next
     if (CJ_) then
-        call initialize_allocate(fB_value, Lj_value, z0_value, a_inj_value)
+        call initialize_allocate(sigma0_value, Lj_value, z0_value, a_inj_value)
 
         !Jet trajectory
         call trajectory_calc('CJ')  ! counter-jet 
@@ -275,7 +275,7 @@ END PROGRAM main
   !============================================================================
   ! syn_model(START)
   !============================================================================
-  subroutine syn_model(fB_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
+  subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron SED at specific energies
   ! for the given input parameters. 
@@ -291,13 +291,13 @@ END PROGRAM main
     use synrad
     use sscrad
     implicit none
-    real(dp), intent(in) :: fB_value, Lj_value, z0_value, a_inj_value
+    real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
     real(dp), intent(in) :: E_data(:), z_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
         
     ! Calculate everything for the jet first
-    call initialize_allocate(fB_value, Lj_value, z0_value, a_inj_value)
+    call initialize_allocate(sigma0_value, Lj_value, z0_value, a_inj_value)
     call trajectory_calc('')  
     call Quantities('')    
     call Edist('e')   

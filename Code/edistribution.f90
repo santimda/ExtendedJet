@@ -399,7 +399,6 @@ contains
 
             if (zz(jz) < zmax_inj) then
                 build_Qin: do k = 1, numbins
-                    !Qinj(k, jz) = dQ_Edz(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), v_lat(zz(jz)), 'e') * mec2
                     Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2
                 end do build_Qin
             else
