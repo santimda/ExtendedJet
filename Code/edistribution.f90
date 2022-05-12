@@ -15,9 +15,9 @@ contains
    ! This subroutine calculates the electron energy distribution at each segment
    !============================================================================
     character(1), intent(in) :: particle
-    real(dp) :: Ecut, Ein, EFF, NE(Ns), NEtot, NE1, NE2, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
+    real(dp) :: Ecut, Ein, NEtot, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
     real(dp) :: NEmatrix(nIn, Ns), Evec(nIn)
-    real(dp) :: NEE(Ns), Nparticles, flux, Eparticles, energyFlux, vol, fluxp, eFluxp, Ljett, magnetization
+    real(dp) :: Nparticles, flux, Eparticles, energyFlux, vol, fluxp, eFluxp, Ljett, magnetization
     real(dp) :: sqrt_factor, dEdt_factor
     integer :: izz
     logical :: print_quantities = .False.
@@ -25,14 +25,12 @@ contains
     if (particle == 'e') then
         open(11,file='Emax_FF.dat')
         open(20,file='NE_cuts.dat')
-        open(30,file='NE_jet.dat')
         EminFF2 = EminFF
         EmaxFF2 = EmaxFF
         restEnergy = mec2
     else if (particle == 'p') then
         open(11,file='Epmax_FF.dat')
         open(20,file='Np_cuts.dat')
-        open(30,file='Np_jet.dat')
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
         restEnergy = mpc2
@@ -55,7 +53,6 @@ contains
     ! Build a logarithmically-spaced energy vector
     call vector_log(EminFF2, EmaxFF2, Ein, Evec ) 
 
-    NEE = 0d0
     NEmatrix = 0d0
     call calcNE_paramo(Evec, NEmatrix, particle)
 
@@ -91,32 +88,25 @@ contains
         close(50)
     endif
 
-    EFF = EminFF2       !Initialization
     do i2 = 1, nIn
         NEtot = 0.d0    !Initialization
         do izz = 1, Ns
-            write(20,*) EFF, NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
+            write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
             NEtot = NEtot + NEmatrix(i2, izz)           !Sum for all the jet segments
-            NEE(izz) = NEE(izz) + NEmatrix(i2, izz) * EFF * (Ein-1d0)
-
-            !Contribution of the segments up to given lengths
-            if (z(izz) <= 0.01d0*zmax) NE1 = NEtot
-            if (z(izz) <= 0.1d0*zmax) NE2 = NEtot
         enddo
-        write(30,*) EFF/eV, EFF**2*NE1, EFF**2*NE2, EFF**2*NEtot
-        EFF = EFF*Ein   !Increase the energy of the loop
     enddo
-
     close(20)
-    close(30)
-    
+
+    ! Calculate the integrated distribution along different z-ranges and for the total jet
+    call N_bin(Evec,NEmatrix,particle)
+
     end subroutine Edist
         
 
     !************************************************************************************
     !   Determination of the cutoff energy of the particle injection
     !************************************************************************************
-    real(dp) function CutE (BFF1,rj1,Eph1,Kappa1, particle)
+    real(dp) function CutE (BFF1, rj1, Eph1, Kappa1, particle)
     character(1), intent(in) :: particle
     real(dp), intent(in) :: BFF1,rj1,Eph1,Kappa1
     real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,check
@@ -146,7 +136,6 @@ contains
     !Ecut obtained by the minimum of the values above
     CutE = min(Emax1,Emax2)
     end function CutE
-
 
     !************************************************************************************
     !   Injection function (at a specific injection cell)
@@ -201,16 +190,10 @@ contains
     !************************************************************************************
     real(dp) function qp_E(E, zz, BB, rr, particle)
     real(dp), intent(in) :: E, zz, BB, rr
-    real(dp) :: Ecut, Kinj, EminFF2, EmaxFF2, intInj, q0p
+    real(dp) :: Ecut, EminFF2, EmaxFF2, q0p
     character(1), intent(in) :: particle
     Ecut = CutE(BB, rr, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
-
-    !Kinj = NormKz(Ecut, particle) / (zz * log(zmax_inj/z0))         !Normalization constant for Q(E)
-    !intInj = z0 / (a_inj-1d0) * (1d0 - (z0/zmax_inj)**(a_inj-1d0))
-    !Kinj = NormKz(Ecut, particle) * (z0/zz)**a_inj / intInj
-    q0p = Norm_q0p(Ecut, zz, particle)
-    !intInj = z0 / (a_inj - 1d0 - geomIndex) * (1d0 - (z0/zmax_inj)**(a_inj - 1d0 - geomIndex))
-    !Kinj = NormKz(Ecut, particle) * (r0/r_fun(zz))**a_inj / intInj
+    q0p = Norm_q0p(Ecut, zz, particle)        !Normalization constant
     if (particle == 'e') then
         EminFF2 = EminFF
         EmaxFF2 = EmaxFF
@@ -226,12 +209,62 @@ contains
     end function qp_E
 
     !============================================================================
-    ! Calc_Ue (START)
+    ! Bin the particle energy distribution at different z ranges
     !============================================================================
-    subroutine Calc_Ue()
+    subroutine N_bin(E,N_tot,particle)
+        character(LEN=*), intent(in) :: particle
+        real(dp), intent(in) :: E(nIn),N_tot(nIn,Ns)
+        integer, parameter :: N_bins = 6 ! For the plot dist_particle_bins
+        real(dp) :: N_bin_i(N_bins,nIn), N_total_i
+        real(dp) :: zin, zvec(N_bins+1) 
+
+        N_bin_i = 0.d0
+
+        ! Build a logarithmically-spaced vector of z intervals
+        call vector_log(z(1), z(Ns), zin, zvec ) 
+        open(80,file='z_bin.dat') ! Store the z values
+            do i = 1, N_bins+1
+                write(80,*) zvec(i), zvec(i)/z0
+            enddo
+        close(80)
+
+        open(81,file='N'//particle//'_total.dat')
+        do i = 1, nIn
+            N_total_i = 0.d0
+            do l = 1, Ns
+                ! The bin "i" is for z(i) < z < z(i+1)
+                if (z(l) >= zvec(1) .and. z(l) < zvec(2)) then
+                    N_bin_i(1,i) = N_bin_i(1,i) + N_tot(i,l)
+                elseif (z(l) >= zvec(2) .and. z(l) < zvec(3)) then
+                    N_bin_i(2,i) = N_bin_i(2,i) + N_tot(i,l)
+                elseif (z(l) >= zvec(3) .and. z(l) < zvec(4)) then
+                    N_bin_i(3,i) = N_bin_i(3,i) + N_tot(i,l)
+                elseif (z(l) >= zvec(4) .and. z(l) < zvec(5)) then
+                    N_bin_i(4,i) = N_bin_i(4,i) + N_tot(i,l)
+                elseif (z(l) >= zvec(5) .and. z(l) < zvec(6)) then
+                    N_bin_i(5,i) = N_bin_i(5,i) + N_tot(i,l)
+                elseif (z(l) >= zvec(6) .and. z(l) < zvec(7)) then
+                    N_bin_i(6,i) = N_bin_i(6,i) + N_tot(i,l)
+                end if  
+                N_total_i = N_total_i + N_tot(i,l)
+            end do
+            write(81,*) E(i)/eV, N_total_i 
+        end do
+        close(81)
+
+        open(82,file='N'//particle//'_bin.dat')
+        do j = 1,N_bins
+            do i = 1, nIn
+                write(82,*) j, E(i)/eV, N_bin_i(j,i)
+            end do
+        end do
+        close(82)
+    end subroutine N_bin
+
     !============================================================================
     ! Computation of the electron energy density in each segment (FF)
     !============================================================================
+    subroutine Calc_Ue()
         real(dp) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
 
         ! Read from a file: Ee(i), Ne(i,l)
@@ -257,8 +290,7 @@ contains
         close(28)
 
     end subroutine Calc_Ue
-    !============================================================================
-    ! Calc_Ue (END)
+
     !============================================================================
 
     subroutine FP_FinDif_cool(dt, g, nin, nout, gdot, QQ, tesc)
@@ -335,7 +367,6 @@ contains
         dg(1) = dg(2)
 
         build_Q: do k = 1, numbins
-            !Qinj(k, 0) = dQ_Edz(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), v_lat(zz(0)), 'e') * mec2
             Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2
         end do build_Q
 
@@ -374,8 +405,6 @@ contains
             else
                 Qinj(:, jz) = 0d0
             end if
-
-            !write(*, *) jz, zz(jz) / R_g
 
         end do z_loop
 
