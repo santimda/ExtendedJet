@@ -21,11 +21,10 @@ module system_parameters
    
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0 = sqrt(gj0**2-1d0)*c/gj0!Fluid bulk speed at the base of the jet
-   real(dp), parameter :: zmax = 3d3*R_g           !Jet maximum height
+   real(dp), parameter :: zmax = 1d4*R_g           !Jet maximum height
    real(dp), parameter :: zmax_inj = 1d3*R_g       !Jet maximum cell of injection
    real(dp), parameter :: r0 = 7d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   !real(dp), parameter :: exp_B = 1.5d0            !B = B0*(r/r0)^exp_B
    real(dp), parameter :: gammaIndex = 0.16d0      !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
    !===NONTHERMAL PARTICLES======================================================================================
@@ -76,8 +75,8 @@ module system_parameters
       real(dp) function r_fun(zz)
          real(dp), intent(in) :: zz
          r_fun = r0 * (abs(zz)/z0)**geomIndex
-         return
       end function
+
       !*************************************************************************************
       !   Jet Lorentz factor as a function of z
       !*************************************************************************************
@@ -86,8 +85,8 @@ module system_parameters
          !lorentzFactor = sqrt(1d0 + betaGamma(abs(zz))**2)
          lorentzFactor = gj0 * (abs(zz)/z0)**gammaIndex
          lorentzFactor = min(lorentzFactor, mu/max_enthalpy)
-         return
       end function
+
       !*************************************************************************************
       !   Jet normalized velocity as a function of z
       !*************************************************************************************
@@ -95,8 +94,8 @@ module system_parameters
          real(dp), intent(in) :: zz
          !betaJet = betaGamma(zz) / lorentzFactor(zz)
          betaJet = sqrt(1d0 - 1d0/lorentzFactor(zz)**2)
-         return
       end function
+
       !*************************************************************************************
       !   Jet Beta times Lorentz factor as a function of z
       !*************************************************************************************
@@ -104,8 +103,8 @@ module system_parameters
          real(dp), intent(in) :: zz
         ! betaGamma = 0.37 * (abs(zz)/R_g)**gammaIndex
          betaGamma = betaJet(zz) * lorentzFactor(zz)
-         return
       end function
+
       !*************************************************************************************
       ! Power injected in electrons per unit zz
       !*************************************************************************************
@@ -114,8 +113,8 @@ module system_parameters
          real(dp) L0
          L0 = LnT * a_inj / (1d0 - (z0/zmax_inj)**a_inj)
          dLe_dz = L0/z0 * (zz/z0)**(-(1d0+a_inj))
-         return
       end function
+
       !*************************************************************************************
       ! Power injected in electrons up to a height zz
       !*************************************************************************************
@@ -126,32 +125,32 @@ module system_parameters
          else
             Le_z = LnT
          end if
-         return
       end function
+
       !*************************************************************************************
       ! Power in cold matter
       !*************************************************************************************
       real(dp) function Lp(zz)
          real(dp), intent(in) :: zz
          Lp = lorentzFactor(zz) * Mdot_j * c**2
-         return
       end function
+
       !*************************************************************************************
       ! Specific enthalpy
       !*************************************************************************************
       real(dp) function enthalpy(zz)
          real(dp), intent(in) :: zz
          enthalpy = 1d0 + Le_z(zz)/Lp(zz)
-         return
       end function
+
       !*************************************************************************************
       ! Magnetization
       !*************************************************************************************
       real(dp) function sigma_B(zz)
          real(dp), intent(in) :: zz
          sigma_B = mu / (lorentzFactor(zz) * enthalpy(zz)) - 1d0
-         return
       end function
+
       !*************************************************************************************
       !   Jet FF magnetic field at height z
       !*************************************************************************************
@@ -162,23 +161,14 @@ module system_parameters
          Gamma = lorentzFactor(zz)
          sB = sigma_B(zz)
          BFF_fun = 2d0/(Gamma*rr) * sqrt( Lj/(betaJet(zz)*c) * sB/(sB+1d0))
-         return
       end function
-      !real(dp) function BFF_fun(zz)
-      !   real(dp), intent(in) :: zz
-      !   real(dp) :: rr
-      !   rr = r_fun(abs(zz))
-      !   BFF_fun = B0 * (r0/rr)**exp_B / lorentzFactor(zz)
-      !
-      !   return
-      !end function
+      
       !*************************************************************************************
       !   Jet lateral velocity at height z ( = dr/dz * vj)
       !*************************************************************************************
       real(dp) function v_lat(zz)
          real(dp), intent(in) :: zz
          v_lat = betaJet(zz) * c * (r0/z0) * geomIndex * (z0/abs(zz))**(1d0-geomIndex)
-         return
       end function
 
    !============================================================================
