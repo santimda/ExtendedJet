@@ -54,6 +54,7 @@ contains
     call vector_log(EminFF2, EmaxFF2, Ein, Evec ) 
 
     NEmatrix = 0d0
+    print*, 'paramo'
     call calcNE_paramo(Evec, NEmatrix, particle)
 
     if (print_quantities) then
@@ -188,11 +189,11 @@ contains
     !************************************************************************************
     !   Injection function (for multiple injection cells)
     !************************************************************************************
-    real(dp) function qp_E(E, zz, BB, rr, particle)
-    real(dp), intent(in) :: E, zz, BB, rr
+    real(dp) function qp_E(E, zz, BB, particle)
+    real(dp), intent(in) :: E, zz, BB
     real(dp) :: Ecut, EminFF2, EmaxFF2, q0p
     character(1), intent(in) :: particle
-    Ecut = CutE(BB, rr, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
+    Ecut = CutE(BB, zz, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
     q0p = Norm_q0p(Ecut, zz, particle)        !Normalization constant
     if (particle == 'e') then
         EminFF2 = EminFF
@@ -367,7 +368,7 @@ contains
         dg(1) = dg(2)
 
         build_Q: do k = 1, numbins
-            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), r_fun(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2
+            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2
         end do build_Q
 
         nn(:, 0) = 0d0
@@ -399,7 +400,7 @@ contains
 
             if (zz(jz) < zmax_inj) then
                 build_Qin: do k = 1, numbins
-                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), r_fun(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2
+                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2
                 end do build_Qin
             else
                 Qinj(:, jz) = 0d0
