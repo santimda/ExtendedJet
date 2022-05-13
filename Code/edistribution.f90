@@ -41,7 +41,7 @@ contains
         
     ! Calculate the cutoff energy for particle injection at each segment
     do i = 1, Ns
-        Ecut = CutE(BFF(i),rj(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
+        Ecut = CutE(BFF(i),z(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
         if (Ecut > EmaxFF2/3.d0) then
             print *, 'EmaxFF in globals.f90 is too low!'
             stop
@@ -106,9 +106,9 @@ contains
     !************************************************************************************
     !   Determination of the cutoff energy of the particle injection
     !************************************************************************************
-    real(dp) function CutE (BFF1, rj1, Eph1, Kappa1, particle)
+    real(dp) function CutE (BFF1, z1, Eph1, Kappa1, particle)
     character(1), intent(in) :: particle
-    real(dp), intent(in) :: BFF1,rj1,Eph1,Kappa1
+    real(dp), intent(in) :: BFF1,z1,Eph1,Kappa1
     real(dp) :: Emax1,Emax2,Eacc,lE1,lE2,lEmid,check
     real(dp), parameter :: error_tolerance = 1.d-3 ! log(1 + DE/E) ~ |DE|/E <= error_tolerance
     
@@ -120,7 +120,7 @@ contains
     Eacc = facc*qe*BFF1*c ! energy gain: dE/dt_acc [erg/s]
     do while (abs(lE2-lE1) > error_tolerance)
         lEmid = (lE1+lE2)/2d0
-        check =  Eacc - abs(TLosses(BFF1,rj1,Eph1,Kappa1,10d0**lEmid, particle))
+        check =  Eacc - abs(TLosses(BFF1,z1,Eph1,Kappa1,10d0**lEmid, particle))
         if (check == 0d0) then
             lE2 = lEmid
             exit
@@ -132,7 +132,7 @@ contains
     enddo
     Emax1 = 10d0**(lE2)
     !Maximum energy that particles can get before diffusing away of the injection point
-    Emax2 = rj1*sqrt(3d0*qe*BFF1*Eacc/(2d0*c))
+    Emax2 = r_fun(z1)*sqrt(3d0*qe*BFF1*Eacc/(2d0*c))
     !Ecut obtained by the minimum of the values above
     CutE = min(Emax1,Emax2)
     end function CutE
