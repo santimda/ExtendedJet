@@ -415,11 +415,11 @@ contains
         call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
-        do j = 1, Ns
-            if (z(j) <= z_data(l)) then 
-                LumcutA(j) = boost(j)*LumcutAFF(j)  !(de)Boosted
-                LumA(l) = LumA(l) + LumcutA(j)      !Absorbed (de)boosted luminosity for Eph
-            endif
+        j = 1
+        do while ( (z(j) <= z_data(l) .and. j <= Ns ) .or. j==1) 
+            LumcutA(j) = boost(j)*LumcutAFF(j)  !(de)Boosted
+            LumA(l) = LumA(l) + LumcutA(j)      !Absorbed (de)boosted luminosity for Eph
+            j = j + 1
         enddo
     enddo
 
