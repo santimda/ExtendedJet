@@ -15,15 +15,16 @@ a = 4.0*np.pi*dist**2
 M_BH = 6.5e9             #Black hole mass [Msun] (EHT+2018?)
 R_g = 1.477e5*M_BH       #Gravitational radius (M_BH [Msun])
 
+# Run the whole code 
+JetCode.run_jet(True)
+
+
 # Define the energy range for the SED
 E_min = 1.e-7 * eV #Aprox 20 MHz
 E_max = 1.e10 * eV
 n_points = 10
 E_data = np.geomspace(E_min, E_max, n_points)
 z_data = np.geomspace(10*R_g, 1e3*R_g, n_points)
-
-# Correr el codigo completo
-JetCode.run_jet(True)
 
 #Syn + SSC:
 sigma0 = 1.e1

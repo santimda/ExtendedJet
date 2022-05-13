@@ -94,7 +94,7 @@ module system_parameters
       real(dp) function betaJet(zz)
          real(dp), intent(in) :: zz
          !betaJet = betaGamma(zz) / lorentzFactor(zz)
-         betaJet = sqrt(1d0 - 1d0/lorentzFactor(zz)**2)
+         betaJet = sqrt(1d0 - 1d0/lorentzFactor(abs(zz))**2)
       end function
 
       !*************************************************************************************
@@ -103,7 +103,7 @@ module system_parameters
       real(dp) function betaGamma(zz)
          real(dp), intent(in) :: zz
         ! betaGamma = 0.37 * (abs(zz)/R_g)**gammaIndex
-         betaGamma = betaJet(zz) * lorentzFactor(zz)
+         betaGamma = betaJet(abs(zz)) * lorentzFactor(abs(zz))
       end function
 
       !*************************************************************************************
@@ -113,7 +113,7 @@ module system_parameters
          real(dp), intent(in) :: zz
          real(dp) L0
          L0 = LnT * a_inj / (1d0 - (z0/zmax_inj)**a_inj)
-         dLe_dz = L0/z0 * (zz/z0)**(-(1d0+a_inj))
+         dLe_dz = L0/z0 * (abs(zz)/z0)**(-(1d0+a_inj))
       end function
 
       !*************************************************************************************
@@ -122,7 +122,7 @@ module system_parameters
       real(dp) function Le_z(zz)
          real(dp), intent(in) :: zz
          if (zz < zmax_inj) then
-            Le_z = LnT * (1d0 - (z0/zz)**a_inj)/(1d0 - (z0/zmax_inj)**a_inj)
+            Le_z = LnT * (1d0 - (z0/abs(zz))**a_inj)/(1d0 - (z0/zmax_inj)**a_inj)
          else
             Le_z = LnT
          end if
@@ -133,7 +133,7 @@ module system_parameters
       !*************************************************************************************
       real(dp) function Lp(zz)
          real(dp), intent(in) :: zz
-         Lp = lorentzFactor(zz) * Mdot_j * c**2
+         Lp = lorentzFactor(abs(zz)) * Mdot_j * c**2
       end function
 
       !*************************************************************************************
@@ -149,7 +149,7 @@ module system_parameters
       !*************************************************************************************
       real(dp) function sigma_B(zz)
          real(dp), intent(in) :: zz
-         sigma_B = mu / (lorentzFactor(zz) * enthalpy(zz)) - 1d0
+         sigma_B = mu / (lorentzFactor(abs(zz)) * enthalpy(abs(zz))) - 1d0
       end function
 
       !*************************************************************************************
@@ -159,9 +159,9 @@ module system_parameters
          real(dp), intent(in) :: zz
          real(dp) :: rr, Gamma, sB
          rr = r_fun(zz)
-         Gamma = lorentzFactor(zz)
-         sB = sigma_B(zz)
-         BFF_fun = 2d0/(Gamma*rr) * sqrt( Lj/(betaJet(zz)*c) * sB/(sB+1d0))
+         Gamma = lorentzFactor(abs(zz))
+         sB = sigma_B(abs(zz))
+         BFF_fun = 2d0/(Gamma*rr) * sqrt( Lj/(betaJet(abs(zz))*c) * sB/(sB+1d0))
       end function
       
       !*************************************************************************************

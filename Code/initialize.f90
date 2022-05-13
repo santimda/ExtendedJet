@@ -28,7 +28,7 @@ MODULE initialize
         a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
 
         LnT = Lj*fnT          !Available nonthermal luminosity
-        LnTFF = LnT!/gj0**2    !Available nonthermal luminosity in the FF
+        LnTFF = LnT!/gj0**2   !Available nonthermal luminosity in the FF
         
         mu = gj0 * (sigma_0 + 1d0)
         Mdot_j = Lj / (c**2 * gj0 * (sigma_0 + 1d0))

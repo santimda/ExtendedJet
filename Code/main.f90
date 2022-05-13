@@ -153,6 +153,8 @@ END PROGRAM main
 
         !Particle distribution
         if (NE_calc .and. (.not. JET_)) then
+            print*, 'ERROR: current version cannot calculate the electron distribution for the CJ, run with jet!' 
+            stop
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
             call Edist('e')        ! Calculate the particle energy distribution
             !call Edist('p')
