@@ -69,7 +69,6 @@ contains
         call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
         
         do j = 1, Ns
-        
             LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
             write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
             
@@ -85,7 +84,6 @@ contains
             if (z_proj <= 1.95d2*R_g) L4 = LumA
             if (z_proj <= 6.5d2*R_g) L5 = LumA
             if (z_proj <= 3d5*R_g) L6 = LumA
-            
         enddo
 
         write(50,*) Eph/eV, Eph*L1, Eph*L2, Eph*L3, Eph*L4, Eph*L5, Eph*L6, Eph*Lum, Eph*LumA
@@ -119,22 +117,39 @@ contains
     real(dp) :: dE, Ec, x, Psync, E_step, factor
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
+    real(dp) :: f, f1, f2
     !Initialization
     SyncLum = 0d0
-    !Integral by rectangles
     factor = 1d0
     if (particle == 'p') factor = mec2/mpc2
     E_step = E(2)/E(1)
-    do i = 1, nIn
-        dE = E(i)*(E_step - 1.d0)     !Energy interval
-        !Critical photon energy and power emitted for each particle energy
-        Ec = cte_Ec*B*E(i)**2 * factor**3
-        x = Eph/Ec
+
+    ! The integral is solved with the trapezoid method
+    Ec = cte_Ec*B*E(1)**2 * factor**3
+    x = Eph/Ec
+    !The approximation is only valid for 0.1 < x < 10
+    if ((x < 1d-1) .or. (x > 1d1)) then
+        Psync = 0d0
+    else    
         Psync = cte_sy * factor * B * x**(1d0/3d0)*exp(-x)
+    endif   
+    f1 = Psync * NE(1)
+    do i = 1, nIn-1 
+        dE = E(i)*(E_step - 1.d0)     !Energy interval
+        Ec = cte_Ec*B*E(i+1)**2 * factor**3
+        x = Eph/Ec
         !The approximation is only valid for 0.1 < x < 10
-        if ((x < 1d-1) .or. (x > 1d1)) Psync = 0d0
-        SyncLum = SyncLum + Psync*NE(i)*dE
-    enddo
+        if ((x < 1d-1) .or. (x > 1d1)) then
+            Psync = 0d0
+        else    
+            Psync = cte_sy * factor * B * x**(1d0/3d0)*exp(-x)
+        endif   
+        f2 = Psync * NE(i+1)
+        f = (f1 + f2)/2d0
+        SyncLum = SyncLum + f*dE
+        f1 = f2
+    end do
+
     end function SyncLum
     
 
