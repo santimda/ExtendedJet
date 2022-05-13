@@ -35,7 +35,7 @@ module sscrad
 
       ! Read from a file: Ee(i), Ne(i,l)
       ! N_e(i) = number of e- with energy Ee(i) per unit energy
-      open(70,file='NE_cuts.dat')
+      open(70,file='Ne_cuts.dat')
       do i = 1, nIn
          do l = 1, Ns
             read(70,*) Ee(i), Ne(i,l), dummy

@@ -23,14 +23,10 @@ contains
     logical :: print_quantities = .False.
 
     if (particle == 'e') then
-        open(11,file='Emax_FF.dat')
-        open(20,file='NE_cuts.dat')
         EminFF2 = EminFF
         EmaxFF2 = EmaxFF
         restEnergy = mec2
     else if (particle == 'p') then
-        open(11,file='Epmax_FF.dat')
-        open(20,file='Np_cuts.dat')
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
         restEnergy = mpc2
@@ -39,6 +35,9 @@ contains
         stop
     endif
         
+    open(11,file='E'//particle//'_max_FF.dat')
+    open(20,file='N'//particle//'_cuts.dat')
+
     ! Calculate the cutoff energy for particle injection at each segment
     do i = 1, Ns
         Ecut = CutE(BFF(i),z(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
@@ -268,7 +267,7 @@ contains
         real(dp) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
 
         ! Read from a file: Ee(i), Ne(i,l)
-        open(70,file='NE_cuts.dat')
+        open(70,file='Ne_cuts.dat')
         do i = 1, nIn
             do l = 1, Ns
                 read(70,*) Ee(i), Ne(i,l), dummy

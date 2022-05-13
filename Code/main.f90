@@ -103,11 +103,12 @@ END PROGRAM main
         if (NE_calc) then 
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
             call Edist('e')        ! Calculate the particle energy distribution
-            call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
+            call execute_command_line('./SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
             if (verbose) print *, '\n Creating the tloss files for plots'
             call Print_tloss(1, 'e')
-            call Print_tloss(Ns/3, 'e')
+            call Print_tloss(Ns/4, 'e')
+            call Print_tloss(Ns/2, 'e')
             call Print_tloss(Ns, 'e')
         endif
 
@@ -120,7 +121,7 @@ END PROGRAM main
         if (radsyn_calc) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
             call SEDsyn('', 'e')      ! Calculate synchrotron SED
-            call execute_command_line('./SortSEDsyn.sh '//trim(adjustl(numSED))) !Sort SED file
+            call execute_command_line('./SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             call Calc_Usyn('')   ! Calculate the energy density of synchrotron photons
         endif
 
@@ -158,7 +159,7 @@ END PROGRAM main
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
             call Edist('e')        ! Calculate the particle energy distribution
             !call Edist('p')
-            call execute_command_line('./SortNE.sh '//trim(adjustl(numNE)))   !Sort N(E) file
+            call execute_command_line('./SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
             if (verbose) print *, '\n Creating the tloss files for plots'
             call Print_tloss(1, 'e')
@@ -170,8 +171,13 @@ END PROGRAM main
         if (radsyn_calc) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
             call SEDsyn('CJ', 'e')      ! Calculate synchrotron SED
-            call execute_command_line('./SortSEDsyn.sh '//trim(adjustl(numSED))) !Sort SED file
+            call execute_command_line('./SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             call Calc_Usyn('CJ')   ! Calculate the energy density of synchrotron photons
+        endif
+
+        if (radpsyn_calc) then
+            call SEDsyn('', 'p')
+            call execute_command_line('./SortSEDpsyn.sh '//trim(adjustl(numSED))) !Sort SED file
         endif
         
         !IC SED     
@@ -280,7 +286,8 @@ END PROGRAM main
   subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron SED at specific energies
-  ! for the given input parameters. 
+  ! integrated up to certain heights for the given input parameters. 
+  ! Calculates both J and CJ
   !===================================================================
     use controls
     use constants

@@ -17,18 +17,12 @@ contains
     character(1), intent(in) :: particle
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
-    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF
+    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj
     
     !N(E) of each cut
-    if (particle == 'e') then
-        open(30,file='NE_cuts.dat')
-        open(40,file='SEDsyn_cuts'//jet//'.dat')
-        open(50,file='SEDsyn_jet'//jet//'.dat')
-    else if (particle == 'p') then
-        open(30,file='Np_cuts.dat')
-        open(40,file='SEDpsyn_cuts'//jet//'.dat')
-        open(50,file='SEDpsyn_jet'//jet//'.dat')
-    endif
+    open(30,file='N'//particle//'_cuts.dat')
+    open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
+    open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -55,29 +49,17 @@ contains
 
         !Loop for the segments
         do j = 1, Ns
-        
             EphFF(j) = Eph/delta_obs(j)     !Photon energy in the FF
             dEphFF(j) = dEph/delta_obs(j)   !Energy interval in the FF
-        
-            do i = 1, nIn
-                !N(E) for the segment j
-                NEcut(i) = NE(i,j)
-            enddo
+            NEcut = NE(:,j)                 !N(E) for the segment j
 
             !Unabsorbed synchrotron luminosity for each segment
-            if (particle == 'p') then
-                LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
-            else
-                LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
-            endif
-
+            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
             Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
 
             !Unabsorbed (de)boosted luminosity for Eph
             Lum = Lum + Lumcut(j)
-            
             LumFF = LumFF + LumcutFF(j)*dEphFF(j)
-
         enddo
         
         !Unabsorbed bolometric luminosity
@@ -93,16 +75,16 @@ contains
             
             !Absorbed (de)boosted luminosity for Eph
             LumA = LumA + LumcutA(j)
-            
             LumAFF = LumAFF + LumcutAFF(j)*dEphFF(j)
             
             !Jet and c-jet contribution of the segments up to given lengths
-            if (z(j) * sin(jo) <= 7.3*R_g) L1 = LumA
-            if (z(j) * sin(jo) <= 2.6d1*R_g) L2 = LumA
-            if (z(j) * sin(jo) <= 6.5d1*R_g) L3 = LumA
-            if (z(j) * sin(jo) <= 1.95d2*R_g) L4 = LumA
-            if (z(j) * sin(jo) <= 6.5d2*R_g) L5 = LumA
-            if (z(j) * sin(jo) <= 3d5*R_g) L6 = LumA
+            z_proj = z(j) * sin(jo)
+            if (z_proj <= 7.3*R_g) L1 = LumA
+            if (z_proj <= 2.6d1*R_g) L2 = LumA
+            if (z_proj <= 6.5d1*R_g) L3 = LumA
+            if (z_proj <= 1.95d2*R_g) L4 = LumA
+            if (z_proj <= 6.5d2*R_g) L5 = LumA
+            if (z_proj <= 3d5*R_g) L6 = LumA
             
         enddo
 
@@ -240,7 +222,7 @@ contains
         real(dp) :: U_sy_FF
 
         ! Read from a file: Esy(i,l), E*Lsy_unabs(i,l), E*Lsy_abs(i,l), l
-        open(27, file='SEDsyn_cuts_ord'//jet//'.dat')
+        open(27, file='SEDe_syn_cuts_ord'//jet//'.dat')
         do l = 1, Ns 
             do i = 1, NSED_sy
                 read(27,*) Esy(i), Lun(i,l), Lsy(i,l), dummy
@@ -299,7 +281,7 @@ contains
     integer :: m_data
 
     !N(E) of each cut
-    open(30,file='NE_cuts.dat')
+    open(30,file='Ne_cuts.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -371,7 +353,7 @@ contains
     integer :: m_data
 
     !N(E) of each cut
-    open(30,file='NE_cuts.dat')
+    open(30,file='Ne_cuts.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
