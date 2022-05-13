@@ -86,10 +86,11 @@ contains
     !============================================================================
     real(dp) function AdLoss(z_, EFF)
     real(dp), intent(in) :: z_, EFF
-    real(dp) :: gg
+    real(dp) :: gg,zabs
 
     gg = EFF - mec2**2/EFF
-    AdLoss = - 2d0/3d0 * geomIndex * lorentzFactor(z_) * c * betaJet(z_) / z_ * gg
+    zabs = abs(z_)
+    AdLoss = - 2d0/3d0 * geomIndex * lorentzFactor(zabs) * c * betaJet(zabs) / zabs * gg
     
     end function AdLoss
         
@@ -100,9 +101,9 @@ contains
     integer, intent(in) :: segN
 
     if (segN==Ns) then
-        t_cell = (z(segN) - z(segN-1))/(c*bj(segN))/gj(segN)
+        t_cell = abs(z(segN) - z(segN-1))/(c*bj(segN))/gj(segN)
     else   
-        t_cell = (z(segN+1) - z(segN))/(c*bj(segN))/gj(segN)
+        t_cell = abs(z(segN+1) - z(segN))/(c*bj(segN))/gj(segN)
     endif
     
     end function t_cell
@@ -123,11 +124,11 @@ contains
     write(num_seg,'(I3)') segN
     open(20,file='losses_'//trim(adjustl(num_seg))//'.dat')  
     tcell = t_cell(segN)
-    tconv = z(segN)/(c*bj(segN))/gj(segN)
+    tconv = abs(z(segN))/(c*bj(segN))/gj(segN)
 
     do i = 1, nIn
         !Cooling time for each process for segment segN
-        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF,particle))
+        tSyn = EFF/abs(SyncLoss(BFF(segN),EFF,particle))    
         tIC = EFF/abs(ICLoss(EphMFF(segN),Kappa(segN),EFF))
         tAd = EFF/abs(AdLoss(z(segN),EFF))
         tTot = EFF/abs(TLosses(BFF(segN),z(segN),EphMFF(segN),Kappa(segN),EFF,particle))
