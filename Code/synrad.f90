@@ -17,8 +17,8 @@ contains
     character(1), intent(in) :: particle
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
-    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj
-    
+    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
+
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
     open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
@@ -32,6 +32,7 @@ contains
     
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
+    sjo = sin(jo)
 
     !Initialization of the bolometric luminosities
     LBolFF = 0d0
@@ -77,7 +78,7 @@ contains
             LumAFF = LumAFF + LumcutAFF(j)*dEphFF(j)
             
             !Jet and c-jet contribution of the segments up to given lengths
-            z_proj = z(j) * sin(jo)
+            z_proj = z(j) * sjo
             if (z_proj <= 7.3*R_g) L1 = LumA
             if (z_proj <= 2.6d1*R_g) L2 = LumA
             if (z_proj <= 6.5d1*R_g) L3 = LumA
@@ -167,11 +168,10 @@ contains
 
     !Loop for the segments
     do j = 1, Ns
-
         !Absorption and emission coefficients, and source function, for each segment (Pacholczyck, 1970)
         mass = me
         if (particle == 'p') mass = mpc2/c**2
-        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*mass*V(j)) * EintSSA(B(j),Eph(j),E,NE)
+        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*mass*V(j)) * EintSSA(B(j),Eph(j),E,NE,particle)
         Ecf = Lum(j)/(4d0*pi*V(j))      !Per stereoradian
         Sf = Ecf/max(K,1.d-30) !!!! CHECK !!!!
 
@@ -192,7 +192,6 @@ contains
         else
             LumA(j) = 4d0*pi*Ap*Sf*(1d0-exp(-tau))
         endif
-        !print*, tau, Lum(j), 4d0*pi*Ap*Sf*(1d0-exp(-tau))
     enddo
 
     end subroutine SSA
@@ -204,22 +203,42 @@ contains
     !************************************************************************************
     !   Integral for the particle energy in SSA
     !************************************************************************************
-    real(dp) function EintSSA(B,Eph,E,NE)
+    real(dp) function EintSSA(B,Eph,E,NE,particle)
     real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
-    real(dp) :: dE, Ec, x, F, E_step
+    character(1), intent(in) :: particle
+    real(dp) :: dE, Ec, x, F, E_step, factor
+    real(dp) :: f1, f2, sum
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
-    EIntSSA = 0d0   !Initialization
+    !Initialization
+    EIntSSA = 0d0   
+    factor = 1d0
+    if (particle == 'p') factor = mec2/mpc2
     E_step = E(2)/E(1)
-    do i = 1, nIn
+
+    ! The integral is solved with the trapezoid method
+    Ec = cte_Ec*B*E(1)**2 * factor**3
+    x = Eph/Ec
+    !The approximation is only valid for 0.1 < x < 10
+    if ((x < 1d-1) .or. (x > 1d1)) then
+        f1 = 0d0
+    else    
+        f1 = NE(1)/E(1)*exp(-x)*x**(1d0/3d0)*(x + 2d0/3d0)
+    endif   
+    do i = 1, nIn-1 
         dE = E(i)*(E_step - 1.d0)     !Energy interval
-        !Critical photon energy and function to integrate for each particle energy
-        Ec = cte_Ec*B*E(i)**2
+        Ec = cte_Ec*B*E(i+1)**2 * factor**3
         x = Eph/Ec
-        F = NE(i)/E(i)*exp(-x)*x**(1d0/3d0)*(x + 2d0/3d0)
         !The approximation is only valid for 0.1 < x < 10
-        if (x < 1d-3 .or. x > 1d1) F = 0d0 !!!!CHECK THIS!!!!, troublesome in first cell?
-        EintSSA = EintSSA + F*dE
-    enddo
+        if (x < 1d-3 .or. x > 1d1) then
+            f2 = 0d0 !!!!CHECK THIS!!!!, troublesome in first cell?
+        else
+            f2 = NE(i+1)/E(i+1)*exp(-x)*x**(1d0/3d0)*(x + 2d0/3d0)
+        endif      
+        f = (f1 + f2)/2d0
+        EintSSA = EintSSA + f*dE
+        f1 = f2
+    end do
+
     end function EintSSA
 
 
