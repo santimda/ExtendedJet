@@ -54,7 +54,6 @@ contains
     call vector_log(EminFF2, EmaxFF2, Ein, Evec ) 
 
     NEmatrix = 0d0
-    print*, 'paramo'
     call calcNE_paramo(Evec, NEmatrix, particle)
 
     if (print_quantities) then
@@ -376,7 +375,7 @@ contains
 
         jz = 0
         z_loop: do while (zz(jz) < zmax)
-            Ecut = CutE(BFF_fun(zz(jz)), r_fun(zz(jz)), 1d0, 1d0, particle)
+            Ecut = CutE(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, particle)
             tlossFF = Ecut/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ecut, particle))
             dttFF = min(1e4*tlossFF, 1d-3*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
