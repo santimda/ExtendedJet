@@ -416,7 +416,7 @@ contains
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
         j = 1
-        do while ( (z(j) <= z_data(l) .and. j <= Ns ) .or. j==1) 
+        do while ( (abs(z(j)) <= z_data(l) .and. j <= Ns ) .or. j==1) 
             LumcutA(j) = boost(j)*LumcutAFF(j)  !(de)Boosted
             LumA(l) = LumA(l) + LumcutA(j)      !Absorbed (de)boosted luminosity for Eph
             j = j + 1
