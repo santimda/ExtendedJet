@@ -34,7 +34,7 @@ module system_parameters
    real(dp), parameter :: facc = 1d-4           !Acceleration efficiency
    real(dp), parameter :: EminFF = 1d6*eV       !Minimum electron energy in the FF
    real(dp), parameter :: Emin_injFF = 2d6*eV   !Minimum electron energy of injected particles in the FF
-   real(dp), parameter :: EmaxFF = 1d13*eV      !Maximum electron energy in the FF
+   real(dp), parameter :: EmaxFF = 3d13*eV      !Maximum electron energy in the FF
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 2d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d18*eV     !Maximum proton energy in the FF
@@ -43,7 +43,7 @@ module system_parameters
    !===FREE PARAMETERS=========================================================================================
 
    real(dp) :: Lj = 5d42                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp) :: sigma_0 = 10d0                   !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
+   real(dp) :: sigma_0 = 1d0                   !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
    real(dp) :: mu ! = gj * (sigma_0 + 1d0)      !Total energy flux per unit of rest-mass energy flux
    real(dp) :: Mdot_j ! = Lj / (c**2 * gj * (sigma_0 + 1d0)) !Mass flux
    real(dp) :: z0 = 10d0*R_g                    !Jet launching height

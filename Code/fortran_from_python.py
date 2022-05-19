@@ -25,9 +25,9 @@ E_max = 1.e-5 * eV #Aprox 2 GHz
 #E_max = 1.e10 * eV
 n_points = 6
 E_data = np.geomspace(E_min, E_max, n_points)
-#z_data = np.geomspace(10*R_g, 1e3*R_g, n_points)
+z_data = np.geomspace(5*R_g, 100*R_g, n_points)
 #z_data = np.array([7.3*R_g, 2.6e1*R_g, 6.5e1*R_g, 1.95e2*R_g, 6.5e2*R_g, 3e5*R_g]) 
-z_data = np.array([1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g]) 
+#z_data = np.array([1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g]) 
 
 # Only syn, considering restrictions in z:
 sigma0 = 1.e1
