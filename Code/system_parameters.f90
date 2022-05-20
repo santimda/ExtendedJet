@@ -21,7 +21,7 @@ module system_parameters
    
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0 = sqrt(gj0**2-1d0)*c/gj0!Fluid bulk speed at the base of the jet
-   real(dp), parameter :: zmax = 1d4*R_g           !Jet maximum height
+   real(dp), parameter :: zmax = 3d4*R_g           !Jet maximum height
    real(dp), parameter :: zmax_inj = 1d3*R_g       !Jet maximum cell of injection
    real(dp), parameter :: r0 = 7d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
@@ -34,7 +34,7 @@ module system_parameters
    real(dp), parameter :: facc = 1d-4           !Acceleration efficiency
    real(dp), parameter :: EminFF = 1d6*eV       !Minimum electron energy in the FF
    real(dp), parameter :: Emin_injFF = 2d6*eV   !Minimum electron energy of injected particles in the FF
-   real(dp), parameter :: EmaxFF = 3d13*eV      !Maximum electron energy in the FF
+   real(dp), parameter :: EmaxFF = 5d13*eV      !Maximum electron energy in the FF
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 2d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d18*eV     !Maximum proton energy in the FF
