@@ -51,7 +51,7 @@ PROGRAM main
         sigma0_value = 1.d1
         Lj_value = L_Edd*1d-4
         z0_value = 10.d0*R_g
-        a_inj_value = 1.0001d0        
+        a_inj_value = 0.5d0        
         call syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data) ! Energies in cgs
         call sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_data) ! Energies in cgs
         deallocate( E_data, z_data )

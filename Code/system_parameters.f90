@@ -47,7 +47,7 @@ module system_parameters
    real(dp) :: mu ! = gj * (sigma_0 + 1d0)      !Total energy flux per unit of rest-mass energy flux
    real(dp) :: Mdot_j ! = Lj / (c**2 * gj * (sigma_0 + 1d0)) !Mass flux
    real(dp) :: z0 = 10d0*R_g                    !Jet launching height
-   real(dp) :: a_inj = 0.1d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
+   real(dp) :: a_inj = 0.5d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
                                                 !a_inj =/ 0 (else error!)
    real(dp) :: gammaIndex = 0.16d0              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 

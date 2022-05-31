@@ -35,13 +35,12 @@ MODULE initialize
         max_enthalpy = 1d0 + LnT / (mu/1.12d0 * Mdot_j * c**2)
         !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
         
-        print*, " B0 = ", BFF_fun(z0)
         dl = (zmax-z0)/Ns    !Segment length
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
         cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
 
-        !write(*,'(A,Es9.2)') 'B0[G] = ', B0
-        write(*,'(A,Es9.2)') 'Lj[erg/s] = ', Lj
+        !write(*,'(A,Es9.2)') 'B0[G] = ', BFF_fun(z0)
+        !write(*,'(A,Es9.2)') 'Lj[erg/s] = ', Lj
 
         ! Initialize arrays
         if (.not.jet_calc) then 
