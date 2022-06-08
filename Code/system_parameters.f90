@@ -31,6 +31,7 @@ module system_parameters
    !Particle injection
    real(dp), parameter :: LnTpFF = L_Edd * 1d-4
    real(dp), parameter :: fnT = 5.d-2           !Nonthermal energy fraction
+   real(dp), parameter :: max_enthalpy = 1.d0/(1.d0-fnT) ! Maximum enthalpy (assuming sigma_B -> 0)
    real(dp), parameter :: facc = 1d-4           !Acceleration efficiency
    real(dp), parameter :: EminFF = 1d6*eV       !Minimum electron energy in the FF
    real(dp), parameter :: Emin_injFF = 2d6*eV   !Minimum electron energy of injected particles in the FF
@@ -57,8 +58,6 @@ module system_parameters
    !real(dp) :: B0 != sqrt(fB*8d0*Lj/(vj*(thetaj*z0)**2))  !Magnetic field at the jet base
    real(dp) :: LnT != Lj*fnT              !Available nonthermal luminosity
    real(dp) :: LnTFF != LnT!/gj**2        !Available nonthermal luminosity in the FF
-   real(dp) :: max_enthalpy
-   !max_enthalpy = 1d0 + LnT / (mu/1.12d0 * Mdot_j * c**2)
    real(dp) :: dl != (zmax-z0)/Ns    !Segment length
    real(dp) :: dlogz != (zmax/z0)**(1d0/(Ns-1d0))
    ! L(z) = cte_inj * z**-a_inj --> LnTFF = integral L(z) dz = log(zmax_inj/z0) iif a_inj == 1.d0, else: 
@@ -85,7 +84,8 @@ module system_parameters
          real(dp), intent(in) :: zz
          !lorentzFactor = sqrt(1d0 + betaGamma(abs(zz))**2)
          lorentzFactor = gj0 * (abs(zz)/z0)**gammaIndex
-         lorentzFactor = min(lorentzFactor, mu/max_enthalpy)
+         lorentzFactor = min(lorentzFactor, 0.99*mu/max_enthalpy) 
+         ! The factor 0.99 is included to avoid numerical errors if B = 0
       end function
 
       !*************************************************************************************

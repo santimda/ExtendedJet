@@ -32,7 +32,6 @@ MODULE initialize
         
         mu = gj0 * (sigma_0 + 1d0)
         Mdot_j = Lj / (c**2 * gj0 * (sigma_0 + 1d0))
-        max_enthalpy = 1d0 + LnT / (mu/1.12d0 * Mdot_j * c**2)
         !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
         
         dl = (zmax-z0)/Ns    !Segment length
