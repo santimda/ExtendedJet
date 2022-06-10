@@ -21,7 +21,7 @@ module system_parameters
    
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0 = sqrt(gj0**2-1d0)*c/gj0!Fluid bulk speed at the base of the jet
-   real(dp), parameter :: f_zmax = 1.d-2           !Aprox. fraction L(zmax)/L(z0) to define zmax
+   real(dp), parameter :: f_zmax = 2.d-2           !Aprox. fraction L(zmax)/L(z0) to define zmax
    real(dp), parameter :: f_zmax_inj = 1.d0        !z_max_inj = f_zmax_inj * z_max
    real(dp), parameter :: r0 = 7d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.5d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016

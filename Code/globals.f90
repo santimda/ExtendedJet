@@ -16,8 +16,8 @@ MODULE globals
 
   !===========================================================
   ! Simulation grid/vectors size
-  integer, parameter :: Ns = 200       !Number of jet segments (default: 200)
-  integer, parameter :: nIn = 150      !Number of points in the electron energy distribution (default: 150)
+  integer, parameter :: Ns = 256       !Number of jet segments (default: 200)
+  integer, parameter :: nIn = 200      !Number of points in the electron energy distribution (default: 150)
   integer, parameter :: numbins = 500  !Number of integration bins for the energy distribution (default: 300)
   integer, parameter :: numdt = 10000  !Number of segments for integrating the energy distribution (default: 100000)
   real(dp), parameter :: dttFF_min = 1.d-4 !Precision in timestep for N(E) (default: 1.d-10)
