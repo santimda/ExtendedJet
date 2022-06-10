@@ -34,9 +34,10 @@ MODULE initialize
         Mdot_j = Lj / (c**2 * gj0 * (sigma_0 + 1d0))
         !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
         
-        zmax = z0/(f_zmax**(1.d0/a_inj))    !Jet maximum height
-        if (zmax > 1d5*R_g) zmax = 1d5*R_g  !Give a reasonable limit for a_inj < 0.5
-        zmax_inj = f_zmax_inj*zmax          !Jet maximum cell of injection
+        zmax_inj = z0/(f_zmax**(1.d0/a_inj))!Jet maximum height of injection cell
+        if (zmax_inj > 1d5*R_g) zmax_inj = 1d5*R_g  !Give a reasonable limit for a_inj < 0.5
+        zmax = zmax_inj/f_zmax_inj          !Jet maximum height
+        if (zmax < 3d4*R_g) zmax = 3d4*R_g  !Minimum value to recover the low-frequency radio emission (~100 MHz)
         dl = (zmax-z0)/Ns                   !Segment length
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
         cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )

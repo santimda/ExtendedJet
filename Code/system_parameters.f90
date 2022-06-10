@@ -51,9 +51,7 @@ module system_parameters
    real(dp) :: a_inj = 0.5d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
                                                 !a_inj =/ 0 (else error!)
    real(dp) :: gammaIndex = 0.16d0              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
-
    real(dp) :: zmax = 4d4*R_g                   !Jet maximum height
-   real(dp) :: zmax_inj = 1d4*R_g               !Jet maximum cell of injection
 
    !===GLOBAL VARIABLES (TIED TO FREE PARAMETERS)================================================================
 
@@ -66,6 +64,7 @@ module system_parameters
    real(dp) :: cte_inj != LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
    real(dp) :: dt != dl/vj           !Segment advection time for constant velocity
    real(dp) :: dtFF != dt/gj         !Advection time in the FF
+   real(dp) :: zmax_inj              !Jet maximum cell of injection
 
    !==============================================================================================================
 
