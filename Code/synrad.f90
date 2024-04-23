@@ -68,9 +68,11 @@ contains
         LBolFF = LBolFF + LumFF
                 
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
         
         do j = 1, Ns
+
+            NEcut = NE(:,j)
+            call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
             LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
             write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
             
