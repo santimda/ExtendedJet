@@ -50,10 +50,13 @@ contains
     close(11)
     
     ! Build a logarithmically-spaced energy vector
-    call vector_log(EminFF2, EmaxFF2, Ein, Evec ) 
+    call vector_log(EminFF2, EmaxFF2, Ein, Evec )
 
     NEmatrix = 0d0
+    !call calcNE_onezone(Evec, NEmatrix, particle)
     call calcNE_paramo(Evec, NEmatrix, particle)
+
+    NEmatrix(:,Ns) = 0d0
 
     if (print_quantities) then
         flux = 0d0
@@ -90,7 +93,7 @@ contains
     do i2 = 1, nIn
         NEtot = 0.d0    !Initialization
         do izz = 1, Ns
-            write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
+            write(20,*) Evec(i2), NEmatrix(i2, izz)/deltaZ(izz), izz     !E and N(E) for each jet cut
             NEtot = NEtot + NEmatrix(i2, izz)           !Sum for all the jet segments
         enddo
     enddo
@@ -136,6 +139,18 @@ contains
     CutE = min(Emax1,Emax2)
     end function CutE
 
+    real(dp) function BreakE(BFF1,zzz,deltaZZ,particle)
+        real(dp), intent(in) :: BFF1, zzz, deltaZZ
+        character(1), intent(in) :: particle
+        real(dp) :: mc2
+
+        if (particle == 'e') then
+            mc2 = mec2
+        else
+            mc2 = mpc2
+        endif
+        BreakE = 6*pi*mc2**2 * betaGamma(zzz) / (sigma_T*BFF1**2*deltaZZ*(mec2/mc2)**2)
+    end function BreakE
     !************************************************************************************
     !   Injection function (at a specific injection cell)
     !************************************************************************************
@@ -155,7 +170,7 @@ contains
     real(dp) function Norm_q0p(Ecut, zz, particle)
     real(dp), intent(in) :: Ecut, zz
     character(1), intent(in) :: particle
-    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2
+    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2, fact
     integer, parameter :: N = 300   !Number of subintervals for the integral
     if (particle == 'e') then
         EminFF2 = EminFF
@@ -165,7 +180,10 @@ contains
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
         LnTFF2 = LnTpFF
-    endif 
+    endif
+    !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
+    !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
+    !EminFF2 = 2*mec2
     Einc = (EmaxFF2/EminFF2)**(1d0/(N-1d0))  !Increase factor of the energy
     !Initialization
     E = EminFF2
@@ -189,7 +207,7 @@ contains
     !************************************************************************************
     real(dp) function qp_E(E, zz, BB, particle)
     real(dp), intent(in) :: E, zz, BB
-    real(dp) :: Ecut, EminFF2, EmaxFF2, q0p
+    real(dp) :: Ecut, EminFF2, EmaxFF2, q0p, fact
     character(1), intent(in) :: particle
     Ecut = CutE(BB, zz, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
     q0p = Norm_q0p(Ecut, zz, particle)        !Normalization constant
@@ -200,6 +218,9 @@ contains
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
     endif
+    EminFF2 = 2*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
+    !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
+    !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
     if (E >= EminFF2 .and. E <= EmaxFF2) then
         qp_E = q0p*(E/EminFF2)**(-p) * exp(-E/Ecut)
     else
@@ -292,11 +313,11 @@ contains
 
     !============================================================================
 
-    subroutine FP_FinDif_cool(dt, g, nin, nout, gdot, QQ, tesc)
+    subroutine FP_FinDif_cool(dt, g, n_in, n_out, gdot, QQ, tesc)
         implicit none
         real(dp), intent(in) :: dt, tesc
-        real(dp), intent(in), dimension(:) :: g, nin, gdot, QQ
-        real(dp), intent(out), dimension(:) :: nout
+        real(dp), intent(in), dimension(:) :: g, n_in, gdot, QQ
+        real(dp), intent(out), dimension(:) :: n_out
         integer :: Ng, Ng1
         real(dp), dimension(size(g)) :: dx, dxp2, dxm2, BBp2, BBm2, a, b, c, r
   
@@ -314,12 +335,11 @@ contains
         BBp2(Ng) = -0.5d0 * (gdot(Ng) + gdot(Ng1))
         BBm2(1) = -0.5d0 * (gdot(2) + gdot(1))
   
-        r = nin + dt * QQ
+        r = n_in + dt * QQ
         a = zeros1D(Ng,.true.)
         c = -dt * BBp2 / dx
         b = 1d0 + BBm2 * dt / dx + dt / tesc
-  
-        call tridag_ser(a(2:), b, c(:Ng1), r, nout)
+        call tridag_ser(a(2:), b, c(:Ng1), r, n_out)
   
     end subroutine FP_FinDif_cool
 
@@ -336,7 +356,7 @@ contains
         real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2
         integer :: jz, k, m, izz
         real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
-        real(dp) :: g_min, g_max
+        real(dp) :: g_min, g_max, Ebr, dz_aux
         
         allocate(t(0:numdt), Ntot(numdt), dt(numdt), dg(numbins), zz(0:numdt))
         allocate(nn(numbins, 0:numdt), dotg(numbins, 0:numdt), gg(numbins), &
@@ -354,8 +374,8 @@ contains
 
         t(0) = 0d0
         zz(0) = z0*1.001
-        g_min = EminFF / mc2
-        g_max = EmaxFF / mc2
+        g_min = EminFF2 / mc2
+        g_max = EmaxFF2 / mc2
         build_g: do k = 1, numbins
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
             Ee(k) = gg(k) * mc2
@@ -374,11 +394,15 @@ contains
 
         jz = 0
         z_loop: do while (zz(jz) < zmax)
+            dz_aux = zz(jz)*(sqrt(dlogz)-1d0/sqrt(dlogz))
+            Ebr = BreakE(BFF_fun(zz(jz)), zz(jz), dz_aux, particle)
             Ecut = CutE(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, particle)
-            tlossFF = Ecut/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ecut, particle))
-            dttFF = min(1e4*tlossFF, 1d-3*zz(jz)/(betaGamma(zz(jz))*c))
+            Ebr = min(Ebr, Ecut)
+            tlossFF = Ebr/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ebr, particle))
+            dttFF = min(0.25*tlossFF, dz_aux/(betaGamma(zz(jz))*c))
+            !if ((1d0*tlossFF, 1d-2*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
-            
+            !write(*,*) Ebr, Ecut, BFF_fun(zz(jz)), sigma_B(zz(jz))
             jz = jz + 1
             zz(jz) = zz(jz-1) + dzz
 
@@ -390,6 +414,7 @@ contains
             &                   Qinj(:, jz - 1), &
             &                   1d200)
 
+            !write(*,*) nn(:,jz)
             build_dotg: do k = 1, numbins
                 dotg(k, jz) = -abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ee(k), particle))/mc2!, &
                                      !nn(k, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
@@ -417,7 +442,7 @@ contains
             E1 = Ee(m)
             E2 = Ee(m+1)
             jz = 0
-            do izz=1, Ns
+            do izz=2, Ns
                 do while (zz(jz) < z(izz))
                     jz = jz + 1
                 end do
@@ -445,5 +470,30 @@ contains
     ! calcNE_paramo (END)
     !============================================================================
     
+
+    !============================================================================
+    ! ONEZONE
+    !============================================================================
+    subroutine calcNE_onezone(Evec, NEmatrix, particle)
+
+        real(dp), intent(in) :: Evec(nIn)
+        character(1), intent(in) :: particle
+        real(dp), intent(out) :: NEmatrix(nIn, Ns)
+        real(dp) :: t_cool, t_adv, Q
+        integer :: i, j
+
+        do i=1,nIn
+            do j=1,Ns
+                if (j < Ns1) then
+                    Q = qp_E(Evec(i), z(j), BFF_fun(z(j)), particle) * pi * r_fun(z(j))**2 * deltaZ(j)
+                else
+                    Q = 0d0
+                endif
+                t_cool = Evec(i)/abs(TLosses(BFF_fun(z(j)), z(j), 1d0, 1d0, Evec(i), particle))
+                t_adv = z(j)/(betaGamma(z(j))*c)
+                NEmatrix(i, j) = Q * min(t_cool, t_adv)
+            end do
+        end do
+    end subroutine
 
 END MODULE edistribution

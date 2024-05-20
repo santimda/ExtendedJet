@@ -22,10 +22,12 @@ contains
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
     open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
+    open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
     open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
+            NE(i,j) = NE(i,j) * deltaZ(j)
         enddo
     enddo
     close(30)
@@ -45,19 +47,21 @@ contains
         LumFF = 0d0
         LumA = 0d0
         LumAFF = 0d0
+        LumcutAFF = 0d0
+        LumcutFF = 0d0
         
         dEph = Eph*(Ein-1d0)    !Energy interval
 
         !Loop for the segments
-        do j = 1, Ns
+        do j = 2, Ns
             EphFF(j) = Eph/delta_obs(j)     !Photon energy in the FF
             dEphFF(j) = dEph/delta_obs(j)   !Energy interval in the FF
             NEcut = NE(:,j)                 !N(E) for the segment j
 
             !Unabsorbed synchrotron luminosity for each segment
             LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
-            Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
 
+            Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
             !Unabsorbed (de)boosted luminosity for Eph
             Lum = Lum + Lumcut(j)
             LumFF = LumFF + LumcutFF(j)*dEphFF(j)
@@ -67,11 +71,12 @@ contains
         LBolFF = LBolFF + LumFF
                 
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
-        
+        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
+
         do j = 1, Ns
             LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
             write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
+            write(45,*) EphFF(j), LumcutAFF(j)/VFF(j) * rj(j)/c / EphFF(j)
             
             !Absorbed (de)boosted luminosity for Eph
             LumA = LumA + LumcutA(j)
@@ -100,6 +105,7 @@ contains
     write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
 
     close(40)
+    close(45)
     close(50)
     
     
@@ -162,22 +168,21 @@ contains
     ! Luminosity corrected for synchrotron self-absorption
     !============================================================================
     character, intent(in) :: particle
-    real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn),Lum(Ns)
+    real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn,Ns),Lum(Ns)
     real(dp), intent(out) :: LumA(Ns)
     real(dp) :: K,Ecf,Sf,depth,tau,Ap, mass
 
     !Loop for the segments
-    do j = 1, Ns
+    do j = 2, Ns
         !Absorption and emission coefficients, and source function, for each segment (Pacholczyck, 1970)
         mass = me
         if (particle == 'p') mass = mpc2/c**2
-        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*mass*V(j)) * EintSSA(B(j),Eph(j),E,NE,particle)
+        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*mass*V(j)) * EintSSA(B(j),Eph(j),E,NE(:,j),particle)
         Ecf = Lum(j)/(4d0*pi*V(j))      !Per stereoradian
         Sf = Ecf/max(K,1.d-30) !!!! CHECK !!!!
 
         !Length that photons in the observer's direction must travel inside the segment (in the FF)
         depth = r_j(j)/sjo(j)
-
         !Optical depth for SSA
         tau = K*depth / delta_obs(j)
         !tau = K*min(depth,z(j)/gj)!/delta_obs(j)
