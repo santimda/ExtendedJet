@@ -45,6 +45,8 @@ MODULE initialize
         !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
         
         !dl = (zmax-z0)/Ns    !Segment length
+        !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
+        
         cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
 
         !write(*,'(A,Es9.2)') 'B0[G] = ', BFF_fun(z0)

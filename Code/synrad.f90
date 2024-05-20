@@ -18,6 +18,7 @@ contains
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
+    logical, parameter :: bin_SEDsyn = .True.
 
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
@@ -74,6 +75,9 @@ contains
         call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
 
         do j = 1, Ns
+
+            NEcut = NE(:,j)
+            call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
             LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
             write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
             write(45,*) EphFF(j), LumcutAFF(j)/VFF(j) * rj(j)/c / EphFF(j)
@@ -108,6 +112,8 @@ contains
     close(45)
     close(50)
     
+    ! Calculate the integrated SED for different z-ranges and for the total jet
+    if (bin_SEDsyn .and. jet=='') call SEDsyn_bin(jet,particle)
     
     end subroutine SEDsyn
     !============================================================================
@@ -246,6 +252,67 @@ contains
 
     end function EintSSA
 
+
+    !============================================================================
+    ! Bin the particle energy distribution at different z ranges
+    !============================================================================
+    subroutine SEDsyn_bin(jet,particle)
+        character(LEN=*), intent(in) :: jet,particle
+        integer, parameter :: n_bins = 6 ! For the plot SEDsyn_bins
+        real(dp) :: SED_bin_i(n_bins,NSED_sy), SED_total_i
+        real(dp) :: SED_cut(NSED_sy,Ns), Esyn(NSED_sy)
+        real(dp) :: zin, zvec(n_bins+1) 
+
+        ! Read the synchrotron SED at each location
+        open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
+        do i = 1, NSED_sy            
+            do l = 1, Ns
+                !The file contains Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
+                read(40,*) Esyn(i), SED_cut(i,l)
+            enddo
+        enddo
+
+        ! Build a logarithmically-spaced vector of z intervals
+        call vector_log(z(1), z(Ns), zin, zvec ) 
+        open(80,file='z_bin.dat') ! Store the z values
+        do i = 1, n_bins+1
+            write(80,*) zvec(i), zvec(i)/z0
+        enddo
+        close(80)
+
+        open(81,file='SEDsyn'//particle//'_total.dat')
+        SED_bin_i = 0.d0
+        do i = 1, NSED_sy
+            SED_total_i = 0.d0
+            do l = 1, Ns
+                ! The bin "i" is for z(i) < z < z(i+1)
+                if (z(l) >= zvec(1) .and. z(l) < zvec(2)) then
+                    SED_bin_i(1,i) = SED_bin_i(1,i) + SED_cut(i,l)
+                elseif (z(l) >= zvec(2) .and. z(l) < zvec(3)) then
+                    SED_bin_i(2,i) = SED_bin_i(2,i) + SED_cut(i,l)
+                elseif (z(l) >= zvec(3) .and. z(l) < zvec(4)) then
+                    SED_bin_i(3,i) = SED_bin_i(3,i) + SED_cut(i,l)
+                elseif (z(l) >= zvec(4) .and. z(l) < zvec(5)) then
+                    SED_bin_i(4,i) = SED_bin_i(4,i) + SED_cut(i,l)
+                elseif (z(l) >= zvec(5) .and. z(l) < zvec(6)) then
+                    SED_bin_i(5,i) = SED_bin_i(5,i) + SED_cut(i,l)
+                elseif (z(l) >= zvec(6) .and. z(l) < zvec(7)) then
+                    SED_bin_i(6,i) = SED_bin_i(6,i) + SED_cut(i,l)
+                end if  
+                SED_total_i = SED_total_i + SED_cut(i,l)
+            end do
+            write(81,*) Esyn(i), SED_total_i 
+        end do
+        close(81)
+
+        open(82,file='SEDsyn'//particle//'_bin.dat')
+        do j = 1,N_bins
+            do i = 1, NSED_sy
+                write(82,*) j, Esyn(i), SED_bin_i(j,i)
+            end do
+        end do
+        close(82)
+    end subroutine SEDsyn_bin
 
     !============================================================================
     ! SEDsyn (END)

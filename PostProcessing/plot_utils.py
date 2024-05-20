@@ -37,6 +37,7 @@ def luc_std_plot(ax=None):
        ax.tick_params(which='minor', axis="y", direction="in", length=5, width=1, color="black")
        ax.tick_params(axis="x", direction="in", length=10, width=1, color="black")
        ax.tick_params(which='minor', axis="x", direction="in", length=5, width=1, color="black")
+       ax.set_axisbelow(False)
 
 def color_from_cmap(cmap,ncol=10, vmin=0.0, vmax=1.0):
     cmap = matplotlib.cm.get_cmap(cmap)

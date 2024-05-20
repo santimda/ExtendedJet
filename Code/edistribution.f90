@@ -42,7 +42,7 @@ contains
     do i = 1, Ns
         Ecut = CutE(BFF(i),z(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
         if (Ecut > EmaxFF2/3.d0) then
-            print *, 'EmaxFF in globals.f90 is too low!'
+            print *, 'EmaxFF in system_parameters.f90 is too low!'
             stop
         endif
         write(11,*) i, z(i), Ecut/eV
@@ -116,7 +116,7 @@ contains
     
     !Initialization
     lE1 = log10(1d9*eV)  ! log10(Emin [CGS]) ~ 1 GeV
-    lE2 = log10(1d14*eV) ! log10(Emax [CGS]) ~ 100 TeV
+    lE2 = log10(2d14*eV) ! log10(Emax [CGS]) ~ 200 TeV
     if (particle == 'p') lE2 = log10(1d20*eV) !Maximum particle energy    
 
     Eacc = facc*qe*BFF1*c ! energy gain: dE/dt_acc [erg/s]
@@ -243,9 +243,9 @@ contains
         ! Build a logarithmically-spaced vector of z intervals
         call vector_log(z(1), z(Ns), zin, zvec ) 
         open(80,file='z_bin.dat') ! Store the z values
-            do i = 1, N_bins+1
-                write(80,*) zvec(i), zvec(i)/z0
-            enddo
+        do i = 1, N_bins+1
+            write(80,*) zvec(i), zvec(i)/z0
+        enddo
         close(80)
 
         open(81,file='N'//particle//'_total.dat')

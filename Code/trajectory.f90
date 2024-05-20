@@ -30,10 +30,10 @@ MODULE trajectory
 
     z(1) = dir*z0               ! jet height
     rj(1) = r0
-    do i = 1, Ns-1
-      z(i+1) = z(i) * dlogZ
-      rj(i+1) = r_fun(z(i+1))
-    enddo
+    do i = 2, Ns
+      z(i) = z(i-1) * dlogz
+      rj(i) = r_fun(z(i))
+    end do
 
     open(10, file='trajectory'//jet//'.dat')
     do i = 1, Ns
