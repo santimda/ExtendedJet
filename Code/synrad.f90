@@ -50,7 +50,8 @@ contains
         LumAFF = 0d0
         LumcutAFF = 0d0
         LumcutFF = 0d0
-        
+        LumcutA = 0d0
+
         dEph = Eph*(Ein-1d0)    !Energy interval
 
         !Loop for the segments
@@ -75,9 +76,8 @@ contains
         call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
 
         do j = 1, Ns
-
             NEcut = NE(:,j)
-            call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
+            !call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
             LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
             write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
             write(45,*) EphFF(j), LumcutAFF(j)/VFF(j) * rj(j)/c / EphFF(j)
@@ -94,6 +94,7 @@ contains
             if (z_proj <= 1.95d2*R_g) L4 = LumA
             if (z_proj <= 6.5d2*R_g) L5 = LumA
             if (z_proj <= 3d5*R_g) L6 = LumA
+            write(*,*) l, j, Ns
         enddo
 
         write(50,*) Eph/eV, Eph*L1, Eph*L2, Eph*L3, Eph*L4, Eph*L5, Eph*L6, Eph*Lum, Eph*LumA
@@ -265,6 +266,7 @@ contains
 
         ! Read the synchrotron SED at each location
         open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
+        write(*,*) Ns, NSED_sy
         do i = 1, NSED_sy            
             do l = 1, Ns
                 !The file contains Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
@@ -412,7 +414,7 @@ contains
         enddo
         
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
+        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
         do j = 1, Ns
@@ -484,7 +486,7 @@ contains
         enddo
         
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NEcut,LumcutFF,LumcutAFF,particle)
+        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
         j = 1

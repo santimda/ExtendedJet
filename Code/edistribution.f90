@@ -393,7 +393,7 @@ contains
         Ddiff(:, 0) = 1d-200
 
         jz = 0
-        z_loop: do while (zz(jz) < zmax)
+        z_loop: do while (zz(jz) < zmax*1.1)
             dz_aux = zz(jz)*(sqrt(dlogz)-1d0/sqrt(dlogz))
             Ebr = BreakE(BFF_fun(zz(jz)), zz(jz), dz_aux, particle)
             Ecut = CutE(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, particle)

@@ -21,9 +21,9 @@ module system_parameters
    
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0 = sqrt(gj0**2-1d0)*c/gj0!Fluid bulk speed at the base of the jet
-   real(dp), parameter :: zmax = 2d7*R_g           !Jet maximum height
-   real(dp), parameter :: zmax_inj = 1d5*R_g       !Jet maximum cell of injection
-   real(dp), parameter :: r0 = 10d0*R_g             !Jet launching radius (Kim+2018)
+   real(dp), parameter :: zmax = 2d5*R_g           !Jet maximum height
+   real(dp), parameter :: zmax_inj = 400*R_g       !Jet maximum cell of injection
+   real(dp), parameter :: r0 = 4d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.6d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
 
    !===NONTHERMAL PARTICLES======================================================================================
@@ -38,16 +38,16 @@ module system_parameters
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 2d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d18*eV     !Maximum proton energy in the FF
-   real(dp), parameter :: p = 2.05d0            !Power law exponent for Q(E) = cte * E**-p
+   real(dp), parameter :: p = 2.25d0            !Power law exponent for Q(E) = cte * E**-p
 
    !===FREE PARAMETERS=========================================================================================
 
-   real(dp) :: Lj = 5d42                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp) :: sigma_0 = 3d0                    !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
+   real(dp) :: Lj = 8d42                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: sigma_0 = 10d0                    !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
    real(dp) :: mu ! = gj * (sigma_0 + 1d0)      !Total energy flux per unit of rest-mass energy flux
    real(dp) :: Mdot_j ! = Lj / (c**2 * gj * (sigma_0 + 1d0)) !Mass flux
-   real(dp) :: z0 = 4d0*R_g                    !Jet launching height
-   real(dp) :: a_inj = 0.51d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
+   real(dp) :: z0 = 2d0*R_g                    !Jet launching height
+   real(dp) :: a_inj = -0.51d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
                                                 !a_inj =/ 0 (else error!)
    real(dp) :: gammaIndex = 0.13d0              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
@@ -63,7 +63,6 @@ module system_parameters
    real(dp) :: cte_inj != LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
    real(dp) :: dt != dl/vj           !Segment advection time for constant velocity
    real(dp) :: dtFF != dt/gj         !Advection time in the FF
-   real(dp) :: zmax_inj              !Jet maximum cell of injection
 
    !==============================================================================================================
 
@@ -76,7 +75,7 @@ module system_parameters
          real(dp), intent(in) :: zz
          real(dp) :: r_fun1, r_fun2
          r_fun1 = r0 * (abs(zz)/z0)**geomIndex
-         r_fun2 = 40 * (abs(zz)/z0)**0.15
+         r_fun2 = 0.0 !40 * (abs(zz)/z0)**0.15
          r_fun = max(r_fun1, r_fun2)
       end function
 
@@ -87,7 +86,7 @@ module system_parameters
          real(dp), intent(in) :: zz
          !lorentzFactor = sqrt(1d0 + betaGamma(abs(zz))**2)
          lorentzFactor = gj0 * (abs(zz)/z0)**gammaIndex
-         lorentzFactor = min(lorentzFactor, 0.99*mu/max_enthalpy) 
+         !lorentzFactor = min(lorentzFactor, 0.99*mu/max_enthalpy) 
          ! The factor 0.99 is included to avoid numerical errors if B = 0
       end function
 
