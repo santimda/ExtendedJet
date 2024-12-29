@@ -42,7 +42,7 @@ module system_parameters
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 2d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d18*eV     !Maximum proton energy in the FF
-   real(dp), parameter :: p = 2.3d0            !Power law exponent for Q(E) = cte * E**-p
+   real(dp), parameter :: p = 2.3d0             !Power law exponent for Q(E) = cte * E**-p
 
    !===FREE PARAMETERS=========================================================================================
 

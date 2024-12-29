@@ -16,10 +16,10 @@ set mytics 10
 set xlabel 'l'
 set ylabel 'E_{e,max}(l)'
 
-plot '../../Code/Emax_FF.dat' u 1:3 t 'E_{max}' w l lw 3 lc 1
+plot '../../Code/Ee_max_FF.dat' u 1:3 t 'E_{max}' w l lw 3 lc 1
 
 set terminal postscript color enhanced dl 1.2 lw 2 'Helvetica' 20
-set output 'Emax_FF.ps'
+set output 'Ee_max_FF.ps'
 replot
-!./fixbb Emax_FF.ps
+!./fixbb Ee_max_FF.ps
 

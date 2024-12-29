@@ -9,8 +9,8 @@ set key samplen 3.5 spacing 1.3 font ',20'
 set format x '10^{%L}'
 set format y '10^{%L}'
 set logscale
-#set xrange [:8]
-set yrange [1e-5:]
+#set xrange [1:8]
+set yrange [1e-8:]
 #set mxtics 10
 set mytics 10
 set xlabel 'z_j'
