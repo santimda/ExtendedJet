@@ -18,6 +18,7 @@ contains
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
+    real(dp) :: j_at_z, alpha_at_z
     logical, parameter :: bin_SEDsyn = .True.
 
     !N(E) of each cut
@@ -33,6 +34,7 @@ contains
     enddo
     close(30)
     
+    open(122,file='Em_Abs.dat')
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
     sjo = sin(jo)
@@ -44,13 +46,13 @@ contains
     do l = 1, NSED_sy
 
         !Initialization of the total luminosity for each photon energy
-        Lum = 0d0
-        LumFF = 0d0
-        LumA = 0d0
-        LumAFF = 0d0
+        Lum = 0d0           !Unabsorbed (de)boosted luminosity for Eph
+        LumFF = 0d0         !In the FF
+        LumA = 0d0          !Absorbed (de)boosted luminosity for Eph
+        LumAFF = 0d0        !In the FF
         LumcutAFF = 0d0
         LumcutFF = 0d0
-        LumcutA = 0d0
+        LumcutA = 0d0       !Absorbed radiation for each cut
 
         dEph = Eph*(Ein-1d0)    !Energy interval
 
@@ -62,6 +64,12 @@ contains
 
             !Unabsorbed synchrotron luminosity for each segment
             LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
+
+            !Emissivity and Absortion at height j
+            !j_at_z=jsync(EphFF(j), BFF(j), NEcut, E)
+            !alpha_at_z=alpha_sync(EphFF(j), BFF(j), NEcut, E)
+            
+            !write(122,*)Eph, j_at_z, alpha_at_z, BFF(j), NEcut
 
             Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
             !Unabsorbed (de)boosted luminosity for Eph
@@ -110,6 +118,7 @@ contains
     write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
 
     close(40)
+    close(122)
     close(45)
     close(50)
     
@@ -166,6 +175,178 @@ contains
 
     end function SyncLum
     
+    !****************************************************************************
+    ! Synchrotron emitted power for a specific photon energy
+    !****************************************************************************
+    subroutine PSynchrotron(E_ph, E, B, resultado)
+    implicit none
+        real(dp), intent(in) :: E_ph, B
+        real(dp), dimension(:), intent(in) :: E
+        real(dp) :: K
+        real(dp), dimension(:), allocatable :: x, R
+        real(dp), dimension(size(E)) :: Ec
+        real(dp), dimension(size(E)), intent(out) :: resultado
+        integer :: j, n
+    n = size(E)
+    ! Define constants
+    K = sqrt(3.0d0) * qe**3 / (h * me * c**2)
+    ! Allocate arrays
+    allocate(x(n))
+    allocate(R(n))
+    do j = 1, n
+        ! Calculate critical energy for each element of E
+        Ec(j) = (3.0d0 / (4.0d0 * pi)) * (qe * h * B) / (me**3 * c**5) * E(j)**2
+        ! Calculate x and R for each element of E
+        x(j) = E_ph / Ec(j)
+        R(j) = (1.808 * x(j)**(1.0d0 / 3.0d0) / sqrt(1.0d0 + 3.4 * x(j)**(2.0d0 / 3.0d0))) * &
+                ((1.0d0 + 2.21 * x(j)**(2.0d0 / 3.0d0) + 0.347 * x(j)**(4.0d0 / 3.0d0)) / &
+                (1.0d0 + 1.353 * x(j)**(2.0d0 / 3.0d0) + 0.217 * x(j)**(4.0d0 / 3.0d0))) * exp(-x(j))
+    end do
+
+    ! Compute the emitted power for each element of E
+    resultado = K * B * R
+    ! Deallocate arrays
+    deallocate(x)
+    deallocate(R)
+
+    end subroutine PSynchrotron
+
+    !****************************************************************************
+    ! Synchrotron emissivity for a specific photon energy
+    !****************************************************************************
+    function jsync(E_ph, B, N, E) result(integral)
+    implicit none
+    integer :: nsize  ! Number of elements in arrays
+    real(dp), intent(in) :: E_ph, B
+    real(dp), dimension(:), intent(in) :: E
+    real(dp), dimension(:), intent(in) :: N
+    real(dp) :: integral
+    real(dp) , dimension(:), allocatable :: integ
+    integer :: i
+    nsize=size(E)
+    allocate(integ(nsize))
+    ! The values inside the integral
+    call PSynchrotron(E_ph, E, B, integ)
+    integ=integ*N
+    ! The integral is solved with the trapezoid method
+    integral = 0.0d0
+    
+    do i = 1, nsize-1
+        integral = integral + 0.5d0 * (E(i+1) - E(i)) * (integ(i) + integ(i+1))
+        
+    end do
+    integral=integral/(4d0*pi)
+    deallocate(integ)
+
+    end function jsync
+
+    !****************************************************************************
+    ! Synchrotron absorption for a specific photon energy
+    !****************************************************************************
+    function alpha_sync(E_ph,B, N, E) result(alpha)
+    implicit none
+    real(dp), dimension(:) :: E, N
+    real(dp), dimension(:), ALLOCATABLE :: log_eVec, log_neVec
+    real(dp), intent(in) :: B, E_ph
+    real(dp) :: logne
+    real(dp) :: alpha
+
+    allocate(log_eVec(size(E)), log_neVec(size(N)))
+    log_eVec = log(E)
+    log_neVec = log(N)
+
+    alpha = quad(integrand, log(E(1)*1.1d0), log(E(size(E))/1.1d0), E_ph, B, log_eVec, log_neVec)
+    deallocate(log_eVec, log_neVec)
+
+    end function alpha_sync
+
+    !Function that calculates the interpolation
+    function log_interp1d(x, xp, yp)
+    real(dp) :: log_interp1d, x
+    real(dp), dimension(:) :: xp, yp
+    integer :: i, j, n
+    real(dp) :: t
+    
+    n = size(xp)
+    log_interp1d = 0.0  ! Initialize the output array
+    if (x .lt. xp(1)) THEN 
+        log_interp1d = yp(1) 
+    ELSE if (x .gt. xp(n)) THEN 
+        log_interp1d = yp(n) 
+    ELSE 
+        j = 1 
+        do WHILE (x .gt. xp(j)) 
+            j = j + 1 
+        end do 
+        t = (x - xp(j-1)) / (xp(j) - xp(j-1)) 
+        log_interp1d = yp(j-1) + t * (yp(j) - yp(j-1)) 
+    end if
+    end function log_interp1d
+
+    !Funtion that calculates the term inside the integral
+    function integrand(loge, E_ph, bField, log_eVec,log_neVec)
+    
+    real(dp) :: df
+    real(dp), dimension(:) :: log_eVec, log_neVec
+    real(dp) :: loge
+    real(dp) :: E_e, integrand
+    real(dp), dimension(1) :: E_e_int 
+    real(dp), intent(in) :: E_ph, bField
+    real(dp), dimension(1) :: p
+
+    E_e=exp(loge)
+    E_e_int=E_e
+    call compute_derivative(log_interp1d, loge, 1d-4, df, log_eVec,log_neVec)
+    if (df.lt. 0. .and. df.gt.-10.) then
+        call PSynchrotron(E_ph, E_e_int, bField, p)
+        integrand=E_e * p(1) * E_e * (exp(log_interp1d(loge,log_eVec,log_neVec))/(E_e*E_e)) * (df-2)
+    else
+        integrand=0.0
+    end if
+
+    end function integrand
+
+    !Integration function
+    function quad(f, a, b, E_ph, bField , log_eVec,log_neVec) result(q)
+        implicit none
+        real(dp), intent(in) :: a, b, E_ph, bField
+        interface
+            real(8) function f(x, E_ph, bField, log_eVec, log_neVec)
+            real(8) :: x
+            real(8), dimension(:) :: log_eVec, log_neVec
+            real(8), intent(in) :: E_ph, bField
+        end function f
+        end interface
+        real(dp), dimension(:) :: log_eVec, log_neVec
+        real(dp) :: q
+        real(dp) :: h, x
+        integer :: n, i
+
+        n = 100000 ! Number of intervals, you can adjust this
+        h = (b - a) / n
+        q = 0.0
+        do i = 0, n
+            x = a + i * h
+            q = q + f(x, E_ph, bField, log_eVec, log_neVec)
+        end do
+
+        q = q * h
+
+    end function quad
+
+    !Subroutines that calculates the derivative  d(log(N))/d(log(E)) 
+    subroutine compute_derivative(f, x, h, df, log_eVec, log_neVec)
+    interface
+        real(8) function f(x,log_eVec, log_neVec)
+        real(8) :: x
+        real(8), dimension(:) :: log_eVec, log_neVec
+      end function f
+    end interface
+    real(dp), intent(in) :: x, h
+    real(dp), dimension(:) :: log_eVec, log_neVec
+    real(dp),intent(out) :: df
+    df = (f(x + h,log_eVec,log_neVec) - f(x - h,log_eVec,log_neVec)) / (2.0 * h)
+    end subroutine compute_derivative
 
     !============================================================================
     ! SSA (start)
@@ -177,24 +358,24 @@ contains
     character, intent(in) :: particle
     real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn,Ns),Lum(Ns)
     real(dp), intent(out) :: LumA(Ns)
-    real(dp) :: K,Ecf,Sf,depth,tau,Ap, mass
+    real(dp) :: Absor_coef,Emmision_coef,Source_fun,depth,tau,Ap, mass
 
     !Loop for the segments
     do j = 2, Ns
         !Absorption and emission coefficients, and source function, for each segment (Pacholczyck, 1970)
         mass = me
         if (particle == 'p') mass = mpc2/c**2
-        K = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*mass*V(j)) * EintSSA(B(j),Eph(j),E,NE(:,j),particle)
-        Ecf = Lum(j)/(4d0*pi*V(j))      !Per stereoradian
-        Sf = Ecf/max(K,1.d-30) !!!! CHECK !!!!
+        Absor_coef = 2.62d0*qe**3*h**2*B(j)/(4d0*pi*Eph(j)**2*mass*V(j)) * EintSSA(B(j),Eph(j),E,NE(:,j),particle)
+        Emmision_coef = Lum(j)/(4d0*pi*V(j))      !Per stereoradian
+        Source_fun = Emmision_coef/max(Absor_coef,1.d-30) !!!! CHECK !!!!
 
         !Length that photons in the observer's direction must travel inside the segment (in the FF)
         depth = r_j(j)/sjo(j)
         !Optical depth for SSA
-        tau = K*depth / delta_obs(j)
-        !tau = K*min(depth,z(j)/gj)!/delta_obs(j)
+        tau = Absor_coef*depth / delta_obs(j)
+        !tau = Absor_coef*min(depth,z(j)/gj)!/delta_obs(j)
         !Estimation of the projected area, perpendicular to the observer's direction, obtained by equating
-        !the unabsorbed Lum to its value for optically thin emission: 4*pi*Ap*Sf*tau
+        !the unabsorbed Lum to its value for optically thin emission: 4*pi*Ap*Source_fun*tau
         !Ap = V(j)/min(depth,z(j)/gj)
         Ap = V(j)*delta_obs(j)/depth
 
@@ -202,7 +383,7 @@ contains
         if (tau < 0.01d0) then  !!!! CHECK !!!!
             LumA(j) = Lum(j)
         else
-            LumA(j) = 4d0*pi*Ap*Sf*(1d0-exp(-tau))
+            LumA(j) = 4d0*pi*Ap*Source_fun*(1d0-exp(-tau))
         endif
     enddo
 
