@@ -71,7 +71,6 @@ MODULE evolution
          write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj(i)/rj(1), VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
 
       end do
-
       close(30)
       close(31)
 
