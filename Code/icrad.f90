@@ -118,8 +118,7 @@ subroutine IC_Khang(Ee, Ne, Ef, aniso, cang, Eph0, Kapp, L_IC, sum_IC)
   real(dp) :: gamma_e(nIn), Eps(NSED_IC), Eps_int, dEps
   real(dp) :: T_ad, T_ad_ang, cte_Ndot, Ndot, x0, z_IC, t_K, sum
 
-  T_ad = Eph0/(2.7*mec2)     ! adimensional temperature, Eph0 = 2.7*kT
-  
+  T_ad = Eph0/(2.7*mec2)     ! adimensional temperature, Eph0 = 2.7*k*T
   T_ad_ang = T_ad  !  dummy definition so compiler doesn't warn possible uninitialization
   if (aniso) T_ad_ang = T_ad*(1.-cang) ! anisotropic IC
   
