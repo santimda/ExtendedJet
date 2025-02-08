@@ -65,11 +65,11 @@ contains
             !Unabsorbed synchrotron luminosity for each segment
             LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
 
-            !Emissivity and Absortion at height j
-            !j_at_z=jsync(EphFF(j), BFF(j), NEcut, E)
-            !alpha_at_z=alpha_sync(EphFF(j), BFF(j), NEcut, E)
+            !Emissivity and Absortion    at height j
+            j_at_z=jsync(EphFF(j), BFF(j), NEcut, E)
+            alpha_at_z=alpha_sync(EphFF(j), BFF(j), NEcut, E)
             
-            !write(122,*)Eph, j_at_z, alpha_at_z, BFF(j), NEcut
+            write(122,*)Eph, j_at_z, alpha_at_z, BFF(j), NEcut
 
             Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
             !Unabsorbed (de)boosted luminosity for Eph
@@ -178,38 +178,27 @@ contains
     !****************************************************************************
     ! Synchrotron emitted power for a specific photon energy
     !****************************************************************************
-    subroutine PSynchrotron(E_ph, E, B, resultado)
+    real(dp) function PSynchrotron(E_ph, E_e, B) result(resultado)
     implicit none
-        real(dp), intent(in) :: E_ph, B
-        real(dp), dimension(:), intent(in) :: E
+        real(dp), intent(in) :: E_ph, B, E_e
         real(dp) :: K
-        real(dp), dimension(:), allocatable :: x, R
-        real(dp), dimension(size(E)) :: Ec
-        real(dp), dimension(size(E)), intent(out) :: resultado
-        integer :: j, n
-    n = size(E)
+        real(dp) :: x, R
+        real(dp) :: Ec
+    
     ! Define constants
     K = sqrt(3.0d0) * qe**3 / (h * me * c**2)
-    ! Allocate arrays
-    allocate(x(n))
-    allocate(R(n))
-    do j = 1, n
-        ! Calculate critical energy for each element of E
-        Ec(j) = (3.0d0 / (4.0d0 * pi)) * (qe * h * B) / (me**3 * c**5) * E(j)**2
+    
+    Ec = (3.0d0 / (4.0d0 * pi)) * (qe * h * B) / (me**3 * c**5) * E_e**2
         ! Calculate x and R for each element of E
-        x(j) = E_ph / Ec(j)
-        R(j) = (1.808 * x(j)**(1.0d0 / 3.0d0) / sqrt(1.0d0 + 3.4 * x(j)**(2.0d0 / 3.0d0))) * &
-                ((1.0d0 + 2.21 * x(j)**(2.0d0 / 3.0d0) + 0.347 * x(j)**(4.0d0 / 3.0d0)) / &
-                (1.0d0 + 1.353 * x(j)**(2.0d0 / 3.0d0) + 0.217 * x(j)**(4.0d0 / 3.0d0))) * exp(-x(j))
-    end do
+        x = E_ph / Ec
+        R = (1.808 * x**(1.0d0 / 3.0d0) / sqrt(1.0d0 + 3.4 * x**(2.0d0 / 3.0d0))) * &
+                ((1.0d0 + 2.21 * x**(2.0d0 / 3.0d0) + 0.347 * x**(4.0d0 / 3.0d0)) / &
+                (1.0d0 + 1.353 * x**(2.0d0 / 3.0d0) + 0.217 * x**(4.0d0 / 3.0d0))) * exp(-x)
 
     ! Compute the emitted power for each element of E
     resultado = K * B * R
-    ! Deallocate arrays
-    deallocate(x)
-    deallocate(R)
 
-    end subroutine PSynchrotron
+    end function PSynchrotron
 
     !****************************************************************************
     ! Synchrotron emissivity for a specific photon energy
@@ -226,7 +215,9 @@ contains
     nsize=size(E)
     allocate(integ(nsize))
     ! The values inside the integral
-    call PSynchrotron(E_ph, E, B, integ)
+    do i=1, nsize
+        integ(i)=PSynchrotron(E_ph, E(i), B)
+    enddo
     integ=integ*N
     ! The integral is solved with the trapezoid method
     integral = 0.0d0
@@ -256,13 +247,14 @@ contains
     log_neVec = log(N)
 
     alpha = quad(integrand, log(E(1)*1.1d0), log(E(size(E))/1.1d0), E_ph, B, log_eVec, log_neVec)
+    alpha = -h**3*c**2/ (8.*pi*E_ph*E_ph)*alpha
     deallocate(log_eVec, log_neVec)
 
     end function alpha_sync
 
     !Function that calculates the interpolation
-    function log_interp1d(x, xp, yp)
-    real(dp) :: log_interp1d, x
+    real(dp) function log_interp1d(x, xp, yp)
+    real(dp) :: x
     real(dp), dimension(:) :: xp, yp
     integer :: i, j, n
     real(dp) :: t
@@ -295,11 +287,11 @@ contains
     real(dp), dimension(1) :: p
 
     E_e=exp(loge)
-    E_e_int=E_e
+    
     call compute_derivative(log_interp1d, loge, 1d-4, df, log_eVec,log_neVec)
     if (df.lt. 0. .and. df.gt.-10.) then
-        call PSynchrotron(E_ph, E_e_int, bField, p)
-        integrand=E_e * p(1) * E_e * (exp(log_interp1d(loge,log_eVec,log_neVec))/(E_e*E_e)) * (df-2)
+        
+        integrand=E_e * PSynchrotron(E_ph, E_e, bField) * E_e * (exp(log_interp1d(loge,log_eVec,log_neVec))/(E_e*E_e)) * (df-2)
     else
         integrand=0.0
     end if
@@ -336,13 +328,13 @@ contains
 
     !Subroutines that calculates the derivative  d(log(N))/d(log(E)) 
     subroutine compute_derivative(f, x, h, df, log_eVec, log_neVec)
+    real(dp), intent(in) :: x, h
     interface
         real(8) function f(x,log_eVec, log_neVec)
         real(8) :: x
         real(8), dimension(:) :: log_eVec, log_neVec
       end function f
     end interface
-    real(dp), intent(in) :: x, h
     real(dp), dimension(:) :: log_eVec, log_neVec
     real(dp),intent(out) :: df
     df = (f(x + h,log_eVec,log_neVec) - f(x - h,log_eVec,log_neVec)) / (2.0 * h)
