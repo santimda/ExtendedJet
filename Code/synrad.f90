@@ -209,136 +209,159 @@ contains
     real(dp), intent(in) :: E_ph, B
     real(dp), dimension(:), intent(in) :: E
     real(dp), dimension(:), intent(in) :: N
-    real(dp) :: integral
+    real(dp) :: integral, dE
     real(dp) , dimension(:), allocatable :: integ
     integer :: i
-    nsize=size(E)
+
+    nsize = size(E)
     allocate(integ(nsize))
     ! The values inside the integral
     do i=1, nsize
-        integ(i)=PSynchrotron(E_ph, E(i), B)
+        integ(i) = PSynchrotron(E_ph, E(i), B)
     enddo
-    integ=integ*N
+    integ = integ*N
     ! The integral is solved with the trapezoid method
     integral = 0.0d0
     
     do i = 1, nsize-1
-        integral = integral + 0.5d0 * (E(i+1) - E(i)) * (integ(i) + integ(i+1))
-        
+        dE = E(i+1) - E(i)
+        integral = integral + 0.5d0 * (integ(i) + integ(i+1)) * dE
     end do
-    integral=integral/(4d0*pi)
+    integral = integral/(4d0*pi)
     deallocate(integ)
 
     end function jsync
 
     !****************************************************************************
-    ! Synchrotron absorption for a specific photon energy
+    ! Synchrotron absorption coefficient for a specific photon energy
     !****************************************************************************
-    function alpha_sync(E_ph,B, N, E) result(alpha)
+    function alpha_sync(E_ph, B, N, E) result(alpha)
     implicit none
-    real(dp), dimension(:) :: E, N
+    real(dp), dimension(:), intent(in) :: E, N
     real(dp), dimension(:), ALLOCATABLE :: log_eVec, log_neVec
     real(dp), intent(in) :: B, E_ph
-    real(dp) :: logne
     real(dp) :: alpha
+    real(dp) :: df
+    real(dp), dimension(:), allocatable :: integ
+    integer(dp) :: nsize
 
-    allocate(log_eVec(size(E)), log_neVec(size(N)))
+    nsize = size(E)
+    allocate(log_eVec(nsize), log_neVec(nsize), integ(nsize))
     log_eVec = log(E)
     log_neVec = log(N)
 
-    alpha = quad(integrand, log(E(1)*1.1d0), log(E(size(E))/1.1d0), E_ph, B, log_eVec, log_neVec)
+    do i=1, nsize
+      if (i == 1) then
+        df = (log_neVec(i+1) - log_neVec(i))/(log_eVec(i+1) - log_eVec(i))
+      else if (i == nsize) then
+        df = (log_neVec(i) - log_neVec(i-1))/(log_eVec(i) - log_eVec(i-1))
+      else
+        df = (log_neVec(i+1) - log_neVec(i-1))/(log_eVec(i+1) - log_eVec(i-1))
+      end if
+
+      if (df > -10 .and. df < 2) then
+        integ(i) = PSynchrotron(E_ph, E(i), B) * N(i) * (df - 2)
+      else
+        integ(i) = 0d0
+      end if
+    end do
+
+    !alpha = quad(integrand, log(E(1)*1.1d0), log(E(size(E))/1.1d0), E_ph, B, log_eVec, log_neVec)
+    alpha = 0d0
+    do i = 1, nsize-1
+      alpha = alpha + 0.5d0 * (integ(i+1) + integ(i)) * (log_eVec(i+1) - log_eVec(i))
+    end do
     alpha = -h**3*c**2/ (8.*pi*E_ph*E_ph)*alpha
-    deallocate(log_eVec, log_neVec)
+    deallocate(log_eVec, log_neVec, integ)
 
     end function alpha_sync
 
-    !Function that calculates the interpolation
-    real(dp) function log_interp1d(x, xp, yp)
-    real(dp) :: x
-    real(dp), dimension(:) :: xp, yp
-    integer :: i, j, n
-    real(dp) :: t
+    ! !Function that calculates the interpolation
+    ! real(dp) function log_interp1d(x, xp, yp)
+    ! real(dp) :: x
+    ! real(dp), dimension(:) :: xp, yp
+    ! integer :: i, j, n
+    ! real(dp) :: t
     
-    n = size(xp)
-    log_interp1d = 0.0  ! Initialize the output array
-    if (x .lt. xp(1)) THEN 
-        log_interp1d = yp(1) 
-    ELSE if (x .gt. xp(n)) THEN 
-        log_interp1d = yp(n) 
-    ELSE 
-        j = 1 
-        do WHILE (x .gt. xp(j)) 
-            j = j + 1 
-        end do 
-        t = (x - xp(j-1)) / (xp(j) - xp(j-1)) 
-        log_interp1d = yp(j-1) + t * (yp(j) - yp(j-1)) 
-    end if
-    end function log_interp1d
+    ! n = size(xp)
+    ! log_interp1d = 0.0  ! Initialize the output array
+    ! if (x .lt. xp(1)) THEN 
+    !     log_interp1d = yp(1) 
+    ! ELSE if (x .gt. xp(n)) THEN 
+    !     log_interp1d = yp(n) 
+    ! ELSE 
+    !     j = 1 
+    !     do WHILE (x .gt. xp(j)) 
+    !         j = j + 1 
+    !     end do 
+    !     t = (x - xp(j-1)) / (xp(j) - xp(j-1)) 
+    !     log_interp1d = yp(j-1) + t * (yp(j) - yp(j-1)) 
+    ! end if
+    ! end function log_interp1d
 
-    !Funtion that calculates the term inside the integral
-    function integrand(loge, E_ph, bField, log_eVec,log_neVec)
+    ! !Funtion that calculates the term inside the integral
+    ! function integrand(loge, E_ph, bField, log_eVec,log_neVec)
     
-    real(dp) :: df
-    real(dp), dimension(:) :: log_eVec, log_neVec
-    real(dp) :: loge
-    real(dp) :: E_e, integrand
-    real(dp), dimension(1) :: E_e_int 
-    real(dp), intent(in) :: E_ph, bField
-    real(dp), dimension(1) :: p
+    ! real(dp) :: df
+    ! real(dp), dimension(:) :: log_eVec, log_neVec
+    ! real(dp) :: loge
+    ! real(dp) :: E_e, integrand
+    ! real(dp), dimension(1) :: E_e_int 
+    ! real(dp), intent(in) :: E_ph, bField
+    ! real(dp), dimension(1) :: p
 
-    E_e=exp(loge)
+    ! E_e=exp(loge)
     
-    call compute_derivative(log_interp1d, loge, 1d-4, df, log_eVec,log_neVec)
-    if (df.lt. 0. .and. df.gt.-10.) then
-        
-        integrand=E_e * PSynchrotron(E_ph, E_e, bField) * E_e * (exp(log_interp1d(loge,log_eVec,log_neVec))/(E_e*E_e)) * (df-2)
-    else
-        integrand=0.0
-    end if
+    ! call compute_derivative(log_interp1d, loge, 1d-4, df, log_eVec,log_neVec)
+    ! if (df < 2. .and. df > -10.) then  
+    !     integrand = PSynchrotron(E_ph, E_e, bField) * exp(log_interp1d(loge, log_eVec, log_neVec)) * (df-2)
+    ! else
+    !     integrand = 0.0
+    ! end if
 
-    end function integrand
+    ! end function integrand
 
-    !Integration function
-    function quad(f, a, b, E_ph, bField , log_eVec,log_neVec) result(q)
-        implicit none
-        real(dp), intent(in) :: a, b, E_ph, bField
-        interface
-            real(8) function f(x, E_ph, bField, log_eVec, log_neVec)
-            real(8) :: x
-            real(8), dimension(:) :: log_eVec, log_neVec
-            real(8), intent(in) :: E_ph, bField
-        end function f
-        end interface
-        real(dp), dimension(:) :: log_eVec, log_neVec
-        real(dp) :: q
-        real(dp) :: h, x
-        integer :: n, i
+    ! !Integration function
+    ! function quad(f, a, b, E_ph, bField , log_eVec,log_neVec) result(q)
+    !     implicit none
+    !     real(dp), intent(in) :: a, b, E_ph, bField
+    !     interface
+    !         real(8) function f(x, E_ph, bField, log_eVec, log_neVec)
+    !         real(8) :: x
+    !         real(8), dimension(:) :: log_eVec, log_neVec
+    !         real(8), intent(in) :: E_ph, bField
+    !     end function f
+    !     end interface
+    !     real(dp), dimension(:) :: log_eVec, log_neVec
+    !     real(dp) :: q
+    !     real(dp) :: h, x
+    !     integer :: n, i
 
-        n = 100000 ! Number of intervals, you can adjust this
-        h = (b - a) / n
-        q = 0.0
-        do i = 0, n
-            x = a + i * h
-            q = q + f(x, E_ph, bField, log_eVec, log_neVec)
-        end do
+    !     n = 200 ! Number of intervals, you can adjust this
+    !     h = (b - a) / n
+    !     q = 0.0
+    !     do i = 0, n
+    !         x = a + i * h
+    !         q = q + f(x, E_ph, bField, log_eVec, log_neVec)
+    !     end do
 
-        q = q * h
+    !     q = q * h
 
-    end function quad
+    ! end function quad
 
-    !Subroutines that calculates the derivative  d(log(N))/d(log(E)) 
-    subroutine compute_derivative(f, x, h, df, log_eVec, log_neVec)
-    real(dp), intent(in) :: x, h
-    interface
-        real(8) function f(x,log_eVec, log_neVec)
-        real(8) :: x
-        real(8), dimension(:) :: log_eVec, log_neVec
-      end function f
-    end interface
-    real(dp), dimension(:) :: log_eVec, log_neVec
-    real(dp),intent(out) :: df
-    df = (f(x + h,log_eVec,log_neVec) - f(x - h,log_eVec,log_neVec)) / (2.0 * h)
-    end subroutine compute_derivative
+    ! !Subroutines that calculates the derivative  d(log(N))/d(log(E)) 
+    ! subroutine compute_derivative(f, x, h, df, log_eVec, log_neVec)
+    ! real(dp), intent(in) :: x, h
+    ! interface
+    !     real(8) function f(x,log_eVec, log_neVec)
+    !     real(8) :: x
+    !     real(8), dimension(:) :: log_eVec, log_neVec
+    !   end function f
+    ! end interface
+    ! real(dp), dimension(:) :: log_eVec, log_neVec
+    ! real(dp),intent(out) :: df
+    ! df = (f(x + h,log_eVec,log_neVec) - f(x - h,log_eVec,log_neVec)) / (2.0 * h)
+    ! end subroutine compute_derivative
 
     !============================================================================
     ! SSA (start)
