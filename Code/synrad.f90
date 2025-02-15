@@ -17,8 +17,8 @@ contains
     character(1), intent(in) :: particle
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
+    real(dp) :: flux(Ns)
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
-    real(dp) :: j_at_z, alpha_at_z
     logical, parameter :: bin_SEDsyn = .True.
 
     !N(E) of each cut
@@ -26,6 +26,8 @@ contains
     open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
     open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
     open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
+
+    open(122,file='Flux.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -33,8 +35,6 @@ contains
         enddo
     enddo
     close(30)
-    
-    open(122,file='Em_Abs.dat')
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
     sjo = sin(jo)
@@ -62,14 +62,12 @@ contains
             dEphFF(j) = dEph/delta_obs(j)   !Energy interval in the FF
             NEcut = NE(:,j)                 !N(E) for the segment j
 
+
+            !Derivative of flux over z in each segment
+            Flux(j)=dFlux_dz(NEcut, BFF(j), EphFF(j), E, delta_obs(j),rj(j))
+            write(122,*) j, Flux(j), alpha_sync(EphFF(j), BFF(j), NEcut, E), jsync(EphFF(j), BFF(j), NEcut, E), delta_obs(j),rj(j), rj(j)/2.0
             !Unabsorbed synchrotron luminosity for each segment
             LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
-
-            !Emissivity and Absortion    at height j
-            j_at_z=jsync(EphFF(j), BFF(j), NEcut, E)
-            alpha_at_z=alpha_sync(EphFF(j), BFF(j), NEcut, E)
-            
-            write(122,*)Eph, j_at_z, alpha_at_z, BFF(j), NEcut
 
             Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
             !Unabsorbed (de)boosted luminosity for Eph
@@ -275,6 +273,65 @@ contains
     deallocate(log_eVec, log_neVec, integ)
 
     end function alpha_sync
+
+    !****************************************************************************
+    ! Flux for a given N_e(E,z),B(z),E_ph/delta(z)
+    !****************************************************************************
+
+    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out) result(flux)
+    implicit none
+        real(dp), dimension(:), intent(in) :: N_e, E
+        real(dp), intent (in) :: BFF, E_ph, delta_obs
+        real(dp) :: j, alpha, S, R_out, R_in, R_avg
+        real(dp) :: x, Step
+        integer :: n
+        real(dp), dimension(:), allocatable :: FI
+
+        !R_out and R_in are not yet defined as a function of z, this is just for testing:
+        R_in=R_out/2.0
+
+        alpha=alpha_sync(E_ph, BFF, N_e, E)
+        j=jsync(E_ph, BFF, N_e, E)
+        R_avg=0.5*(R_in+R_out)
+
+        !We consider the opt. thin case
+        if (crossed_length(R_in, R_in, R_out)*(alpha/sin(jo)) < 0.1) then
+            flux=delta_obs**2/dist**2*j*pi*(R_out**2-R_in**2)
+        !In case the jet at height z is opt thick
+        else if (crossed_length(R_avg,R_in,R_out)*(alpha/sin(jo)) > (10.0)) then
+            flux=sin(jo)*delta_obs**3/dist**2*j/alpha*2*R_out
+        !In case the integral has to be calculated numerically
+        else
+            n=1000
+            allocate(FI(n))
+
+            Step=2*R_out/n !Step
+            do i=1,n+1
+                x=-R_out+Step*(i-1)
+                FI(i)=1-exp((alpha/(delta_obs*sin(jo)))*crossed_length(x,R_in,R_out)) !The integrand vector
+            enddo
+
+            call integrate(n,Step,FI,flux) !We call a function for Simpson integration
+            flux=sin(jo)*delta_obs**3/dist**2*j/alpha*flux !Add constants
+
+            deallocate(FI)
+        endif
+
+    end function dFlux_dz
+
+    !Function for the length of the section we cross in the jet
+    real(dp) function crossed_length(x, R_in, R_out) result(l)
+    implicit none
+        real(dp) :: x, R_in, R_out
+
+        if ((abs(x) < abs(R_out)) .and. (abs(x) > abs(R_in))) then
+            l = 2 * sqrt(R_out**2 - x**2)
+        else if (abs(x) < abs(R_in)) then
+            l = 2 * (sqrt(R_out**2 - x**2) - sqrt(R_in**2 - x**2))
+        else
+            l = 0
+        endif
+    end function crossed_length
 
     ! !Function that calculates the interpolation
     ! real(dp) function log_interp1d(x, xp, yp)

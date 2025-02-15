@@ -8,7 +8,7 @@ program test_synchrotron
 
     
     ! Define test values
-    E_ph = 1.0d-18  ! Sample photon energy
+    E_ph = 1.0d-16  ! Sample photon energy
     B = 1.0d0      ! Sample magnetic field
     ! Define range for geometrically spaced energy values
     E_min = 1.63742116e-06
