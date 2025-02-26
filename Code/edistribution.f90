@@ -93,8 +93,8 @@ contains
     do i2 = 1, nIn
         NEtot = 0.d0    !Initialization
         do izz = 1, Ns
-            write(20,*) Evec(i2), NEmatrix(i2, izz)/deltaZ(izz), izz     !E and N(E) for each jet cut
-            NEtot = NEtot + NEmatrix(i2, izz)           !Sum for all the jet segments
+            write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
+            NEtot = NEtot + NEmatrix(i2, izz) * pi * r_fun(zz(izz))**2 * deltaZ(izz)   !Sum for all the jet segments
         enddo
     enddo
     close(20)
@@ -379,21 +379,21 @@ contains
         build_g: do k = 1, numbins
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
             Ee(k) = gg(k) * mc2
-            dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, Ee(k), particle)) / mc2
-            dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)
+            dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, Ee(k), particle)) / mc2             ! dotg'
+            dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)                                                ! dotg' / (betaGamma c)
             if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
         end do build_g
         dg(1) = dg(2)
 
         build_Q: do k = 1, numbins
-            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2
+            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2         ! dQ'(g', z)/dz
         end do build_Q
 
         nn(:, 0) = 0d0
         Ddiff(:, 0) = 1d-200
 
         jz = 0
-        z_loop: do while (zz(jz) < zmax*1.1)
+        z_loop: do while (zz(jz) < zmax*1.01)
             dz_aux = zz(jz)*(sqrt(dlogz)-1d0/sqrt(dlogz))
             Ebr = BreakE(BFF_fun(zz(jz)), zz(jz), dz_aux, particle)
             Ecut = CutE(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, particle)
@@ -461,7 +461,7 @@ contains
                 slope = (N2-N1)/log10(E2/E1)
                 !NEmatrix(i2, izz) = nn(m, jz)
                 NEmatrix(i2, izz) = N1 + slope * log10(Evec(i2)/E1)
-                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) * deltaZ(izz) / (betaGamma(z(izz)) * c * mc2)
+                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * r_fun(z(izz))**2) * betaGamma(z(izz)) * c * mc2)
             enddo
         enddo
 
