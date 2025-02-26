@@ -17,7 +17,7 @@ contains
     character(1), intent(in) :: particle
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF(Ns), dEphFF(Ns)
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
-    real(dp) :: flux(Ns)
+    real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
     logical, parameter :: bin_SEDsyn = .True.
 
@@ -40,80 +40,87 @@ contains
     sjo = sin(jo)
 
     !Initialization of the bolometric luminosities
-    LBolFF = 0d0
-    LBolAFF = 0d0
-
+    ! LBolFF = 0d0
+    ! LBolAFF = 0d0
+    Total_flux=0d0
+    write(122,'(8(A9, 8X))') 'Eph/eV', 'Flujo 1', 'Flujo 2', 'Flujo 3', 'Flujo 4', 'Flujo 5', 'Flujo 6', 'Flujo Tot'
     do l = 1, NSED_sy
-
         !Initialization of the total luminosity for each photon energy
-        Lum = 0d0           !Unabsorbed (de)boosted luminosity for Eph
-        LumFF = 0d0         !In the FF
-        LumA = 0d0          !Absorbed (de)boosted luminosity for Eph
-        LumAFF = 0d0        !In the FF
-        LumcutAFF = 0d0
-        LumcutFF = 0d0
-        LumcutA = 0d0       !Absorbed radiation for each cut
+        ! Lum = 0d0           !Unabsorbed (de)boosted luminosity for Eph
+        ! LumFF = 0d0         !In the FF
+        ! LumA = 0d0          !Absorbed (de)boosted luminosity for Eph
+        ! LumAFF = 0d0        !In the FF
+        ! LumcutAFF = 0d0
+        ! LumcutFF = 0d0
+        ! LumcutA = 0d0       !Absorbed radiation for each cut
 
         dEph = Eph*(Ein-1d0)    !Energy interval
-
         !Loop for the segments
         do j = 2, Ns
             EphFF(j) = Eph/delta_obs(j)     !Photon energy in the FF
             dEphFF(j) = dEph/delta_obs(j)   !Energy interval in the FF
             NEcut = NE(:,j)                 !N(E) for the segment j
-
+            
 
             !Derivative of flux over z in each segment
-            Flux(j)=dFlux_dz(NEcut, BFF(j), EphFF(j), E, delta_obs(j),rj(j))
-            write(122,*) j, Flux(j), alpha_sync(EphFF(j), BFF(j), NEcut, E), jsync(EphFF(j), BFF(j), NEcut, E), delta_obs(j),rj(j), rj(j)/2.0
-            !Unabsorbed synchrotron luminosity for each segment
-            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
+            Total_flux=Total_flux+dFlux_dz(NEcut, BFF(j), Eph, E, delta_obs(j),rj(j))*DeltaZ(j)
+            !write(*,*)Total_flux
+            ! !Unabsorbed synchrotron luminosity for each segment
+            ! LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
 
-            Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
+            ! Lumcut(j) = boost(j)*LumcutFF(j)      !(de)Boosted
             !Unabsorbed (de)boosted luminosity for Eph
-            Lum = Lum + Lumcut(j)
-            LumFF = LumFF + LumcutFF(j)*dEphFF(j)
+            ! Lum = Lum + Lumcut(j)
+            ! LumFF = LumFF + LumcutFF(j)*dEphFF(j)
         enddo
         
         !Unabsorbed bolometric luminosity
-        LBolFF = LBolFF + LumFF
+        ! LBolFF = LBolFF + LumFF
                 
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
-
-        do j = 1, Ns
+        ! call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
+        Total_flux=0d0
+        do j = 2, Ns
             NEcut = NE(:,j)
             !call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
-            LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
-            write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
-            write(45,*) EphFF(j), LumcutAFF(j)/VFF(j) * rj(j)/c / EphFF(j)
+            ! LumcutA(j) = boost(j)*LumcutAFF(j)    !(de)Boosted
+            ! write(40,*) Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
+            ! write(45,*) EphFF(j), LumcutAFF(j)/VFF(j) * rj(j)/c / EphFF(j)
             
-            !Absorbed (de)boosted luminosity for Eph
-            LumA = LumA + LumcutA(j)
-            LumAFF = LumAFF + LumcutAFF(j)*dEphFF(j)
+            ! !Absorbed (de)boosted luminosity for Eph
+            ! LumA = LumA + LumcutA(j)
+            ! LumAFF = LumAFF + LumcutAFF(j)*dEphFF(j)
             
+            Total_flux=Total_flux+dFlux_dz(NEcut, BFF(j), Eph, E, delta_obs(j),rj(j))*DeltaZ(j)
             !Jet and c-jet contribution of the segments up to given lengths
             z_proj = z(j) * sjo
-            if (z_proj <= 7.3*R_g) L1 = LumA
-            if (z_proj <= 2.6d1*R_g) L2 = LumA
-            if (z_proj <= 6.5d1*R_g) L3 = LumA
-            if (z_proj <= 1.95d2*R_g) L4 = LumA
-            if (z_proj <= 6.5d2*R_g) L5 = LumA
-            if (z_proj <= 3d5*R_g) L6 = LumA
+            if (z_proj <= 7.3*R_g) FT1 = Total_flux
+            if (z_proj <= 2.6d1*R_g) FT2 = Total_flux
+            if (z_proj <= 6.5d1*R_g) FT3 = Total_flux
+            if (z_proj <= 1.95d2*R_g) FT4 = Total_flux
+            if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
+            if (z_proj <= 3d5*R_g) FT6 = Total_flux
             write(*,*) l, j, Ns
         enddo
 
-        write(50,*) Eph/eV, Eph*L1, Eph*L2, Eph*L3, Eph*L4, Eph*L5, Eph*L6, Eph*Lum, Eph*LumA
+        write(122,'(8(ES15.7, 2X))') Eph/eV, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
         
         !Absorbed bolometric luminosity
-        LBolAFF = LBolAFF + LumAFF
-        
+        ! LBolAFF = LBolAFF + LumAFF
+        ! write(*,*)'Total Flux=', Flux_tot
+        ! write(*,*)'Flux at 7.3*R_g',FT1
+        ! write(*,*)'Flux at 2.6d1*R_g',FT2
+        ! write(*,*)'Flux at 6.5d1*R_g',FT3
+        ! write(*,*)'Flux at 1.95d2*R_g',FT4
+        ! write(*,*)'Flux at 6.5d2*R_g',FT5
+        ! write(*,*)'Flux at 3d5*R_g',FT6
+        Total_flux=0d0
         Eph = Eph*Ein       !Increase in the photon energy
 
     enddo
     
-    !write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
-    write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
+    ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
+    ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
 
     close(40)
     close(122)
@@ -274,6 +281,7 @@ contains
 
     end function alpha_sync
 
+    
     !****************************************************************************
     ! Flux for a given N_e(E,z),B(z),E_ph/delta(z)
     !****************************************************************************
@@ -288,12 +296,11 @@ contains
         real(dp), dimension(:), allocatable :: FI
 
         !R_out and R_in are not yet defined as a function of z, this is just for testing:
-        R_in=R_out/2.0
+        R_in=0.0!R_out/2.0
 
         alpha=alpha_sync(E_ph, BFF, N_e, E)
         j=jsync(E_ph, BFF, N_e, E)
         R_avg=0.5*(R_in+R_out)
-
         !We consider the opt. thin case
         if (crossed_length(R_in, R_in, R_out)*(alpha/sin(jo)) < 0.1) then
             flux=delta_obs**2/dist**2*j*pi*(R_out**2-R_in**2)
@@ -302,17 +309,17 @@ contains
             flux=sin(jo)*delta_obs**3/dist**2*j/alpha*2*R_out
         !In case the integral has to be calculated numerically
         else
-            n=1000
+            n=100
             allocate(FI(n))
 
-            Step=2*R_out/n !Step
+            Step=R_out/n !Step
             do i=1,n+1
-                x=-R_out+Step*(i-1)
+                x=0.0+Step*(i-1)
                 FI(i)=1-exp((alpha/(delta_obs*sin(jo)))*crossed_length(x,R_in,R_out)) !The integrand vector
             enddo
 
             call integrate(n,Step,FI,flux) !We call a function for Simpson integration
-            flux=sin(jo)*delta_obs**3/dist**2*j/alpha*flux !Add constants
+            flux=sin(jo)*delta_obs**3/dist**2*j/alpha*2*flux !Add constants
 
             deallocate(FI)
         endif
@@ -325,11 +332,11 @@ contains
         real(dp) :: x, R_in, R_out
 
         if ((abs(x) < abs(R_out)) .and. (abs(x) > abs(R_in))) then
-            l = 2 * sqrt(R_out**2 - x**2)
+            l = 2d0 * sqrt(R_out**2 - x**2)
         else if (abs(x) < abs(R_in)) then
-            l = 2 * (sqrt(R_out**2 - x**2) - sqrt(R_in**2 - x**2))
+            l = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(R_in**2 - x**2))
         else
-            l = 0
+            l = 0d0
         endif
     end function crossed_length
 
