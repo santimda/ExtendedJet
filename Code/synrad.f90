@@ -31,7 +31,6 @@ contains
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
-            NE(i,j) = NE(i,j) * deltaZ(j)
         enddo
     enddo
     close(30)
@@ -291,7 +290,7 @@ contains
         real(dp), dimension(:), intent(in) :: N_e, E
         real(dp), intent (in) :: BFF, E_ph, delta_obs
         real(dp) :: j, alpha, S, R_out, R_in, R_avg
-        real(dp) :: x, Step
+        real(dp) :: x, Step, tau, tau_avg, tau_max
         integer :: n
         real(dp), dimension(:), allocatable :: FI
 
@@ -302,10 +301,12 @@ contains
         j=jsync(E_ph, BFF, N_e, E)
         R_avg=0.5*(R_in+R_out)
         !We consider the opt. thin case
-        if (crossed_length(R_in, R_in, R_out)*(alpha/sin(jo)) < 0.1) then
+        tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+        tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+        if (tau_max < 0.1) then
             flux=delta_obs**2/dist**2*j*pi*(R_out**2-R_in**2)
         !In case the jet at height z is opt thick
-        else if (crossed_length(R_avg,R_in,R_out)*(alpha/sin(jo)) > (10.0)) then
+        else if (tau_avg > (10.0)) then
             flux=sin(jo)*delta_obs**3/dist**2*j/alpha*2*R_out
         !In case the integral has to be calculated numerically
         else
@@ -315,7 +316,8 @@ contains
             Step=R_out/n !Step
             do i=1,n+1
                 x=0.0+Step*(i-1)
-                FI(i)=1-exp((alpha/(delta_obs*sin(jo)))*crossed_length(x,R_in,R_out)) !The integrand vector
+                tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+                FI(i)=1d0-exp(-tau) !The integrand vector
             enddo
 
             call integrate(n,Step,FI,flux) !We call a function for Simpson integration
@@ -333,7 +335,7 @@ contains
 
         if ((abs(x) < abs(R_out)) .and. (abs(x) > abs(R_in))) then
             l = 2d0 * sqrt(R_out**2 - x**2)
-        else if (abs(x) < abs(R_in)) then
+        else if (abs(x) <= abs(R_in)) then
             l = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(R_in**2 - x**2))
         else
             l = 0d0
