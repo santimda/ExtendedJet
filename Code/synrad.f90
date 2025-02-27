@@ -66,11 +66,19 @@ contains
     open(133,file="Tau.dat")
     Eph = Emin_sy   
     do k=1,NSED_sy
-        write(133,*)Eph, (crossed_length(0d0, 0d0, rj(j))*alpha_sync(Eph, BFF(j), NE(:,j), E)/(sin(jo)*delta_obs(j)), j=2,Ns)
+        write(133,*)Eph/eV, (crossed_length(0d0, 0d0, rj(j))*alpha_sync(Eph, BFF(j), NE(:,j), E)/(sin(jo)*delta_obs(j)), j=2,Ns)
+        Eph = Eph*Ein
+    enddo
+    open(245,file="dFlux_dz.dat")
+    Eph = Emin_sy   
+    do k=1,NSED_sy
+
+        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), EphFF, E, delta_obs(j),rj(j))*DeltaZ(j), j=2,Ns)
         Eph = Eph*Ein
     enddo
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
+    close(245)
     close(133)
     close(40)
     close(122)
