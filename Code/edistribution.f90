@@ -94,7 +94,7 @@ contains
         NEtot = 0.d0    !Initialization
         do izz = 1, Ns
             write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
-            NEtot = NEtot + NEmatrix(i2, izz) * pi * r_fun(zz(izz))**2 * deltaZ(izz)   !Sum for all the jet segments
+            NEtot = NEtot + NEmatrix(i2, izz) * pi * r_fun(z(izz))**2 * deltaZ(izz)   !Sum for all the jet segments
         enddo
     enddo
     close(20)

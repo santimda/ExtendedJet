@@ -20,6 +20,7 @@ contains
     real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
     logical, parameter :: bin_SEDsyn = .True.
+    integer :: k
 
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
@@ -61,9 +62,16 @@ contains
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
     
+    !Pruebas
+    open(133,file="Tau.dat")
+    Eph = Emin_sy   
+    do k=1,NSED_sy
+        write(133,*)Eph, (crossed_length(0d0, 0d0, rj(j))*alpha_sync(Eph, BFF(j), NE(:,j), E)/(sin(jo)*delta_obs(j)), j=2,Ns)
+        Eph = Eph*Ein
+    enddo
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
-
+    close(133)
     close(40)
     close(122)
     close(45)
