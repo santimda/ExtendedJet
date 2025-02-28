@@ -73,7 +73,7 @@ contains
     Eph = Emin_sy   
     do k=1,NSED_sy
 
-        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), EphFF, E, delta_obs(j),rj(j))*DeltaZ(j), j=2,Ns)
+        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj(j))*DeltaZ(j), j=2,Ns)
         Eph = Eph*Ein
     enddo
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
