@@ -94,7 +94,7 @@ contains
         NEtot = 0.d0    !Initialization
         do izz = 1, Ns
             write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
-            NEtot = NEtot + NEmatrix(i2, izz) * pi * r_fun(zz(izz))**2 * deltaZ(izz)   !Sum for all the jet segments
+            NEtot = NEtot + NEmatrix(i2, izz) * pi * r_fun(z(izz))**2 * deltaZ(izz)   !Sum for all the jet segments
         enddo
     enddo
     close(20)
@@ -454,13 +454,13 @@ contains
                 N12 = safeLog10(nn(m, jz+1))
                 N21 = safeLog10(nn(m+1, jz))
                 N22 = safeLog10(nn(m+1, jz+1))
-                slope1 = (N12-N11)/log10(z2/z1)
-                slope2 = (N22-N21)/log10(z2/z1)
-                N1 = N11 + slope1 * log10(z(izz)/z1)
-                N2 = N21 + slope2 * log10(z(izz)/z1)
-                slope = (N2-N1)/log10(E2/E1)
+                slope1 = (N12-N11)/safeLog10(z2/z1)
+                slope2 = (N22-N21)/safeLog10(z2/z1)
+                N1 = N11 + slope1 * safeLog10(z(izz)/z1)
+                N2 = N21 + slope2 * safeLog10(z(izz)/z1)
+                slope = (N2-N1)/safeLog10(E2/E1)
                 !NEmatrix(i2, izz) = nn(m, jz)
-                NEmatrix(i2, izz) = N1 + slope * log10(Evec(i2)/E1)
+                NEmatrix(i2, izz) = N1 + slope * safeLog10(Evec(i2)/E1)
                 NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * r_fun(z(izz))**2) * betaGamma(z(izz)) * c * mc2)
             enddo
         enddo
