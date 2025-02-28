@@ -7,7 +7,7 @@ contains
         if (x > 0d0) then
             safeLog10 = log10(x)
         else
-            safeLog10 = -50
+            safeLog10 = -500
         endif
         return
     end function safeLog10
