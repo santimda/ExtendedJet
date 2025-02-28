@@ -67,7 +67,7 @@ MODULE evolution
          !Doppler boosting factor (used to transform FF -> OF); the expression assumes that delta z is defined in the LF
          boost(i) = delta_obs(i)**2 
 
-         write(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
+         write(30,*) z(i), BFF(i), rj(i), gj(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i), sigma_B(z(i))
          write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj(i)/rj(1), VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
 
       end do

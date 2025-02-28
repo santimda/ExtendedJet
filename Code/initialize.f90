@@ -17,13 +17,7 @@ MODULE initialize
         real(dp) :: zx
         logical :: fexist
 
-        Ns = Ns1
-        zx = zmax_inj
-        dlogz = (zmax_inj/z0)**(1d0/(Ns1-1d0))
-        do while (zx < zmax)
-          zx = zx * dlogz
-          Ns = Ns +1
-        end do
+        dlogz = (zmax/z0)**(1d0/(Ns-1d0))
 
         allocate( z(Ns), rj(Ns), gj(Ns), bj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 

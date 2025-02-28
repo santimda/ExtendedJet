@@ -151,7 +151,7 @@ contains
     
     ! Define constants
     g = E_e / (me * c**2)
-    K = sqrt(3.0d0) * qe**3 / (h * me * c**2) * (1.0 - 1.0/g**2)
+    K = sqrt(3.0d0) * qe**3 / (h * me * c**2)
     
     Ec = (3.0d0 / (4.0d0 * pi)) * (qe * h * B) / (me**3 * c**5) * E_e**2
         ! Calculate x and R for each element of E

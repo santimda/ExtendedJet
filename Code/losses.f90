@@ -41,7 +41,7 @@ contains
         factor = 2.966d-7    ! (me/mp)^2
         Lgamma = EFF/mpc2
     endif
-    SyncLoss = - 1.05804d-15 * factor * B_FF**2 * (Lgamma**2)   !4/9*c*re^2 * B^2 * gamma^2 [erg/s]
+    SyncLoss = - 1.05804d-15 * factor * B_FF**2 * (Lgamma**2 - 1d0)   !4/9*c*re^2 * B^2 * gamma^2 [erg/s]
 
     end function SyncLoss
 

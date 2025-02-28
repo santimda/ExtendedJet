@@ -22,7 +22,7 @@ module system_parameters
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0  = sqrt(gj0**2-1d0)*c/gj0 !Fluid bulk speed at the base of the jet
    real(dp), parameter :: zmax = 2d6*R_g           !Jet maximum height !~~~~
-   real(dp), parameter :: zmax_inj = 2d4*R_g       !Jet maximum cell of injection
+   real(dp), parameter :: zmax_inj = 2d3*R_g       !Jet maximum cell of injection
    real(dp), parameter :: r0 = 8d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex = 0.3d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
                                                    !Para CenA (Janssen+2021)~~~~
@@ -51,7 +51,7 @@ module system_parameters
    real(dp) :: mu  != gj0 * (10d0 + 1d0)!= gj0 * (sigma_0 + 1d0)    !!  !Total energy flux per unit of rest-mass energy flux
    real(dp) :: Mdot_j  != Lj / (c**2 * gj0 * (sigma_0 + 1d0)) !! !Mass flux
    real(dp) :: z0 = 2d0*R_g                    !Jet launching height
-   real(dp) :: a_inj = -0.5d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
+   real(dp) :: a_inj = -0.01d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
                                                 !a_inj =/ 0 (else error!)
    real(dp) :: gammaIndex = 0.13              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
@@ -156,7 +156,7 @@ module system_parameters
       real(dp) function sigma_B(zz)
          real(dp), intent(in) :: zz
          !write(*,*) "ent_ratio = ", enthalpy(abs(zz))/max_enthalpy
-         sigma_B = max(mu / (lorentzFactor(abs(zz)) * enthalpy(abs(zz))) - 1d0, 1d-4)
+         sigma_B = max(mu / (lorentzFactor(abs(zz)) * enthalpy(abs(zz))) - 1d0, 1d-10)
       end function
 
       !*************************************************************************************

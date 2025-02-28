@@ -199,7 +199,7 @@ contains
         f1 = f2
         E = E2
     end do
-    Norm_q0p = dLe_dz(zz)/(QInt*lorentzFactor(zz)*pi*r_fun(zz)**2)   !Normalization constant
+    Norm_q0p = dLe_dz(zz)/(QInt*lorentzFactor(zz)*pi*r_fun(zz)**2)  !Normalization constant
     end function Norm_q0p
 
     !************************************************************************************
@@ -218,7 +218,7 @@ contains
         EminFF2 = EpminFF
         EmaxFF2 = EpmaxFF
     endif
-    EminFF2 = 2*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
+    EminFF2 = 1.1*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
     !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
     !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
     if (E >= EminFF2 .and. E <= EmaxFF2) then
@@ -421,13 +421,13 @@ contains
                 dotg(k, jz) = dotg(k, jz) / (betaGamma(zz(jz))*c)
             end do build_dotg
 
-            if (zz(jz) < zmax_inj) then
-                build_Qin: do k = 1, numbins
-                    Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2
-                end do build_Qin
-            else
-                Qinj(:, jz) = 0d0
-            end if
+            !if (zz(jz) < zmax_inj) then
+            build_Qin: do k = 1, numbins
+              Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2 * exp(-(zz(jz)/zmax_inj))
+            end do build_Qin
+            !else
+            !    Qinj(:, jz) = 0d0
+            !end if
 
         end do z_loop
 
@@ -484,11 +484,7 @@ contains
 
         do i=1,nIn
             do j=1,Ns
-                if (j < Ns1) then
-                    Q = qp_E(Evec(i), z(j), BFF_fun(z(j)), particle) * pi * r_fun(z(j))**2 * deltaZ(j)
-                else
-                    Q = 0d0
-                endif
+                Q = qp_E(Evec(i), z(j), BFF_fun(z(j)), particle) * exp(-(z(j)/zmax_inj))
                 t_cool = Evec(i)/abs(TLosses(BFF_fun(z(j)), z(j), 1d0, 1d0, Evec(i), particle))
                 t_adv = z(j)/(betaGamma(z(j))*c)
                 NEmatrix(i, j) = Q * min(t_cool, t_adv)
