@@ -1,6 +1,7 @@
 MODULE synrad
     use globals
     use constants
+    use mathematics
     implicit none
 
 contains
@@ -19,7 +20,7 @@ contains
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
-    logical, parameter :: bin_SEDsyn = .True.
+    logical, parameter :: bin_SEDsyn = .False.
     integer :: k
 
     !N(E) of each cut
@@ -55,7 +56,7 @@ contains
             if (z_proj <= 1.95d2*R_g) FT4 = Total_flux
             if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
             if (z_proj <= 3d5*R_g) FT6 = Total_flux
-            write(*,*) l, j, Ns
+            !write(*,*) l, j, Ns
         enddo
 
         write(122,'(8(ES15.7, 2X))') Eph/eV, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
@@ -66,7 +67,7 @@ contains
     open(133,file="Tau.dat")
     Eph = Emin_sy   
     do k=1,NSED_sy
-        write(133,*)Eph/eV, (crossed_length(0d0, 0d0, rj(j))*alpha_sync(Eph, BFF(j), NE(:,j), E)/(sin(jo)*delta_obs(j)), j=2,Ns)
+        !write(133,*)Eph/eV, (crossed_length(0d0, 0d0, rj(j))*alpha_sync(Eph, BFF(j), NE(:,j), E)/(sin(jo)*delta_obs(j)), j=2,Ns)
         Eph = Eph*Ein
     enddo
     open(245,file="dFlux_dz.dat")
@@ -146,10 +147,11 @@ contains
         real(dp), intent(in) :: E_ph, B, E_e
         real(dp) :: K
         real(dp) :: x, R
-        real(dp) :: Ec
+        real(dp) :: Ec, g
     
     ! Define constants
-    K = sqrt(3.0d0) * qe**3 / (h * me * c**2)
+    g = E_e / (me * c**2)
+    K = sqrt(3.0d0) * qe**3 / (h * me * c**2) * (1.0 - 1.0/g**2)
     
     Ec = (3.0d0 / (4.0d0 * pi)) * (qe * h * B) / (me**3 * c**5) * E_e**2
         ! Calculate x and R for each element of E
@@ -198,9 +200,9 @@ contains
     !****************************************************************************
     ! Synchrotron absorption coefficient for a specific photon energy
     !****************************************************************************
-    function alpha_sync(E_ph, B, N, E) result(alpha)
+    function alpha_sync(E_ph, B, Ne, E) result(alpha)
     implicit none
-    real(dp), dimension(:), intent(in) :: E, N
+    real(dp), dimension(:), intent(in) :: E, Ne
     real(dp), dimension(:), ALLOCATABLE :: log_eVec, log_neVec
     real(dp), intent(in) :: B, E_ph
     real(dp) :: alpha
@@ -210,8 +212,11 @@ contains
 
     nsize = size(E)
     allocate(log_eVec(nsize), log_neVec(nsize), integ(nsize))
-    log_eVec = log(E)
-    log_neVec = log(N)
+    
+    do i=1, nsize
+      log_eVec(i) = safeLog(E(i))
+      log_neVec(i) = safeLog(Ne(i))
+    end do
 
     do i=1, nsize
       if (i == 1) then
@@ -222,8 +227,8 @@ contains
         df = (log_neVec(i+1) - log_neVec(i-1))/(log_eVec(i+1) - log_eVec(i-1))
       end if
 
-      if (df > -10 .and. df < 2) then
-        integ(i) = PSynchrotron(E_ph, E(i), B) * N(i) * (df - 2)
+      if (df < 2) then
+        integ(i) = PSynchrotron(E_ph, E(i), B) * Ne(i) * (df - 2)
       else
         integ(i) = 0d0
       end if
@@ -273,7 +278,7 @@ contains
             allocate(FI(n))
 
             Step=R_out/n !Step
-            do i=1,n+1
+            do i=1,n
                 x=0.0+Step*(i-1)
                 tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
                 FI(i)=1d0-exp(-tau) !The integrand vector

@@ -19,7 +19,7 @@ module system_parameters
    
    !===JET PROPERTIES============================================================================================
    
-   real(dp), parameter :: gj0 = 1d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
+   real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0  = sqrt(gj0**2-1d0)*c/gj0 !Fluid bulk speed at the base of the jet
    real(dp), parameter :: zmax = 2d6*R_g           !Jet maximum height !~~~~
    real(dp), parameter :: zmax_inj = 2d4*R_g       !Jet maximum cell of injection

@@ -12,6 +12,16 @@ contains
         return
     end function safeLog10
 
+    real(dp) function safeLog(x)
+        real(dp), intent(in) :: x
+        if (x > 0d0) then
+            safeLog = log(x)
+        else
+            safeLog = -500
+        endif
+        return
+    end function safeLog
+
     ! :::: This produces an error message ::::
     subroutine an_error(string)
         implicit none
