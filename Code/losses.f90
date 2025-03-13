@@ -62,7 +62,7 @@ contains
     B_cr = 4.4e13
     eps = B_FF / B_cr * Lgamma**2
     alpha = 137d0 / 2d0 * pi * sigma_T * B_FF/B_cr / eps**2 * Ng_
-    tau = alpha * r_fun(zz_)
+    tau = alpha * r_fun_out(zz_)
     SyncLoss_mod = -1.05804d-15 * factor * B_FF**2 * (Lgamma**2-1d0) / (1d0 + tau)  !4/9*c*re^2 * B^2 * gamma^2 [erg/s]
  
     end function SyncLoss_mod
@@ -90,7 +90,7 @@ contains
 
     gg = EFF - mec2**2/EFF
     zabs = abs(z_)
-    AdLoss = - 2d0/3d0 * geomIndex * lorentzFactor(zabs) * c * betaJet(zabs) / zabs * gg
+    AdLoss = - 2d0/3d0 * geomIndex_out * lorentzFactor(zabs) * c * betaJet(zabs) / zabs * gg
     
     end function AdLoss
         
@@ -133,7 +133,7 @@ contains
         tAd = EFF/abs(AdLoss(z(segN),EFF))
         tTot = EFF/abs(TLosses(BFF(segN),z(segN),EphMFF(segN),Kappa(segN),EFF,particle))
         tacc = EFF/(facc*BFF(segN)*qe*c)                    !Acceleration timescale
-        tdiff = 3d0*qe*BFF(segN)*rj(segN)**2/(2d0*c*EFF)    !Diffusion timescale
+        tdiff = 3d0*qe*BFF(segN)*rj_out(segN)**2/(2d0*c*EFF)    !Diffusion timescale
         write(20,*) EFF/eV, tSyn, tIC, tAd, tTot, tcell, tacc, tdiff, tconv
                     
         EFF = EFF*Eint  !Energy increase   

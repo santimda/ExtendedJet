@@ -40,7 +40,7 @@ MODULE globals
 
   !=============================================================================================================
 
-  real(dp), dimension(:), allocatable :: z, rj      !Jet position, radius
+  real(dp), dimension(:), allocatable :: z, rj_out, rj_in      !Jet position, radius
 
   real(dp), dimension(:), allocatable :: delta_obs  !Doppler factor w.r.t. observer
   real(dp), dimension(:), allocatable :: boost      !Doppler boosting (FF -> OF)

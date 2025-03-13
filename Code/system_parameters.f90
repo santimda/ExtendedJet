@@ -1,5 +1,6 @@
 module system_parameters
    use constants
+   use controls
    implicit none
    public
 
@@ -23,8 +24,10 @@ module system_parameters
    real(dp), parameter :: vj0  = sqrt(gj0**2-1d0)*c/gj0 !Fluid bulk speed at the base of the jet
    real(dp), parameter :: zmax = 2d6*R_g           !Jet maximum height !~~~~
    real(dp), parameter :: zmax_inj = 2d3*R_g       !Jet maximum cell of injection
-   real(dp), parameter :: r0 = 8d0*R_g             !Jet launching radius (Kim+2018)
-   real(dp), parameter :: geomIndex = 0.3d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
+   real(dp), parameter :: rout_0 = 8d0*R_g             !Jet launching radius (Kim+2018)
+   real(dp), parameter :: geomIndex_out = 0.3d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
+   real(dp), parameter :: rin_0 = 0d0*R_g             
+   real(dp), parameter :: geomIndex_in = 0.3d0        
                                                    !Para CenA (Janssen+2021)~~~~
 
 
@@ -73,15 +76,32 @@ module system_parameters
    contains
 
       !*************************************************************************************
-      !   Jet radius as a function of z
+      !   Jet outer radius as a function of z
       !*************************************************************************************
-      real(dp) function r_fun(zz)
+      real(dp) function r_fun_out(zz)
          real(dp), intent(in) :: zz
          real(dp) :: r_fun1, r_fun2
-         r_fun1 = r0 * (abs(zz)/z0)**geomIndex
+         r_fun1 = rout_0 * (abs(zz)/z0)**geomIndex_out
          r_fun2 = 0.0 !40 * (abs(zz)/z0)**0.15
-         r_fun = max(r_fun1, r_fun2)
+         r_fun_out = max(r_fun1, r_fun2)
       end function
+
+      !*************************************************************************************
+      !   Jet inner radius as a function of z
+      !*************************************************************************************
+      real(dp) function r_fun_in(zz)
+         real(dp), intent(in) :: zz
+         real(dp) :: r_fun1, r_fun2
+         if (inner_radius_calc) then
+            r_fun1 = rin_0 * (abs(zz)/z0)**geomIndex_in
+         else
+            r_fun1 = 0.0
+         end if
+         !r_fun1 = rin_0 * (abs(zz)/z0)**geomIndex_in
+         r_fun2 = 0.0 !40 * (abs(zz)/z0)**0.15
+         r_fun_in = max(r_fun1, r_fun2)
+      end function
+
 
       !*************************************************************************************
       !   Jet Lorentz factor as a function of z
@@ -165,7 +185,7 @@ module system_parameters
       real(dp) function BFF_fun(zz)
          real(dp), intent(in) :: zz
          real(dp) :: rr, Gamma, sB
-         rr = r_fun(zz)
+         rr = sqrt(r_fun_out(zz)**2-r_fun_in(zz)**2)
          Gamma = lorentzFactor(abs(zz))
          sB = sigma_B(abs(zz))
          BFF_fun = 2d0/(Gamma*rr) * sqrt( Lj/(betaJet(abs(zz))*c) * sB/(sB+1d0))
@@ -176,7 +196,7 @@ module system_parameters
       !*************************************************************************************
       real(dp) function v_lat(zz)
          real(dp), intent(in) :: zz
-         v_lat = betaJet(zz) * c * (r0/z0) * geomIndex * (z0/abs(zz))**(1d0-geomIndex)
+         v_lat = betaJet(zz) * c * (rout_0/z0) * geomIndex_out * (z0/abs(zz))**(1d0-geomIndex_out)
       end function
 
    !============================================================================

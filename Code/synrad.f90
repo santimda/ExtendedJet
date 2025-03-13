@@ -2,6 +2,7 @@ MODULE synrad
     use globals
     use constants
     use mathematics
+    use, intrinsic :: ieee_arithmetic
     implicit none
 
 contains
@@ -29,7 +30,7 @@ contains
     open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
     open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
 
-    open(122,file='Flux.dat')
+    open(122,file='Flux'//jet//'.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -40,14 +41,13 @@ contains
     Eph = Emin_sy                               !Initialization
     sjo = sin(jo)
 
-    write(122,'(8(A9, 8X))') 'Eph/eV', 'Flujo 1', 'Flujo 2', 'Flujo 3', 'Flujo 4', 'Flujo 5', 'Flujo 6', 'Flujo Tot'
+    write(122,'(8(A9, 8X))') 'Eph/eV', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
     do l = 1, NSED_sy
         Total_flux=0d0
         do j = 2, Ns
             NEcut = NE(:,j)
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            
-            Total_flux = Total_flux + dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj(j))*DeltaZ(j)
+            Total_flux = Total_flux + dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j)
             !Jet and c-jet contribution of the segments up to given lengths
             z_proj = z(j) * sjo
             if (z_proj <= 7.3*R_g) FT1 = Total_flux
@@ -64,17 +64,17 @@ contains
     enddo
     
     !Pruebas
-    open(133,file="Tau.dat")
+    open(133,file="Tau"//jet//".dat")
     Eph = Emin_sy   
     do k=1,NSED_sy
         !write(133,*)Eph/eV, (crossed_length(0d0, 0d0, rj(j))*alpha_sync(Eph, BFF(j), NE(:,j), E)/(sin(jo)*delta_obs(j)), j=2,Ns)
         Eph = Eph*Ein
     enddo
-    open(245,file="dFlux_dz.dat")
+    open(245,file="dFlux_dz"//jet//".dat")
     Eph = Emin_sy   
     do k=1,NSED_sy
 
-        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj(j))*DeltaZ(j), j=2,Ns)
+        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j), j=2,Ns)
         Eph = Eph*Ein
     enddo
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
@@ -249,29 +249,31 @@ contains
     ! Flux for a given N_e(E,z),B(z),E_ph/delta(z)
     !****************************************************************************
 
-    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out) result(flux)
+    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in) result(flux)
     implicit none
         real(dp), dimension(:), intent(in) :: N_e, E
         real(dp), intent (in) :: BFF, E_ph, delta_obs
         real(dp) :: j, alpha, S, R_out, R_in, R_avg
-        real(dp) :: x, Step, tau, tau_avg, tau_max
+        real(dp) :: x, Step, tau, tau_avg, tau_max, variable_nan
         integer :: n
         real(dp), dimension(:), allocatable :: FI
 
         !R_out and R_in are not yet defined as a function of z, this is just for testing:
-        R_in=0.0!R_out/2.0
-
+        !R_in=0.0!R_out/2.0
+        variable_nan = ieee_value(variable_nan, ieee_quiet_nan)
         alpha=alpha_sync(E_ph, BFF, N_e, E)
         j=jsync(E_ph, BFF, N_e, E)
         R_avg=0.5*(R_in+R_out)
         !We consider the opt. thin case
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
         tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
-        if (tau_max < 0.1) then
-            flux=delta_obs**2/dist**2*j*pi*(R_out**2-R_in**2)
+        if (tau_max < 0.1) THEN
+            flux=delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2)
+            !write(*,*)delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2), flux
         !In case the jet at height z is opt thick
         else if (tau_avg > (10.0)) then
-            flux=sin(jo)*delta_obs**3/dist**2*j/alpha*2*R_out
+            flux=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
+            !write(*,*)flux
         !In case the integral has to be calculated numerically
         else
             n=100
@@ -285,8 +287,7 @@ contains
             enddo
 
             call integrate(n,Step,FI,flux) !We call a function for Simpson integration
-            flux=sin(jo)*delta_obs**3/dist**2*j/alpha*2*flux !Add constants
-
+            flux=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*flux !Add constants
             deallocate(FI)
         endif
 
@@ -296,11 +297,11 @@ contains
     real(dp) function crossed_length(x, R_in, R_out) result(l)
     implicit none
         real(dp) :: x, R_in, R_out
-
+        !write(*,*)x, R_in, R_out
         if ((abs(x) < abs(R_out)) .and. (abs(x) > abs(R_in))) then
             l = 2d0 * sqrt(R_out**2 - x**2)
         else if (abs(x) <= abs(R_in)) then
-            l = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(R_in**2 - x**2))
+            l = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(abs(R_in**2 - x**2)))
         else
             l = 0d0
         endif
@@ -580,7 +581,7 @@ contains
                 L_tot(l) = L_tot(l) + Lsy(i,l) * dEsy
                 L_abs(l) = L_abs(l) + (Lun(i,l) - Lsy(i,l)) * dEsy
             enddo
-            U_sy_FF = ( L_tot(l)/VFF(l) ) * ( rj(l)/c ) !!! CHECK IF <t> = r/c, deltaz/c, or what
+            U_sy_FF = ( L_tot(l)/VFF(l) ) * ( rj_out(l)/c ) !!! CHECK IF <t> = r/c, deltaz/c, or what
             write(28,*) l, z(l), U_sy_FF, BFF(l)**2/(8.d0*pi), U_sy_FF/(BFF(l)**2/(8.d0*pi))
             write(29,*) l, z(l)/R_g, L_tot(l), L_abs(l)/LnTFF
         enddo
@@ -640,7 +641,7 @@ contains
         enddo
         
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
+        call SSA(BFF,rj_out,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
         do j = 1, Ns
@@ -712,7 +713,7 @@ contains
         enddo
         
         !Absorbed radiation for each cut
-        call SSA(BFF,rj,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
+        call SSA(BFF,rj_out,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
         
         LumA(l) = 0d0 ! Total luminosity at each photon energy
         j = 1

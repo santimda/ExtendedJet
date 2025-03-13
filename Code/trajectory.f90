@@ -29,15 +29,17 @@ MODULE trajectory
     endif
 
     z(1) = dir*z0               ! jet height
-    rj(1) = r0
+    rj_out(1) = rout_0
+    rj_in(1) = rin_0
     do i = 2, Ns
       z(i) = z(i-1) * dlogz
-      rj(i) = r_fun(z(i))
+      rj_out(i) = r_fun_out(z(i))
+      rj_in(i) = r_fun_in(z(i))
     end do
 
     open(10, file='trajectory'//jet//'.dat')
     do i = 1, Ns
-      write(10,*) z(i), rj(i)
+      write(10,*) z(i), rj_out(i), rj_in(i)
     enddo
     close(10)
 

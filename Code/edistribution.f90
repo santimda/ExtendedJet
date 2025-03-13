@@ -74,16 +74,16 @@ contains
                 dEdt = dEdt_factor * (Evec(i2)/mec2)**2
                 Lsy = Lsy + NEmatrix(i2, izz) * dEdt * Evec(i2) * sqrt_factor
             enddo
-            vol = pi * r_fun(z(izz))**2 * deltaZ(izz)
-            Ljett = pi*r_fun(z(izz))**2*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
-             + BFF_fun(z(izz))**2/(8d0*pi) + Lsy/(4d0*r_fun(z(izz))**2*c))
+            vol = pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2) * deltaZ(izz)
+            Ljett = pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
+             + BFF_fun(z(izz))**2/(8d0*pi) + Lsy/(4d0*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)*c))
             magnetization = BFF_fun(z(izz))**2/(8d0*pi*Eparticles/vol)
             write(50, *) z(izz)/R_g, Eparticles/(vol*lorentzFactor(z(izz))), BFF_fun(z(izz))**2/(8d0*pi), Ljett/Lj, magnetization, &
                             (Ljett + Lsy)/Lj
             fluxp = flux
             eFluxp = energyFlux
-            flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
-            energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi * r_fun(z(izz))**2
+            flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)
+            energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)
             print *, "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", & 
                                fluxp/flux, "RatioE = ", eFluxp/energyFlux
         enddo
@@ -94,7 +94,7 @@ contains
         NEtot = 0.d0    !Initialization
         do izz = 1, Ns
             write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
-            NEtot = NEtot + NEmatrix(i2, izz) * pi * r_fun(z(izz))**2 * deltaZ(izz)   !Sum for all the jet segments
+            NEtot = NEtot + NEmatrix(i2, izz) * pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2) * deltaZ(izz)   !Sum for all the jet segments
         enddo
     enddo
     close(20)
@@ -134,7 +134,7 @@ contains
     enddo
     Emax1 = 10d0**(lE2)
     !Maximum energy that particles can get before diffusing away of the injection point
-    Emax2 = r_fun(z1)*sqrt(3d0*qe*BFF1*Eacc/(2d0*c))
+    Emax2 = r_fun_out(z1)*sqrt(3d0*qe*BFF1*Eacc/(2d0*c))
     !Ecut obtained by the minimum of the values above
     CutE = min(Emax1,Emax2)
     end function CutE
@@ -199,7 +199,7 @@ contains
         f1 = f2
         E = E2
     end do
-    Norm_q0p = dLe_dz(zz)/(QInt*lorentzFactor(zz)*pi*r_fun(zz)**2)  !Normalization constant
+    Norm_q0p = dLe_dz(zz)/(QInt*lorentzFactor(zz)*pi*(r_fun_out(zz)**2-r_fun_in(zz)**2))  !Normalization constant
     end function Norm_q0p
 
     !************************************************************************************
@@ -386,7 +386,7 @@ contains
         dg(1) = dg(2)
 
         build_Q: do k = 1, numbins
-            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), particle) * mc2 * pi * r_fun(zz(0))**2         ! dQ'(g', z)/dz
+            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), particle) * mc2 * pi *(r_fun_out(zz(0))**2-r_fun_in(zz(0))**2)        ! dQ'(g', z)/dz
         end do build_Q
 
         nn(:, 0) = 0d0
@@ -423,7 +423,7 @@ contains
 
             !if (zz(jz) < zmax_inj) then
             build_Qin: do k = 1, numbins
-              Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), particle) * mc2 * pi * r_fun(zz(jz))**2 * exp(-(zz(jz)/zmax_inj))
+              Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), particle) * mc2 * pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)* exp(-(zz(jz)/zmax_inj))
             end do build_Qin
             !else
             !    Qinj(:, jz) = 0d0
@@ -461,7 +461,7 @@ contains
                 slope = (N2-N1)/safeLog10(E2/E1)
                 !NEmatrix(i2, izz) = nn(m, jz)
                 NEmatrix(i2, izz) = N1 + slope * safeLog10(Evec(i2)/E1)
-                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * r_fun(z(izz))**2) * betaGamma(z(izz)) * c * mc2)
+                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * (r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)) * betaGamma(z(izz)) * c * mc2)
             enddo
         enddo
 

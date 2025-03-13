@@ -19,7 +19,7 @@ MODULE initialize
 
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
 
-        allocate( z(Ns), rj(Ns), gj(Ns), bj(Ns) )
+        allocate( z(Ns), rj_out(Ns), rj_in(Ns), gj(Ns), bj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 
         allocate( deltaZ(Ns), deltatFF(Ns) )
         allocate( delta_obs(Ns), boost(Ns) )
@@ -57,7 +57,7 @@ MODULE initialize
                 open(30,file='quant_FF.dat')  
                 do i = 1, Ns
                     !Quantities at each segment
-                    read(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
+                    read(30,*) z(i), BFF(i), rj_out(i), rj_in(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
                 enddo
                 close(30)
             endif
@@ -77,7 +77,7 @@ MODULE initialize
     ! deallocate vectors 
     !============================================================================
 
-        deallocate( z, rj, gj, bj )
+        deallocate( z, rj_out, rj_in, gj, bj )
         deallocate( BFF, vnorm, VFF, EphMFF, nfFF, Kappa, sjoFF )
         deallocate( deltaZ, deltatFF )
         deallocate( delta_obs, boost )

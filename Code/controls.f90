@@ -11,9 +11,10 @@ MODULE controls
     logical, parameter :: run_sed_calc = no!yes
 
     logical, parameter :: JET_ = yes
-    logical, parameter :: CJ_ = no
+    logical, parameter :: CJ_ = yes
 
     logical, parameter :: jet_calc = yes
+    logical, parameter :: inner_radius_calc = yes
     logical, parameter :: NE_calc = yes
     logical, parameter :: Np_calc = no
     logical, parameter :: radsyn_calc = yes
