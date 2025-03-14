@@ -26,7 +26,7 @@ module system_parameters
    real(dp), parameter :: zmax_inj = 2d3*R_g       !Jet maximum cell of injection
    real(dp), parameter :: rout_0 = 8d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex_out = 0.3d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: rin_0 = 0d0*R_g             
+   real(dp), parameter :: rin_0 = 7.5d0*R_g             
    real(dp), parameter :: geomIndex_in = 0.3d0        
                                                    !Para CenA (Janssen+2021)~~~~
 
