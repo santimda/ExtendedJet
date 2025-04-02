@@ -2,7 +2,6 @@ MODULE synrad
     use globals
     use constants
     use mathematics
-    use, intrinsic :: ieee_arithmetic
     implicit none
 
 contains
@@ -29,7 +28,7 @@ contains
     open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
     open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
     open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
-
+    open(245,file="dFlux_dz"//jet//".dat")
     open(122,file='Flux'//jet//'.dat')
     do i = 1, nIn
         do j = 1, Ns
@@ -58,24 +57,21 @@ contains
             if (z_proj <= 3d5*R_g) FT6 = Total_flux
             !write(*,*) l, j, Ns
         enddo
-
+        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j), j=2,Ns)
         write(122,'(8(ES15.7, 2X))') Eph/eV, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
     
     !Pruebas
-    open(133,file="Tau"//jet//".dat")
-    Eph = Emin_sy   
-    do k=1,NSED_sy
-        !write(133,*)Eph/eV, (crossed_length(0d0, 0d0, rj(j))*alpha_sync(Eph, BFF(j), NE(:,j), E)/(sin(jo)*delta_obs(j)), j=2,Ns)
-        Eph = Eph*Ein
-    enddo
-    open(245,file="dFlux_dz"//jet//".dat")
-    Eph = Emin_sy   
-    do k=1,NSED_sy
-
-        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j), j=2,Ns)
-        Eph = Eph*Ein
+    open(133,file="Em_Abs"//jet//".dat")
+    Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
+    Eph = Emin_sy                               !Initialization
+    do l=1, NSED_sy
+        do j=1,Ns
+            EphFF = Eph/delta_obs(j)     !Photon energy in the FF
+            write(133,*)EphFF, jsync(EphFF, BFF(j), NE(:,j), E), alpha_sync(EphFF, BFF(j), NE(:,j), E), j
+        enddo
+        Eph = Eph*Ein       !Increase in the photon energy
     enddo
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
     ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
@@ -260,13 +256,13 @@ contains
 
         !R_out and R_in are not yet defined as a function of z, this is just for testing:
         !R_in=0.0!R_out/2.0
-        variable_nan = ieee_value(variable_nan, ieee_quiet_nan)
         alpha=alpha_sync(E_ph, BFF, N_e, E)
         j=jsync(E_ph, BFF, N_e, E)
         R_avg=0.5*(R_in+R_out)
         !We consider the opt. thin case
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
         tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+
         if (tau_max < 0.1) THEN
             flux=delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2)
             !write(*,*)delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2), flux
@@ -278,19 +274,29 @@ contains
         else
             n=100
             allocate(FI(n))
-
             Step=R_out/n !Step
             do i=1,n
                 x=0.0+Step*(i-1)
                 tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
                 FI(i)=1d0-exp(-tau) !The integrand vector
             enddo
-
             call integrate(n,Step,FI,flux) !We call a function for Simpson integration
             flux=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*flux !Add constants
             deallocate(FI)
         endif
+        ! n=100
+        ! allocate(FI(n))
 
+        ! Step=R_out/n !Step
+        ! do i=1,n
+        !     x=0.0+Step*(i-1)
+        !     tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+        !     FI(i)=1d0-exp(-tau) !The integrand vector
+        ! enddo
+
+        ! call integrate(n,Step,FI,flux) !We call a function for Simpson integration
+        ! flux=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*flux !Add constants
+        ! deallocate(FI)
     end function dFlux_dz
 
     !Function for the length of the section we cross in the jet
