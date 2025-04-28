@@ -10,9 +10,9 @@ module system_parameters
 
    !===SYSTEM PARAMETERS=========================================================================================
 
-   real(dp), parameter :: dist = 3.8*Mpc !16.8*Mpc          !Distance to the system (EHT+2018?)
-   real(dp), parameter :: jo = 48.d0*pi/180.d0!17.d0*pi/180.d0     !Observer's angle with the jet axis (rad) (EHT+2018?)
-   real(dp), parameter :: M_BH = 5.5d7!6.5d9             !Black hole mass [Msun] (EHT+2018?)
+   real(dp), parameter :: dist = 16.8*Mpc !16.8*Mpc          !Distance to the system (EHT+2018?)
+   real(dp), parameter :: jo = 17.d0*pi/180.d0 !17.d0*pi/180.d0     !Observer's angle with the jet axis (rad) (EHT+2018?)
+   real(dp), parameter :: M_BH = 6.5d9!6.5d9             !Black hole mass [Msun] (EHT+2018?)
    real(dp), parameter :: L_Edd = 1.25d38*M_BH     !Eddington luminosity
    real(dp), parameter :: R_g = 1.477d5*M_BH       !Gravitational radius (M_BH [Msun])
    real(dp), parameter :: EphM = kB*T_CMB          !Target photon energy in the obs frame
@@ -22,12 +22,12 @@ module system_parameters
    
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0  = sqrt(gj0**2-1d0)*c/gj0 !Fluid bulk speed at the base of the jet
-   real(dp), parameter :: zmax = 2d6*R_g           !Jet maximum height !~~~~
-   real(dp), parameter :: zmax_inj = 2d3*R_g       !Jet maximum cell of injection
-   real(dp), parameter :: rout_0 = 8d0*R_g             !Jet launching radius (Kim+2018)
-   real(dp), parameter :: geomIndex_out = 0.3d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: rin_0 = 7.5d0*R_g             
-   real(dp), parameter :: geomIndex_in = 0.3d0        
+   real(dp), parameter :: zmax = 1d6*R_g           !Jet maximum height !~~~~
+   real(dp), parameter :: zmax_inj = 1000*R_g       !Jet maximum cell of injection
+   real(dp), parameter :: rout_0 = 30d0*R_g             !Jet launching radius (Kim+2018)
+   real(dp), parameter :: geomIndex_out = 0.6d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
+   real(dp), parameter :: rin_0 = 0.0*R_g             
+   real(dp), parameter :: geomIndex_in = 0.6d0        
                                                    !Para CenA (Janssen+2021)~~~~
 
 
@@ -45,16 +45,16 @@ module system_parameters
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 2d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d18*eV     !Maximum proton energy in the FF
-   real(dp), parameter :: p = 2.3d0             !Power law exponent for Q(E) = cte * E**-p
+   real(dp), parameter :: p = 2.01d0             !Power law exponent for Q(E) = cte * E**-p
 
    !===FREE PARAMETERS=========================================================================================
 
-   real(dp) :: Lj = 8d42                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: Lj = 1.5d43                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
    real(dp) :: sigma_0 = 10d0                    !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
    real(dp) :: mu  != gj0 * (10d0 + 1d0)!= gj0 * (sigma_0 + 1d0)    !!  !Total energy flux per unit of rest-mass energy flux
    real(dp) :: Mdot_j  != Lj / (c**2 * gj0 * (sigma_0 + 1d0)) !! !Mass flux
-   real(dp) :: z0 = 2d0*R_g                    !Jet launching height
-   real(dp) :: a_inj = -0.01d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
+   real(dp) :: z0 = 28d0*R_g                    !Jet launching height
+   real(dp) :: a_inj = 0.01d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
                                                 !a_inj =/ 0 (else error!)
    real(dp) :: gammaIndex = 0.13              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
