@@ -42,4 +42,5 @@ run.x
 Code/.vscode
 .ipynb_checkpoints/
 Code/.ipynb_checkpoints/
+Code/system_parameters.f90
 PostProcessing/__pycache__/
