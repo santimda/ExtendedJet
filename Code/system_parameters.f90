@@ -22,12 +22,12 @@ module system_parameters
    
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0  = sqrt(gj0**2-1d0)*c/gj0 !Fluid bulk speed at the base of the jet
-   real(dp), parameter :: zmax = 2d6*R_g           !Jet maximum height !~~~~
-   real(dp), parameter :: zmax_inj = 1.5d6*R_g       !Jet maximum cell of injection
-   real(dp), parameter :: rout_0 = 8d0*R_g             !Jet launching radius (Kim+2018)
-   real(dp), parameter :: geomIndex_out = 0.3d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: rin_0 = 7.5d0*R_g             
-   real(dp), parameter :: geomIndex_in = 0.3d0        
+   real(dp), parameter :: zmax = 1d4*R_g           !Jet maximum height !~~~~
+   real(dp), parameter :: zmax_inj = 0.5d4*R_g       !Jet maximum cell of injection
+   real(dp), parameter :: rout_0 = 20d0*R_g             !Jet launching radius (Kim+2018)
+   real(dp), parameter :: geomIndex_out = 0.33d0        !Jet opening parameter 
+   real(dp), parameter :: rin_0 = 18d0*R_g             
+   real(dp), parameter :: geomIndex_in = 0.33d0        
                                                    !Para CenA (Janssen+2021)~~~~
 
 

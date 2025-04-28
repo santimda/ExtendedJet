@@ -54,7 +54,7 @@ contains
             if (z_proj <= 6.5d1*R_g) FT3 = Total_flux
             if (z_proj <= 1.95d2*R_g) FT4 = Total_flux
             if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
-            if (z_proj <= 3d5*R_g) FT6 = Total_flux
+            if (z_proj <= 2d3*R_g) FT6 = Total_flux
             !write(*,*) l, j, Ns
         enddo
         write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j), j=2,Ns)
