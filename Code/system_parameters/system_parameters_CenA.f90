@@ -24,9 +24,9 @@ module system_parameters
    real(dp), parameter :: vj0  = sqrt(gj0**2-1d0)*c/gj0 !Fluid bulk speed at the base of the jet
    real(dp), parameter :: zmax = 1d4*R_g           !Jet maximum height !~~~~
    real(dp), parameter :: zmax_inj = 0.5d4*R_g       !Jet maximum cell of injection
-   real(dp), parameter :: rout_0 = 20d0*R_g             !Jet launching radius (Kim+2018)
+   real(dp), parameter :: rout_0 = 135d0*R_g             !Jet launching radius (Kim+2018)
    real(dp), parameter :: geomIndex_out = 0.33d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
-   real(dp), parameter :: rin_0 = 18d0*R_g             
+   real(dp), parameter :: rin_0 = 97d0*R_g             
    real(dp), parameter :: geomIndex_in = 0.33d0        
                                                    !Para CenA (Janssen+2021)~~~~
 
@@ -41,7 +41,7 @@ module system_parameters
                                                 !~~~~
    real(dp), parameter :: EmaxFF = 5d15*eV      !Maximum electron energy in the FF
                                                 !~~~~
-   real(dp), parameter :: fnT = 5.d-2           !Nonthermal energy fraction
+   real(dp), parameter :: fnT = 1d-2            !Nonthermal energy fraction
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 2d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d18*eV     !Maximum proton energy in the FF
@@ -53,7 +53,7 @@ module system_parameters
    real(dp) :: sigma_0 = 10d0                    !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
    real(dp) :: mu  != gj0 * (10d0 + 1d0)!= gj0 * (sigma_0 + 1d0)    !!  !Total energy flux per unit of rest-mass energy flux
    real(dp) :: Mdot_j  != Lj / (c**2 * gj0 * (sigma_0 + 1d0)) !! !Mass flux
-   real(dp) :: z0 = 2d0*R_g                    !Jet launching height
+   real(dp) :: z0 = 200d0*R_g                    !Jet launching height
    real(dp) :: a_inj = -0.01d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
                                                 !a_inj =/ 0 (else error!)
    real(dp) :: gammaIndex = 0.13              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
