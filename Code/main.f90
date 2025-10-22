@@ -6,7 +6,7 @@ PROGRAM main
     real(dp) :: sigma0_value, Lj_value, z0_value, a_inj_value
     real(dp), allocatable :: E_data(:), z_data(:)
     real(dp) :: S_data(m_data_max)
-    logical, parameter :: verbose = .False.
+    logical, parameter :: verbose = .True.
 
     interface
         subroutine run_jet(verbose) 
@@ -88,7 +88,7 @@ END PROGRAM main
     write(numSED,'(I3)') NSED_sy    !Number of points for the synchrotron SED
 
     ! Calculate everything for the jet first
-    if (JET_) then 
+    if (JET_) then
         if (verbose) print *, '\n Initialize vectors'    
         call initialize_allocate(sigma_0, Lj, z0, a_inj)
         !Jet trajectory
@@ -118,7 +118,7 @@ END PROGRAM main
             call Edist('p')
             call execute_command_line('./SortNp.sh '//trim(adjustl(numNE)))   !Sort N(E) file
         endif
-        write(*,*) radsyn_calc
+
         !Synchrotron SED
         if (radsyn_calc) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
@@ -174,7 +174,7 @@ END PROGRAM main
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
             call SEDsyn('CJ', 'e')      ! Calculate synchrotron SED
             call execute_command_line('./SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
-            call Calc_Usyn('CJ')   ! Calculate the energy density of synchrotron photons
+            !call Calc_Usyn('CJ')   ! Calculate the energy density of synchrotron photons
         endif
 
         if (radpsyn_calc) then

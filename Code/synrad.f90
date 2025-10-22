@@ -29,7 +29,7 @@ contains
     open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
     open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
     open(245,file="dFlux_dz"//jet//".dat")
-    open(122,file='Flux'//jet//'.dat')
+    open(122,file='Flux'//jet//'_'//particle//'.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -42,13 +42,19 @@ contains
 
     write(122,'(8(A9, 8X))') 'Eph/eV', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
     do l = 1, NSED_sy
-        Total_flux=0d0
+        Total_flux = 0d0
+        FT1 = 0d0
+        FT2 = 0d0
+        FT3 = 0d0
+        FT4 = 0d0
+        FT5 = 0d0
+        FT6 = 0d0
         do j = 2, Ns
             NEcut = NE(:,j)
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            Total_flux = Total_flux + dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j)
+            Total_flux = Total_flux + dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)*h
             !Jet and c-jet contribution of the segments up to given lengths
-            z_proj = z(j) * sjo
+            z_proj = abs(z(j)) * sjo
             if (z_proj <= 7.3*R_g) FT1 = Total_flux
             if (z_proj <= 2.6d1*R_g) FT2 = Total_flux
             if (z_proj <= 6.5d1*R_g) FT3 = Total_flux
@@ -57,8 +63,8 @@ contains
             if (z_proj <= 2d3*R_g) FT6 = Total_flux
             !write(*,*) l, j, Ns
         enddo
-        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j), j=2,Ns)
-        write(122,'(8(ES15.7, 2X))') Eph/eV, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
+        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j), j=2,Ns)
+        write(122,'(8(ES15.7E3, 2X))') Eph/h, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
     
@@ -69,7 +75,7 @@ contains
     do l=1, NSED_sy
         do j=1,Ns
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            write(133,*)EphFF, jsync(EphFF, BFF(j), NE(:,j), E), alpha_sync(EphFF, BFF(j), NE(:,j), E), j
+            write(133,*) Eph/h, jsync(EphFF, BFF(j), NE(:,j), E, particle)*h, alpha_sync(EphFF, BFF(j), NE(:,j), E, particle), j
         enddo
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
@@ -78,6 +84,7 @@ contains
     close(245)
     close(133)
     close(40)
+    close(122)
     close(122)
     close(45)
     close(50)
@@ -138,18 +145,24 @@ contains
     !****************************************************************************
     ! Synchrotron emitted power for a specific photon energy
     !****************************************************************************
-    real(dp) function PSynchrotron(E_ph, E_e, B) result(resultado)
+    real(dp) function PSynchrotron(E_ph, E, B, particle) result(resultado)
     implicit none
-        real(dp), intent(in) :: E_ph, B, E_e
+        real(dp), intent(in) :: E_ph, B, E
+        character(1), intent(in) :: particle
         real(dp) :: K
         real(dp) :: x, R
-        real(dp) :: Ec, g
+        real(dp) :: Ec, g, m
     
     ! Define constants
-    g = E_e / (me * c**2)
-    K = sqrt(3.0d0) * qe**3 / (h * me * c**2)
+    if (particle == 'e') then
+        m = me
+    else if (particle == 'p') then
+        m = mp
+    end if
+    g = E / (m * c**2)
+    K = sqrt(3.0d0) * qe**3 / (h * m * c**2)
     
-    Ec = (3.0d0 / (4.0d0 * pi)) * (qe * h * B) / (me**3 * c**5) * E_e**2
+    Ec =  (3d0 * qe * h * B) / (4d0 * pi * m * c) * g**2
         ! Calculate x and R for each element of E
         x = E_ph / Ec
         R = (1.808 * x**(1.0d0 / 3.0d0) / sqrt(1.0d0 + 3.4 * x**(2.0d0 / 3.0d0))) * &
@@ -164,10 +177,11 @@ contains
     !****************************************************************************
     ! Synchrotron emissivity for a specific photon energy
     !****************************************************************************
-    function jsync(E_ph, B, N, E) result(integral)
+    function jsync(E_ph, B, N, E, particle) result(integral)
     implicit none
     integer :: nsize  ! Number of elements in arrays
     real(dp), intent(in) :: E_ph, B
+    character(1), intent(in) :: particle
     real(dp), dimension(:), intent(in) :: E
     real(dp), dimension(:), intent(in) :: N
     real(dp) :: integral, dE
@@ -178,7 +192,7 @@ contains
     allocate(integ(nsize))
     ! The values inside the integral
     do i=1, nsize
-        integ(i) = PSynchrotron(E_ph, E(i), B)
+        integ(i) = PSynchrotron(E_ph, E(i), B, particle)
     enddo
     integ = integ*N
     ! The integral is solved with the trapezoid method
@@ -196,11 +210,12 @@ contains
     !****************************************************************************
     ! Synchrotron absorption coefficient for a specific photon energy
     !****************************************************************************
-    function alpha_sync(E_ph, B, Ne, E) result(alpha)
+    function alpha_sync(E_ph, B, Ne, E, particle) result(alpha)
     implicit none
     real(dp), dimension(:), intent(in) :: E, Ne
     real(dp), dimension(:), ALLOCATABLE :: log_eVec, log_neVec
     real(dp), intent(in) :: B, E_ph
+    character(1), intent(in) :: particle
     real(dp) :: alpha
     real(dp) :: df
     real(dp), dimension(:), allocatable :: integ
@@ -224,7 +239,7 @@ contains
       end if
 
       if (df < 2) then
-        integ(i) = PSynchrotron(E_ph, E(i), B) * Ne(i) * (df - 2)
+        integ(i) = PSynchrotron(E_ph, E(i), B, particle) * Ne(i) * (df - 2)
       else
         integ(i) = 0d0
       end if
@@ -245,10 +260,11 @@ contains
     ! Flux for a given N_e(E,z),B(z),E_ph/delta(z)
     !****************************************************************************
 
-    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in) result(flux)
+    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in, particle) result(flux)
     implicit none
         real(dp), dimension(:), intent(in) :: N_e, E
         real(dp), intent (in) :: BFF, E_ph, delta_obs
+        character(1), intent(in) :: particle
         real(dp) :: j, alpha, S, R_out, R_in, R_avg
         real(dp) :: x, Step, tau, tau_avg, tau_max, variable_nan
         integer :: n
@@ -256,8 +272,8 @@ contains
 
         !R_out and R_in are not yet defined as a function of z, this is just for testing:
         !R_in=0.0!R_out/2.0
-        alpha=alpha_sync(E_ph, BFF, N_e, E)
-        j=jsync(E_ph, BFF, N_e, E)
+        alpha=alpha_sync(E_ph, BFF, N_e, E, particle)
+        j=jsync(E_ph, BFF, N_e, E, particle)
         R_avg=0.5*(R_in+R_out)
         !We consider the opt. thin case
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)

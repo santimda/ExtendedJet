@@ -16,9 +16,9 @@ MODULE controls
     logical, parameter :: jet_calc = yes
     logical, parameter :: inner_radius_calc = yes
     logical, parameter :: NE_calc = yes
-    logical, parameter :: Np_calc = no
+    logical, parameter :: Np_calc = yes
     logical, parameter :: radsyn_calc = yes
-    logical, parameter :: radpsyn_calc = no
+    logical, parameter :: radpsyn_calc = yes
     logical, parameter :: radssc_calc = no
     logical, parameter :: radic_calc = no!yes
     

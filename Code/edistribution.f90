@@ -41,9 +41,10 @@ contains
     ! Calculate the cutoff energy for particle injection at each segment
     do i = 1, Ns
         Ecut = CutE(BFF(i),z(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
-        if (Ecut > EmaxFF2/3.d0) then
-            print *, 'EmaxFF in system_parameters.f90 is too low!'
-            stop
+        if (Ecut > EmaxFF2/2.d0) then
+            Ecut = EmaxFF2/2d0
+            !print *, 'EmaxFF in system_parameters.f90 is too low!'
+            !stop
         endif
         write(11,*) i, z(i), Ecut/eV
     enddo
@@ -376,6 +377,7 @@ contains
         zz(0) = z0*1.001
         g_min = EminFF2 / mc2
         g_max = EmaxFF2 / mc2
+        !$OMP PARALLEL DO PRIVATE(k)
         build_g: do k = 1, numbins
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
             Ee(k) = gg(k) * mc2
@@ -383,11 +385,14 @@ contains
             dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)                                                ! dotg' / (betaGamma c)
             if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
         end do build_g
+        !$OMP END PARALLEL DO
         dg(1) = dg(2)
 
+        !$OMP PARALLEL DO PRIVATE(k)
         build_Q: do k = 1, numbins
             Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), particle) * mc2 * pi *(r_fun_out(zz(0))**2-r_fun_in(zz(0))**2)        ! dQ'(g', z)/dz
         end do build_Q
+        !$OMP END PARALLEL DO
 
         nn(:, 0) = 0d0
         Ddiff(:, 0) = 1d-200
@@ -399,7 +404,7 @@ contains
             Ecut = CutE(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, particle)
             Ebr = min(Ebr, Ecut)
             tlossFF = Ebr/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ebr, particle))
-            dttFF = min(0.25*tlossFF, dz_aux/(betaGamma(zz(jz))*c))
+            dttFF = min(0.01*tlossFF, dz_aux/(betaGamma(zz(jz))*c))
             !if ((1d0*tlossFF, 1d-2*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
             !write(*,*) Ebr, Ecut, BFF_fun(zz(jz)), sigma_B(zz(jz))
@@ -415,16 +420,20 @@ contains
             &                   1d200)
 
             !write(*,*) nn(:,jz)
+            !$OMP PARALLEL DO PRIVATE(k)
             build_dotg: do k = 1, numbins
                 dotg(k, jz) = -abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ee(k), particle))/mc2!, &
                                      !nn(k, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
                 dotg(k, jz) = dotg(k, jz) / (betaGamma(zz(jz))*c)
             end do build_dotg
+            !$OMP END PARALLEL DO
 
             !if (zz(jz) < zmax_inj) then
+            !$OMP PARALLEL DO PRIVATE(k)
             build_Qin: do k = 1, numbins
               Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), particle) * mc2 * pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)* exp(-(zz(jz)/zmax_inj))
             end do build_Qin
+            !$OMP END PARALLEL DO
             !else
             !    Qinj(:, jz) = 0d0
             !end if
@@ -432,8 +441,9 @@ contains
         end do z_loop
 
         ! INTERPOLATION
-        m = 1
+        !$OMP PARALLEL DO PRIVATE(i2, m, E1, E2, jz, izz, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope)
         do i2=1, nIn
+            m = 1
             do while (Ee(m) < Evec(i2))
                 m = m + 1
             enddo
@@ -464,6 +474,7 @@ contains
                 NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * (r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)) * betaGamma(z(izz)) * c * mc2)
             enddo
         enddo
+        !$OMP END PARALLEL DO
 
     end subroutine
     !============================================================================
