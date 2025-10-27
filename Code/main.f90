@@ -61,9 +61,9 @@ PROGRAM main
 END PROGRAM main
 
 
-  !==================================================================
+!==================================================================
 
-  subroutine run_jet(verbose)
+subroutine run_jet(verbose)
     use controls
     use constants
     use globals
@@ -75,10 +75,10 @@ END PROGRAM main
     use synrad
     use icrad
     use sscrad
-!    use fluxes
-    
     implicit none
     logical, intent(in) :: verbose
+    logical, parameter :: print_tlosses = .True.
+    
     !real(dp) :: EphSy(NSED_sy), Lsy(NSED_sy), Lsy_CJ(NSED_sy)
     !real(dp) :: EphIC(NSED_IC), LIC(NSED_IC), LIC_CJ(NSED_IC)
     !real(dp) :: Flux(N_bands)
@@ -90,7 +90,7 @@ END PROGRAM main
     ! Calculate everything for the jet first
     if (JET_) then
         if (verbose) print *, '\n Initialize vectors'    
-        call initialize_allocate(sigma_0, Lj, z0, a_inj)
+        call initialize_allocate(sigma_0, Lj, a_inj) !, z0 
         !Jet trajectory
         if (verbose .and. jet_calc) print *, '\n Calculating jet trajectory'
         if (jet_calc) call trajectory_calc('') !'' = jet 
@@ -98,7 +98,6 @@ END PROGRAM main
         !Evolution of different quantities
         if (verbose .and. jet_calc) print *, '\n Calculating the evolution of quantities along the jet'
         if (jet_calc) call Quantities('') !'' = jet 
-        !if (verbose) write(*,'(2X,A12,F8.4)') 'B0_FF[G] = ', B0/gj
 
         !Particle distribution
         if (NE_calc) then 
@@ -107,11 +106,13 @@ END PROGRAM main
             call execute_command_line('./SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
 
             call Calc_Ue()      ! Calculate energy densities
-            if (verbose) print *, '\n Creating the tloss files for plots'
-            call Print_tloss(1, 'e')
-            call Print_tloss(Ns/4, 'e')
-            call Print_tloss(Ns/2, 'e')
-            call Print_tloss(Ns, 'e')
+            if (print_tlosses) then
+                if (verbose) print *, '\n Creating the tloss files for plots'
+                call Print_tloss(1, 'e')
+                call Print_tloss(Ns/4, 'e')
+                call Print_tloss(Ns/2, 'e')
+                call Print_tloss(Ns, 'e')
+            endif
         endif
 
         if (Np_calc) then
@@ -143,7 +144,7 @@ END PROGRAM main
     if (CJ_) then
         if (.not. JET_) then
             if (verbose) print *, '\n Initialize vectors'    
-            call initialize_allocate(sigma_0,Lj,z0,a_inj)
+            call initialize_allocate(sigma_0,Lj,a_inj) !z0,
         endif
 
         !Jet trajectory
@@ -163,10 +164,12 @@ END PROGRAM main
             !call Edist('p')
             call execute_command_line('./SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
-            if (verbose) print *, '\n Creating the tloss files for plots'
-            call Print_tloss(1, 'e')
-            call Print_tloss(Ns/3, 'e')
-            call Print_tloss(Ns, 'e')
+            if (print_tlosses) then
+                if (verbose) print *, '\n Creating the tloss files for plots'
+                call Print_tloss(1, 'e')
+                call Print_tloss(Ns/3, 'e')
+                call Print_tloss(Ns, 'e')
+            endif
         endif
 
         !Synchrotron SED
@@ -194,15 +197,14 @@ END PROGRAM main
     
     if (verbose) print *, '\n Program finished'    
 
-  end subroutine run_jet
+end subroutine run_jet
 
 
 
-
-  !============================================================================
-  ! sed_model(START)
-  !============================================================================
-  subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_data)
+!============================================================================
+! sed_model(START)
+!============================================================================
+subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron + SSC SED at specific 
   ! energies for the given input parameters. Calculates both J and CJ
@@ -229,7 +231,7 @@ END PROGRAM main
     S_data = 0.d0 ! Initialize
     ! Calculate everything for the jet first
     if (JET_) then  
-        call initialize_allocate(sigma0_value, Lj_value, z0_value, a_inj_value)
+        call initialize_allocate(sigma0_value, Lj_value, a_inj_value) !z0_value, 
 
         !Jet trajectory
         call trajectory_calc('')  ! jet 
@@ -255,7 +257,7 @@ END PROGRAM main
 
     ! Calculate everything for the counter-jet next
     if (CJ_) then
-        call initialize_allocate(sigma0_value, Lj_value, z0_value, a_inj_value)
+        call initialize_allocate(sigma0_value, Lj_value, a_inj_value) !z0_value, 
 
         !Jet trajectory
         call trajectory_calc('CJ')  ! counter-jet 
@@ -283,16 +285,16 @@ END PROGRAM main
         print *, 'S_data[cgs] =', S_data
     endif
 
-  end subroutine sed_model
+end subroutine sed_model
 
-  !===================================================================
+!===================================================================
 
 
 
-  !============================================================================
-  ! syn_model(START)
-  !============================================================================
-  subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
+!============================================================================
+! syn_model(START)
+!============================================================================
+subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron SED at specific energies
   ! integrated up to certain heights for the given input parameters. 
@@ -316,7 +318,7 @@ END PROGRAM main
     logical, parameter :: verbose = .False.
         
     ! Calculate everything for the jet first
-    call initialize_allocate(sigma0_value, Lj_value, z0_value, a_inj_value)
+    call initialize_allocate(sigma0_value, Lj_value, a_inj_value) !z0_value, 
     call trajectory_calc('')  
     call Quantities('')    
     call Edist('e')   
@@ -338,6 +340,6 @@ END PROGRAM main
         print *, 'S_data[cgs] =', S_data
     endif
 
-  end subroutine syn_model
+end subroutine syn_model
 
-  !===================================================================
+!===================================================================
