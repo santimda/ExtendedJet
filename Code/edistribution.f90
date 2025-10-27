@@ -75,27 +75,26 @@ contains
                 dEdt = dEdt_factor * (Evec(i2)/mec2)**2
                 Lsy = Lsy + NEmatrix(i2, izz) * dEdt * Evec(i2) * sqrt_factor
             enddo
-            vol = pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2) * deltaZ(izz)
-            Ljett = pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
-             + BFF_fun(z(izz))**2/(8d0*pi) + Lsy/(4d0*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)*c))
+            vol = pi*(rj_out(izz)**2-rj_in(izz)**2) * deltaZ(izz)
+            Ljett = pi*(rj_out(izz)**2-rj_in(izz)**2)*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
+             + BFF_fun(z(izz))**2/(8d0*pi) + Lsy/(4d0*(rj_out(izz)**2-rj_in(izz)**2)*c))
             magnetization = BFF_fun(z(izz))**2/(8d0*pi*Eparticles/vol)
             write(50, *) z(izz)/R_g, Eparticles/(vol*lorentzFactor(z(izz))), BFF_fun(z(izz))**2/(8d0*pi), Ljett/Lj, magnetization, &
                             (Ljett + Lsy)/Lj
             fluxp = flux
             eFluxp = energyFlux
-            flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)
-            energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)
+            flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi*(rj_out(izz)**2-rj_in(izz)**2)
+            energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi*(rj_out(izz)**2-rj_in(izz)**2)
             print *, "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", & 
                                fluxp/flux, "RatioE = ", eFluxp/energyFlux
         enddo
         close(50)
     endif
 
+    ! Save the particle energy distribution (JUST MAKE THIS A SHARED OBJECT?)
     do i2 = 1, nIn
-        NEtot = 0.d0    !Initialization
         do izz = 1, Ns
             write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
-            NEtot = NEtot + NEmatrix(i2, izz) * pi*(r_fun_out(z(izz))**2-r_fun_in(z(izz))**2) * deltaZ(izz)   !Sum for all the jet segments
         enddo
     enddo
     close(20)
@@ -107,7 +106,7 @@ contains
         
 
     !************************************************************************************
-    !   Determination of the cutoff energy of the particle injection
+    !   Determination of the cutoff energy of the particle injection (t_acc=t_loss or Hillas)
     !************************************************************************************
     real(dp) function CutE (BFF1, z1, Eph1, Kappa1, particle)
     character(1), intent(in) :: particle
@@ -140,6 +139,9 @@ contains
     CutE = min(Emax1,Emax2)
     end function CutE
 
+    !************************************************************************************
+    !   Determination of the break energy of the particle injection  (CONDITION???)
+    !************************************************************************************
     real(dp) function BreakE(BFF1,zzz,deltaZZ,particle)
         real(dp), intent(in) :: BFF1, zzz, deltaZZ
         character(1), intent(in) :: particle
@@ -152,6 +154,7 @@ contains
         endif
         BreakE = 6*pi*mc2**2 * betaGamma(zzz) / (sigma_T*BFF1**2*deltaZZ*(mec2/mc2)**2)
     end function BreakE
+
     !************************************************************************************
     !   Injection function (at a specific injection cell)
     !************************************************************************************
@@ -471,7 +474,7 @@ contains
                 slope = (N2-N1)/safeLog10(E2/E1)
                 !NEmatrix(i2, izz) = nn(m, jz)
                 NEmatrix(i2, izz) = N1 + slope * safeLog10(Evec(i2)/E1)
-                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * (r_fun_out(z(izz))**2-r_fun_in(z(izz))**2)) * betaGamma(z(izz)) * c * mc2)
+                NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * (rj_out(izz)**2-rj_in(izz)**2)) * betaGamma(z(izz)) * c * mc2)
             enddo
         enddo
         !$OMP END PARALLEL DO
