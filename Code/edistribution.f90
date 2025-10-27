@@ -258,19 +258,19 @@ contains
             do l = 1, Ns
                 ! The bin "i" is for z(i) < z < z(i+1)
                 if (z(l) >= zvec(1) .and. z(l) < zvec(2)) then
-                    N_bin_i(1,i) = N_bin_i(1,i) + N_tot(i,l)
+                    N_bin_i(1,i) = N_bin_i(1,i) + N_tot(i,l) * VFF(l)
                 elseif (z(l) >= zvec(2) .and. z(l) < zvec(3)) then
-                    N_bin_i(2,i) = N_bin_i(2,i) + N_tot(i,l)
+                    N_bin_i(2,i) = N_bin_i(2,i) + N_tot(i,l) * VFF(l)
                 elseif (z(l) >= zvec(3) .and. z(l) < zvec(4)) then
-                    N_bin_i(3,i) = N_bin_i(3,i) + N_tot(i,l)
+                    N_bin_i(3,i) = N_bin_i(3,i) + N_tot(i,l) * VFF(l)
                 elseif (z(l) >= zvec(4) .and. z(l) < zvec(5)) then
-                    N_bin_i(4,i) = N_bin_i(4,i) + N_tot(i,l)
+                    N_bin_i(4,i) = N_bin_i(4,i) + N_tot(i,l) * VFF(l)
                 elseif (z(l) >= zvec(5) .and. z(l) < zvec(6)) then
-                    N_bin_i(5,i) = N_bin_i(5,i) + N_tot(i,l)
+                    N_bin_i(5,i) = N_bin_i(5,i) + N_tot(i,l) * VFF(l)
                 elseif (z(l) >= zvec(6) .and. z(l) < zvec(7)) then
-                    N_bin_i(6,i) = N_bin_i(6,i) + N_tot(i,l)
+                    N_bin_i(6,i) = N_bin_i(6,i) + N_tot(i,l) * VFF(l)
                 end if  
-                N_total_i = N_total_i + N_tot(i,l)
+                N_total_i = N_total_i + N_tot(i,l) * VFF(l)
             end do
             write(81,*) E(i)/eV, N_total_i 
         end do
