@@ -3,36 +3,47 @@ DEBUG  = N
 FC     = gfortran -fopenmp
 FFLAGS = -ffree-line-length-none -fbackslash
 LIBS   = -llapack -lblas
+MODDIR = mod
 
 ifeq ($(DEBUG), Y)
   FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow
 else
-  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops 
-#  FFLAGS += -Wall -Wno-tabs -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
-#  FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -Werror -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops -ffree-line-length-none -fbackslash
+  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
 endif
 
 SOURCES = $(wildcard *.f90)
-OBJECTS = $(subst .f90,.o,$(SOURCES)) 
+OBJECTS = $(SOURCES:.f90=.o)
 
-.PHONY: clean test
+.PHONY: clean test depend
 
 run.x: $(OBJECTS)
-	$(FC) $(OBJECTS) $(LIBS) -o run.x
+	$(FC) $(FFLAGS) $(OBJECTS) $(LIBS) -o $@
 
-.SUFFIXES:
-.SUFFIXES: .f90 .f .o
-.f90.o:
-	$(FC) -c $(FFLAGS) $<
+%.o: %.f90 | $(MODDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -c $< -o $@
 
-.f.o:
-	$(FC) -c $(FFLAGS) $<
+%.o: %.f | $(MODDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -c $< -o $@
+
+$(MODDIR):
+	mkdir -p $(MODDIR)
+
+run: run.x
+	@echo "Running program..."
+	@start_time=$$(date +%s); \
+	./run.x; \
+	end_time=$$(date +%s); \
+	elapsed=$$((end_time - start_time)); \
+	echo "Execution time: $${elapsed} s"
 
 test:
 	sh test_set.sh
 
+depend:
+	$(FC) $(FFLAGS) -cpp -MM $(SOURCES) > Makefile.depend
+
 clean:
-	rm -f *.x *.o *.mod *.dat *.bin *.log *~
-	rm -rf ./test
+	$(RM) *.x *.o *.mod *.dat *.bin *.log *~
+	$(RM) -r $(MODDIR) ./test
 
 include Makefile.depend
