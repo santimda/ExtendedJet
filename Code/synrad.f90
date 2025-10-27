@@ -16,7 +16,7 @@ contains
     !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' or 'jet'
     character(1), intent(in) :: particle
-    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF, dEphFF(Ns)
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF, dEphFF(Ns), dFdz
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
@@ -52,7 +52,8 @@ contains
         do j = 2, Ns
             NEcut = NE(:,j)
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            Total_flux = Total_flux + dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)*h
+            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            Total_flux = Total_flux + dFdz*h
             !Jet and c-jet contribution of the segments up to given lengths
             z_proj = abs(z(j)) * sjo
             if (z_proj <= 7.3*R_g) FT1 = Total_flux
@@ -62,6 +63,7 @@ contains
             if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
             if (z_proj <= 2d3*R_g) FT6 = Total_flux
             !write(*,*) l, j, Ns
+            write(40,*) Eph/eV, Eph*dFdz, j
         enddo
         write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j), j=2,Ns)
         write(122,'(8(ES15.7E3, 2X))') Eph/h, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
