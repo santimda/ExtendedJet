@@ -169,42 +169,57 @@ contains
     end function Q_E
 
     !************************************************************************************
-    !   Injection normalization
+    !   Injection normalization (with parallelization)
     !************************************************************************************  
     real(dp) function Norm_q0p(Ecut, zz, particle)
-    real(dp), intent(in) :: Ecut, zz
-    character(1), intent(in) :: particle
-    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2 !, fact
-    integer, parameter :: N = 300   !Number of subintervals for the integral
-    if (particle == 'e') then
-        EminFF2 = EminFF
-        EmaxFF2 = EmaxFF
-        LnTFF2 = LnTFF
-    else if (particle == 'p') then
-        EminFF2 = EpminFF
-        EmaxFF2 = EpmaxFF
-        LnTFF2 = LnTpFF
-    endif
-    !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
-    !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
-    !EminFF2 = 2*mec2
-    Einc = (EmaxFF2/EminFF2)**(1d0/(N-1d0))  !Increase factor of the energy
-    !Initialization
-    E = EminFF2
-    QInt = 0d0
-    ! The integral is solved with the trapezoid method
-    f1 = E * Q_E(1d0, Ecut, E, EminFF2, EmaxFF2)
-    do i = 1, N-1 
-        dE = E*(Einc-1d0)                    !Energy interval
-        E2 = E*Einc
-        f2 = E2 * Q_E(1d0, Ecut, E2, EminFF2, EmaxFF2)
-        f = (f1 + f2)/2d0
-        QInt = QInt + f*dE
-        f1 = f2
-        E = E2
-    end do
-    Norm_q0p = dLe_dz(zz)/(QInt*lorentzFactor(zz)*pi*(r_fun_out(zz)**2-r_fun_in(zz)**2))  !Normalization constant
+        real(dp), intent(in) :: Ecut, zz
+        character(1), intent(in) :: particle
+        real(dp) :: EminFF2, EmaxFF2, Einc, QInt, dE
+        real(dp), allocatable :: Egrid(:), f(:)
+        integer, parameter :: N = 120
+
+        ! choose ranges depending on particle
+        if (particle == 'e') then
+            EminFF2 = EminFF
+            EmaxFF2 = EmaxFF
+        else
+            EminFF2 = EpminFF
+            EmaxFF2 = EpmaxFF
+        endif
+
+        ! allocate
+        allocate(Egrid(N))
+        allocate(f(N))
+
+        ! geometric grid
+        Einc = (EmaxFF2/EminFF2)**(1d0/(N-1d0))  !Increase factor of the energy
+        Egrid(1) = EminFF2
+        do i = 2, N
+            Egrid(i) = Egrid(i-1) * Einc
+        end do
+
+        ! compute integrand values in parallel (thread-safe if Q_E is)
+        !$omp parallel do default(shared) private(i) schedule(static)
+        do i = 1, N
+            f(i) = Egrid(i) * Q_E(1d0, Ecut, Egrid(i), EminFF2, EmaxFF2)
+        end do
+        !$omp end parallel do
+
+        ! trapezoidal integration
+        QInt = 0d0
+        !$omp parallel do default(shared) private(i,dE) reduction(+:QInt) schedule(static)
+        do i = 1, N-1
+            dE = Egrid(i) * (Einc - 1d0)
+            QInt = QInt + 0.5d0*(f(i) + f(i+1)) * dE
+        end do
+        !$omp end parallel do
+
+        Norm_q0p = dLe_dz(zz) / ( QInt * lorentzFactor(zz) * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) )
+
+        deallocate(Egrid)
+        deallocate(f)
     end function Norm_q0p
+
 
     !************************************************************************************
     !   Injection function (for multiple injection cells)
