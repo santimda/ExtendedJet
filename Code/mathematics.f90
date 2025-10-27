@@ -22,31 +22,35 @@ contains
         return
     end function safeLog
 
-    ! :::: This produces an error message ::::
+    !===========================================================
+    ! Utility routines for error handling and sanity checks
+    !===========================================================
+
+    ! Prints an error message and stops execution
     subroutine an_error(string)
         implicit none
-        character(len=*), intent(IN) :: string
-        write (*, "('ERROR ', A)") string
-        stop 'program terminated by an_error'
+        character(len=*), intent(in) :: string
+        write (*, "('ERROR ', A)") trim(string)
+        error stop 'Program terminated by an_error'
     end subroutine an_error
 
-    function assert_eq(nn, string)
+    ! Checks that all elements of nn are equal 
+    function assert_eq(nn, string) result(val)
         implicit none
-        character(len=*), intent(in) :: string
         integer, intent(in), dimension(:) :: nn
-        integer :: assert_eq
+        character(len=*), intent(in) :: string
+        integer :: val
         if (all(nn(2:) == nn(1))) then
-           assert_eq = nn(1)
+           val = nn(1)
         else
-           write(*,*) 'ERROR: an assert_eq failed with this tag:', string
-           stop 'program terminated by assert_eq'
+            call an_error('assert_eq failed with tag: '//trim(string))
         end if
     end function assert_eq
 
+    !===========================================================
+    ! Tridiagonal matrix solver (based on Numerical Recipes)
+    !===========================================================
     subroutine tridag_ser(a,b,c,r,u)
-        !  Description:
-        !     Solver of a tridiagonal matrix. Based on the code in
-        !     "Numberical Recipes".
         implicit none
         real(dp),dimension(:),intent(in) :: a,b,c,r
         real(dp),dimension(:),intent(out) :: u
@@ -68,13 +72,16 @@ contains
         end do
     end subroutine tridag_ser
 
+    !===========================================================
+    ! Allocates a 1D array of zeros (or small values)
+    !===========================================================
     function zeros1D(n, small) result(a)
         implicit none
         integer, intent(in) :: n
         logical, intent(in) :: small
         real(dp), dimension(n) :: a
         if (small) then
-           a = 1d-200
+           a = 1d-150
         else
            a = 0d0
         end if
