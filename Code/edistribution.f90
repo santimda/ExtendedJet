@@ -68,7 +68,7 @@ contains
             Nparticles = 0d0
             Eparticles = 0d0
             Lsy = 0d0
-            dEdt_factor = 4d0/3d0 * sigma_T * c * (BFF_fun(z(izz))**2/(8d0*pi))
+            dEdt_factor = 4d0/3d0 * sigma_T * c * (BFF(izz)**2/(8d0*pi))
             do i2 = 1, nIn
                 Nparticles = Nparticles + NEmatrix(i2, izz) * Evec(i2) * sqrt_factor
                 Eparticles = Eparticles + NEmatrix(i2, izz) * Evec(i2)**2 * sqrt_factor
@@ -77,9 +77,9 @@ contains
             enddo
             vol = pi*(rj_out(izz)**2-rj_in(izz)**2) * deltaZ(izz)
             Ljett = pi*(rj_out(izz)**2-rj_in(izz)**2)*lorentzFactor(z(izz))**2*betaJet(z(izz))*c * (Eparticles/(vol*lorentzFactor(z(izz))) &
-             + BFF_fun(z(izz))**2/(8d0*pi) + Lsy/(4d0*(rj_out(izz)**2-rj_in(izz)**2)*c))
-            magnetization = BFF_fun(z(izz))**2/(8d0*pi*Eparticles/vol)
-            write(50, *) z(izz)/R_g, Eparticles/(vol*lorentzFactor(z(izz))), BFF_fun(z(izz))**2/(8d0*pi), Ljett/Lj, magnetization, &
+             + BFF(izz)**2/(8d0*pi) + Lsy/(4d0*(rj_out(izz)**2-rj_in(izz)**2)*c))
+            magnetization = BFF(izz)**2/(8d0*pi*Eparticles/vol)
+            write(50, *) z(izz)/R_g, Eparticles/(vol*lorentzFactor(z(izz))), BFF(izz)**2/(8d0*pi), Ljett/Lj, magnetization, &
                             (Ljett + Lsy)/Lj
             fluxp = flux
             eFluxp = energyFlux
@@ -357,7 +357,7 @@ contains
         real(dp), intent(out) :: NEmatrix(nIn, Ns)
         real(dp), allocatable, dimension(:) :: t, Ntot, gg, dt, dg, zz, Ee
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
-        real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2
+        real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2, Bz0, Bjz, const_z0, const_zjz
         integer :: jz, k, m, izz
         real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
         real(dp) :: g_min, g_max, Ebr, dz_aux
@@ -384,16 +384,18 @@ contains
         build_g: do k = 1, numbins
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
             Ee(k) = gg(k) * mc2
-            dotg(k, 0) = -abs(TLosses(BFF_fun(zz(0)), zz(0), 1d0, 1d0, Ee(k), particle)) / mc2             ! dotg'
+            Bz0 = BFF_fun(zz(0))
+            dotg(k, 0) = -abs(TLosses(Bz0, zz(0), 1d0, 1d0, Ee(k), particle)) / mc2             ! dotg'
             dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)                                                ! dotg' / (betaGamma c)
             if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
         end do build_g
         !$OMP END PARALLEL DO
         dg(1) = dg(2)
 
+        const_z0 = mc2 * pi *(r_fun_out(zz(0))**2-r_fun_in(zz(0))**2)
         !$OMP PARALLEL DO PRIVATE(k)
         build_Q: do k = 1, numbins
-            Qinj(k, 0) = qp_E(Ee(k), zz(0), BFF_fun(zz(0)), particle) * mc2 * pi *(r_fun_out(zz(0))**2-r_fun_in(zz(0))**2)        ! dQ'(g', z)/dz
+            Qinj(k, 0) = qp_E(Ee(k), zz(0), Bz0, particle) * const_z0        ! dQ'(g', z)/dz
         end do build_Q
         !$OMP END PARALLEL DO
 
@@ -403,14 +405,15 @@ contains
         jz = 0
         z_loop: do while (zz(jz) < zmax*1.01)
             dz_aux = zz(jz)*(sqrt(dlogz)-1d0/sqrt(dlogz))
-            Ebr = BreakE(BFF_fun(zz(jz)), zz(jz), dz_aux, particle)
-            Ecut = CutE(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, particle)
+            Bjz = BFF_fun(zz(jz))
+            Ebr = BreakE(Bjz, zz(jz), dz_aux, particle)
+            Ecut = CutE(Bjz, zz(jz), 1d0, 1d0, particle)
             Ebr = min(Ebr, Ecut)
-            tlossFF = Ebr/abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ebr, particle))
+            tlossFF = Ebr/abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ebr, particle))
             dttFF = min(0.01*tlossFF, dz_aux/(betaGamma(zz(jz))*c))
             !if ((1d0*tlossFF, 1d-2*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
-            !write(*,*) Ebr, Ecut, BFF_fun(zz(jz)), sigma_B(zz(jz))
+            !write(*,*) Ebr, Ecut, Bjz, sigma_B(zz(jz))
             jz = jz + 1
             zz(jz) = zz(jz-1) + dzz
 
@@ -425,16 +428,17 @@ contains
             !write(*,*) nn(:,jz)
             !$OMP PARALLEL DO PRIVATE(k)
             build_dotg: do k = 1, numbins
-                dotg(k, jz) = -abs(TLosses(BFF_fun(zz(jz)), zz(jz), 1d0, 1d0, Ee(k), particle))/mc2!, &
+                dotg(k, jz) = -abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ee(k), particle))/mc2!, &
                                      !nn(k, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
                 dotg(k, jz) = dotg(k, jz) / (betaGamma(zz(jz))*c)
             end do build_dotg
             !$OMP END PARALLEL DO
 
+            const_zjz = mc2 * pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)* exp(-(zz(jz)/zmax_inj))
             !if (zz(jz) < zmax_inj) then
             !$OMP PARALLEL DO PRIVATE(k)
             build_Qin: do k = 1, numbins
-              Qinj(k, jz) = qp_E(Ee(k), zz(jz), BFF_fun(zz(jz)), particle) * mc2 * pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)* exp(-(zz(jz)/zmax_inj))
+              Qinj(k, jz) = qp_E(Ee(k), zz(jz), Bjz, particle) * const_zjz
             end do build_Qin
             !$OMP END PARALLEL DO
             !else
