@@ -171,7 +171,7 @@ contains
     real(dp) function Norm_q0p(Ecut, zz, particle)
     real(dp), intent(in) :: Ecut, zz
     character(1), intent(in) :: particle
-    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2, fact
+    real(dp) :: E, Einc, dE, QInt, f, f1, f2, E2, EminFF2, EmaxFF2, LntFF2 !, fact
     integer, parameter :: N = 300   !Number of subintervals for the integral
     if (particle == 'e') then
         EminFF2 = EminFF

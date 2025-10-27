@@ -9,12 +9,11 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (START)
     !============================================================================
-    subroutine initialize_allocate(sigma_value, Lj_value, z0_value, a_inj_value)
+    subroutine initialize_allocate(sigma_value, Lj_value, a_inj_value) !,z0_value
     !============================================================================
     ! allocate and initialize vectors 
     !============================================================================
-        real(dp), intent(in) :: sigma_value, Lj_value, z0_value, a_inj_value
-        real(dp) :: zx
+        real(dp), intent(in) :: sigma_value, Lj_value, a_inj_value !,z0_value 
         logical :: fexist
 
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
