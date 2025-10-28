@@ -39,7 +39,7 @@ contains
     open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat') 
     open(245,file="dFlux_dz"//jet//".dat")
     open(122,file='Flux'//jet//'_'//particle//'.dat')
-    write(40,'(3(A9, 8X))') 'E[eV]', 'L[erg/s]', 'segment'
+    write(40,'(3(A9, 8X))') '#E[eV]', 'L[erg/s]', 'segment'
     write(122,'(8(A9, 8X))') 'nu/Hz', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
     do l = 1, NSED_sy
         Total_flux = 0d0
@@ -63,7 +63,7 @@ contains
             if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
             if (z_proj <= 2d3*R_g) FT6 = Total_flux
             !write(*,*) l, j, Ns
-            write(40,*) Eph/eV, Eph*dFdz*dil, j
+            write(40,'(2(ES15.7E3, 2X), I3)') Eph/eV, Eph*dFdz*dil, j
         enddo
         write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j), j=2,Ns)
         write(122,'(8(ES15.7E3, 2X))') Eph/h, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
