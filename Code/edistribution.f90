@@ -169,7 +169,7 @@ contains
         end if
 
         ! If E/Ecut is very small, skip exp()
-        Q_E = K * (E / EminFF2)**(-p)
+        Q_E = K * (E/EminFF2)**(-p)
         if (E/Ecut > 5d-4) then
             Q_E = Q_E * exp(-E/Ecut)
         end if
@@ -234,23 +234,34 @@ contains
     real(dp), intent(in) :: E, zz, BB
     real(dp) :: Ecut, EminFF2, EmaxFF2, q0p, fact
     character(1), intent(in) :: particle
-    Ecut = CutE(BB, zz, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
-    q0p = Norm_q0p(Ecut, zz, particle)        !Normalization constant
-    if (particle == 'e') then
-        EminFF2 = EminFF
-        EmaxFF2 = EmaxFF
-    else if (particle == 'p') then
-        EminFF2 = EpminFF
-        EmaxFF2 = EpmaxFF
-    endif
-    EminFF2 = 1.1*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
-    !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
-    !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
-    if (E >= EminFF2 .and. E <= EmaxFF2) then
-        qp_E = q0p*(E/EminFF2)**(-p) * exp(-E/Ecut)
-    else
-        qp_E = 0d0
-    endif
+
+        ! Compute cutoff energy for Q(E) in the FF and normalisation constant
+        Ecut = CutE(BB, zz, 1d0, 1d0, particle)   !Cutoff energy for Q(E) in the FF
+        q0p = Norm_q0p(Ecut, zz, particle)        !Normalization constant
+
+        ! Select energy limits
+        if (particle == 'e') then
+            EminFF2 = EminFF
+            EmaxFF2 = EmaxFF
+        else if (particle == 'p') then
+            EminFF2 = EpminFF
+            EmaxFF2 = EpmaxFF
+        endif
+        EminFF2 = 1.1*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
+        !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
+        !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
+
+        ! Return 0 if outside bounds
+        if (E < EminFF2 .or. E > EmaxFF2) then
+            qp_E = 0d0
+            return
+        endif
+
+        ! If E/Ecut is very small, skip exp()
+        qp_E = q0p * (E/EminFF2)**(-p)
+        if (E/Ecut > 5d-4) then
+            qp_E = qp_E * exp(-E/Ecut)
+        end if
     end function qp_E
 
     !============================================================================
