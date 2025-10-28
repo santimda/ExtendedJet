@@ -111,8 +111,8 @@ contains
 !============================================================================
 
 subroutine IC_Khang(Ee, Ne, Ef, aniso, cang, Eph0, Kapp, L_IC, sum_IC)
-  real(dp), intent(in) :: Ee(nIn), Ne(nIn), Ef(NSED_IC), cang, Eph0, Kapp
-  real(dp), intent(out) :: L_IC(NSED_IC), sum_IC
+  real(dp), intent(in) :: Ee(:), Ne(:), Ef(:), cang, Eph0, Kapp ! sizes nIn, nIn, NSED_IC
+  real(dp), intent(out) :: L_IC(:), sum_IC  ! size NSED_IC
   logical, intent(in) :: aniso
   real(dp) :: P_eps, dP_eps, dEe, Eint_e
   real(dp) :: gamma_e(nIn), Eps(NSED_IC), Eps_int, dEps

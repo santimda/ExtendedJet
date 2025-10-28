@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-# First compile with make and then create the wrapper as: 
-# f2py -c *f90 -m JetCode
-# f2py -c controls.f90 constants.f90 system_parameters.f90 globals.f90 initialize.f90 trajectory.f90 evolution.f90 losses.f90 mathematics.f90 edistribution.f90 synrad.f90 icrad.f90 sscrad.f90 main.f90 -m JetCode
-import JetCode
+# First compile and create the wrapper running: "make f2py"import JetCode
 import numpy as np
 
 #Constants

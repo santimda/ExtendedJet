@@ -54,7 +54,6 @@ contains
     call vector_log(EminFF2, EmaxFF2, Ein, Evec )
 
     NEmatrix = 0d0
-    !call calcNE_onezone(Evec, NEmatrix, particle)
     call calcNE_paramo(Evec, NEmatrix, particle)
 
     NEmatrix(:,Ns) = 0d0
@@ -269,7 +268,7 @@ contains
     !============================================================================
     subroutine N_bin(E,N_tot,particle)
         character(LEN=*), intent(in) :: particle
-        real(dp), intent(in) :: E(nIn),N_tot(nIn,Ns)
+        real(dp), intent(in) :: E(:),N_tot(:,:) ! Sizes nIn, (nIn, Ns)
         integer, parameter :: N_bins = 6 ! For the plot dist_particle_bins
         real(dp) :: N_bin_i(N_bins,nIn), N_total_i
         real(dp) :: zin, zvec(N_bins+1) 
@@ -384,9 +383,9 @@ contains
     !============================================================================
     subroutine calcNE_paramo(Evec, NEmatrix, particle)
 
-        real(dp), intent(in) :: Evec(nIn)
+        real(dp), intent(in) :: Evec(:) ! Size nIn
         character(1), intent(in) :: particle
-        real(dp), intent(out) :: NEmatrix(nIn, Ns)
+        real(dp), intent(out) :: NEmatrix(:, :) ! Size (nIn, Ns)
         real(dp), allocatable, dimension(:) :: t, Ntot, gg, dt, dg, zz, Ee
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
         real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2, Bz0, Bjz, const_z0, const_zjz
@@ -520,26 +519,5 @@ contains
     ! calcNE_paramo (END)
     !============================================================================
     
-
-    !============================================================================
-    ! ONEZONE
-    !============================================================================
-    subroutine calcNE_onezone(Evec, NEmatrix, particle)
-
-        real(dp), intent(in) :: Evec(nIn)
-        character(1), intent(in) :: particle
-        real(dp), intent(out) :: NEmatrix(nIn, Ns)
-        real(dp) :: t_cool, t_adv, Q
-        integer :: i, j
-
-        do i=1,nIn
-            do j=1,Ns
-                Q = qp_E(Evec(i), z(j), BFF_fun(z(j)), particle) * exp(-(z(j)/zmax_inj))
-                t_cool = Evec(i)/abs(TLosses(BFF_fun(z(j)), z(j), 1d0, 1d0, Evec(i), particle))
-                t_adv = z(j)/(betaGamma(z(j))*c)
-                NEmatrix(i, j) = Q * min(t_cool, t_adv)
-            end do
-        end do
-    end subroutine
 
 END MODULE edistribution

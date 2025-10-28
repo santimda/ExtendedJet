@@ -103,7 +103,7 @@ contains
     !************************************************************************************
     real(dp) function SyncLum(B,Eph,E,NE,particle)
     character(1), intent(in) :: particle
-    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp), intent(in) :: B, Eph, E(:), NE(:) ! sizes nIn
     real(dp) :: dE, Ec, x, Psync, E_step, factor
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
@@ -145,13 +145,11 @@ contains
     !****************************************************************************
     ! Synchrotron emitted power for a specific photon energy
     !****************************************************************************
-    real(dp) function PSynchrotron(E_ph, E, B, particle) result(resultado)
+    real(dp) function PSynchrotron(E_ph, E, B, particle)
     implicit none
         real(dp), intent(in) :: E_ph, B, E
         character(1), intent(in) :: particle
-        real(dp) :: K
-        real(dp) :: x, R
-        real(dp) :: Ec, g, m
+        real(dp) :: K, x, R, Ec, g, m
     
     ! Define constants
     if (particle == 'e') then
@@ -170,7 +168,7 @@ contains
                 (1.0d0 + 1.353 * x**(2.0d0 / 3.0d0) + 0.217 * x**(4.0d0 / 3.0d0))) * exp(-x)
 
     ! Compute the emitted power for each element of E
-    resultado = K * B * R
+    PSynchrotron = K * B * R
 
     end function PSynchrotron
 
@@ -260,7 +258,7 @@ contains
     ! Flux for a given N_e(E,z),B(z),E_ph/delta(z)
     !****************************************************************************
 
-    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in, particle) result(flux)
+    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in, particle)
     implicit none
         real(dp), dimension(:), intent(in) :: N_e, E
         real(dp), intent (in) :: BFF, E_ph, delta_obs
@@ -280,11 +278,11 @@ contains
         tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
 
         if (tau_max < 0.1) THEN
-            flux=delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2)
+            dFlux_dz=delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2)
             !write(*,*)delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2), flux
         !In case the jet at height z is opt thick
         else if (tau_avg > (10.0)) then
-            flux=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
+            dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
             !write(*,*)flux
         !In case the integral has to be calculated numerically
         else
@@ -296,8 +294,8 @@ contains
                 tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
                 FI(i)=1d0-exp(-tau) !The integrand vector
             enddo
-            call integrate(n,Step,FI,flux) !We call a function for Simpson integration
-            flux=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*flux !Add constants
+            call integrate(n,Step,FI,dFlux_dz) !We call a function for Simpson integration
+            dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*dFlux_dz !Add constants
             deallocate(FI)
         endif
         ! n=100
@@ -316,16 +314,16 @@ contains
     end function dFlux_dz
 
     !Function for the length of the section we cross in the jet
-    real(dp) function crossed_length(x, R_in, R_out) result(l)
+    real(dp) function crossed_length(x, R_in, R_out) 
     implicit none
         real(dp) :: x, R_in, R_out
         !write(*,*)x, R_in, R_out
         if ((abs(x) < abs(R_out)) .and. (abs(x) > abs(R_in))) then
-            l = 2d0 * sqrt(R_out**2 - x**2)
+            crossed_length = 2d0 * sqrt(R_out**2 - x**2)
         else if (abs(x) <= abs(R_in)) then
-            l = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(abs(R_in**2 - x**2)))
+            crossed_length = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(abs(R_in**2 - x**2)))
         else
-            l = 0d0
+            crossed_length = 0d0
         endif
     end function crossed_length
 
@@ -424,8 +422,9 @@ contains
     ! Luminosity corrected for synchrotron self-absorption
     !============================================================================
     character, intent(in) :: particle
-    real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn,Ns),Lum(Ns)
-    real(dp), intent(out) :: LumA(Ns)
+    !real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn,Ns),Lum(Ns)
+    real(dp), intent(in) :: B(:),r_j(:),sjo(:),V(:),Eph(:),E(:),NE(:,:),Lum(:) 
+    real(dp), intent(out) :: LumA(:) ! size Ns
     real(dp) :: Absor_coef,Emmision_coef,Source_fun,depth,tau,Ap, mass
 
     !Loop for the segments
@@ -465,7 +464,7 @@ contains
     !   Integral for the particle energy in SSA
     !************************************************************************************
     real(dp) function EintSSA(B,Eph,E,NE,particle)
-    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp), intent(in) :: B, Eph, E(:), NE(:)
     character(1), intent(in) :: particle
     real(dp) :: dE, Ec, x, F, E_step, factor
     real(dp) :: f1, f2, sum
@@ -629,7 +628,7 @@ contains
     !============================================================================
     character(1), intent(in) :: particle
     real(dp), intent(in) :: E_data(:)
-    real(dp), intent(out) :: S_data(m_data_max)
+    real(dp), intent(out) :: S_data(:)  ! size m_data_max
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp), allocatable :: Eph(:), LumA(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
@@ -701,7 +700,7 @@ contains
     character(1), intent(in) :: particle
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(in) :: z_data(:)
-    real(dp), intent(out) :: S_data(m_data_max)
+    real(dp), intent(out) :: S_data(:) ! size m_data_max
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp), allocatable :: Eph(:), LumA(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
