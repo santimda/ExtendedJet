@@ -7,7 +7,7 @@ FC      = gfortran -fopenmp
 LIBS    = -llapack -lblas
 
 # Compiler flags
-FFLAGS  = -ffree-line-length-none -fbackslash $(INCDIR)
+FFLAGS  = -ffree-line-length-none -fbackslash
 ifeq ($(DEBUG), Y)
   FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow
 else
@@ -41,7 +41,7 @@ run: run.x
 	echo "Execution time: $${elapsed} s"
 
 # --------------------------
-# Python module via f2py
+# Python module via f2py (use python <= 3.11)
 # --------------------------
 f2py: clean
 	@echo "Building Python module JetCode..."
@@ -62,8 +62,6 @@ f2py: clean
 	  main.f90 \
 	  -m JetCode \
 	  --f90flags="$(FFLAGS)"
-
-# f2py -c controls.f90 constants.f90 system_parameters.f90 globals.f90 initialize.f90 trajectory.f90 evolution.f90 losses.f90 mathematics.f90 edistribution.f90 synrad.f90 icrad.f90 sscrad.f90 main.f90 -m JetCode
 
 # Clean everything
 clean:
