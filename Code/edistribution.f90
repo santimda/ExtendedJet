@@ -159,15 +159,21 @@ contains
     !   Injection function (at a specific injection cell)
     !************************************************************************************
     real(dp) function Q_E (K, Ecut, E, EminFF2, EmaxFF2)
-    real(dp), intent(in) :: K, Ecut, E, EminFF2, EmaxFF2
-    !Q(E) = 0 if outside the injection energy limits
-    if (E <= EmaxFF2 .and. E >= EminFF2) then
-        Q_E = K*(E/EminFF2)**(-p) * exp(-E/Ecut)
-    else
-        Q_E = 0d0
-    endif
-    end function Q_E
+        implicit none
+        real(dp), intent(in) :: K, Ecut, E, EminFF2, EmaxFF2
 
+        !Q(E) = 0 if outside the injection energy limits
+        if (E > EmaxFF2 .or. E < EminFF2) then
+            Q_E = 0d0
+            return
+        end if
+
+        ! If E/Ecut is very small, skip exp()
+        Q_E = K * (E / EminFF2)**(-p)
+        if (E/Ecut > 5d-4) then
+            Q_E = Q_E * exp(-E/Ecut)
+        end if
+    end function Q_E
     !************************************************************************************
     !   Injection normalization (with parallelization)
     !************************************************************************************  
