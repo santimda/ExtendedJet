@@ -19,17 +19,12 @@ contains
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF, dEphFF(Ns), dFdz
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
-    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
+    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo, dil
     logical, parameter :: bin_SEDsyn = .False.
     integer :: k
 
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
-    open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
-    open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
-    open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
-    open(245,file="dFlux_dz"//jet//".dat")
-    open(122,file='Flux'//jet//'_'//particle//'.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -39,8 +34,13 @@ contains
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
     sjo = sin(jo)
+    dil = 4.d0 * pi * dist**2
 
-    write(122,'(8(A9, 8X))') 'Eph/eV', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
+    open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat') 
+    open(245,file="dFlux_dz"//jet//".dat")
+    open(122,file='Flux'//jet//'_'//particle//'.dat')
+    write(40,'(3(A9, 8X))') 'E[eV]', 'L[erg/s]', 'segment'
+    write(122,'(8(A9, 8X))') 'nu/Hz', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
     do l = 1, NSED_sy
         Total_flux = 0d0
         FT1 = 0d0
@@ -63,7 +63,7 @@ contains
             if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
             if (z_proj <= 2d3*R_g) FT6 = Total_flux
             !write(*,*) l, j, Ns
-            write(40,*) Eph/eV, Eph*dFdz, j
+            write(40,*) Eph/eV, Eph*dFdz*dil, j
         enddo
         write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j), j=2,Ns)
         write(122,'(8(ES15.7E3, 2X))') Eph/h, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
@@ -88,8 +88,6 @@ contains
     close(40)
     close(122)
     close(122)
-    close(45)
-    close(50)
     
     ! Calculate the integrated SED for different z-ranges and for the total jet
     if (bin_SEDsyn .and. jet=='') call SEDsyn_bin(jet,particle)
