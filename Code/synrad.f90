@@ -40,7 +40,7 @@ contains
     open(245,file="dFlux_dz"//jet//".dat")
     open(122,file='Flux'//jet//'_'//particle//'.dat')
     write(40,'(3(A9, 8X))') '#E[eV]', 'L[erg/s]', 'segment'
-    write(122,'(8(A9, 8X))') 'nu/Hz', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
+    write(122,'(8(A9, 8X))') '#nu/Hz', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
     do l = 1, NSED_sy
         Total_flux = 0d0
         FT1 = 0d0

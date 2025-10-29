@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-# First compile and create the wrapper running: "make f2py"import JetCode
+# First compile and create the wrapper running: "make f2py"
+import JetCode
 import numpy as np
 
 #Constants
@@ -24,14 +25,13 @@ n_points = 6
 E_data = np.geomspace(E_min, E_max, n_points)
 z_data = np.geomspace(5*R_g, 100*R_g, n_points)
 #z_data = np.array([7.3*R_g, 2.6e1*R_g, 6.5e1*R_g, 1.95e2*R_g, 6.5e2*R_g, 3e5*R_g]) 
-#z_data = np.array([1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g, 1.1e1*R_g]) 
 
 # Only syn, considering restrictions in z:
 sigma0 = 1.e1
 Lj = 1.e43
 z0 = R_g * 10.0 
 a_inj = 1.5
-S_data2 = JetCode.syn_model(sigma0, Lj, z0, a_inj, E_data, z_data)
+S_data2 = JetCode.syn_z_model(sigma0, Lj, z0, a_inj, E_data, z_data)
 print(S_data2)
 
 #Syn + SSC, without restrictions in z:
@@ -39,5 +39,5 @@ sigma0 = 1.e1
 Lj = 1.e43
 z0 = R_g * 10.0 
 a_inj = 1.5
-S_data = JetCode.sed_model(sigma0, Lj, z0, a_inj, E_data)
+S_data = JetCode.sed_model(sigma0, Lj, a_inj, E_data)
 print(S_data)

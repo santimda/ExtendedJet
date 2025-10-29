@@ -15,24 +15,24 @@ PROGRAM main
     end interface
 
     interface
-        subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_vector, S_vector) 
+        subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_vector, S_vector) 
             use globals
             use constants
-            real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
+            real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
             real(dp), intent(in) :: E_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
         end subroutine sed_model
     end interface 
 
     interface
-        subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_vector, z_vector, S_vector) 
+        subroutine syn_z_model(sigma0_value, Lj_value, a_inj_value, E_vector, z_vector, S_vector) 
             use globals
             use constants
-            real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
+            real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
             real(dp), intent(in) :: E_vector(:)
             real(dp), intent(in) :: z_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
-        end subroutine syn_model
+        end subroutine syn_z_model
     end interface 
 
     !----------------------------------------------------------------
@@ -50,10 +50,9 @@ PROGRAM main
         z_data = (/5d2*R_g, 1d2*R_g, 3d1*R_g, 1.5d1*R_g/)
         sigma0_value = 1.d1
         Lj_value = L_Edd*1d-4
-        z0_value = 10.d0*R_g
         a_inj_value = 0.5d0        
-        call syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data) ! Energies in cgs
-        call sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_data) ! Energies in cgs
+        call syn_model(sigma0_value, Lj_value, a_inj_value, E_data, z_data, S_data) ! Energies in cgs
+        call sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data) ! Energies in cgs
         deallocate( E_data, z_data )
     endif
 
@@ -204,9 +203,9 @@ end subroutine run_jet
 !============================================================================
 ! sed_model(START)
 !============================================================================
-subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_data)
+subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data)
   !===================================================================
-  ! Subroutine to calculate the synchrotron + SSC SED at specific 
+  ! Subroutine to calculate the synchrotron (+ SSC) SED at specific 
   ! energies for the given input parameters. Calculates both J and CJ
   ! TO DO: INCORPORATE SSC IN THE COMPUTATION!!!
   !===================================================================
@@ -222,11 +221,12 @@ subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_da
     use sscrad
 
     implicit none
-    real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
+    real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .False.
+    logical, parameter :: calc_SSC = .False.
         
     S_data = 0.d0 ! Initialize
     ! Calculate everything for the jet first
@@ -246,9 +246,11 @@ subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_da
         call SEDsyn_data(E_data, S_data_J, '', 'e')  
         S_data = S_data_J
 
+        if (calc_SSC) then
         !SSC SED at the given values  
-        !call SEDssc_data(E_data, S_data_J, '', 'e') 
-        !S_data = S_data + S_data_J 
+            call SEDssc_data(E_data, S_data_J, '', 'e') 
+            S_data = S_data + S_data_J
+        endif   
         if (verbose) print *, 'S_data[cgs] =', S_data
 
         call initialize_deallocate 
@@ -273,8 +275,10 @@ subroutine sed_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, S_da
         S_data = S_data + S_data_CJ
 
         !SSC SED at the given values  
-        !call SEDssc_data(E_data, S_data_CJ, '', 'e') 
-        !S_data = S_data + S_data_CJ  
+        if (calc_SSC) then
+            call SEDssc_data(E_data, S_data_CJ, '', 'e') 
+            S_data = S_data + S_data_CJ  
+        endif 
         if (verbose) print *, 'S_data[cgs] =', S_data
         
         call initialize_deallocate 
@@ -294,7 +298,7 @@ end subroutine sed_model
 !============================================================================
 ! syn_model(START)
 !============================================================================
-subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_data, S_data)
+subroutine syn_z_model(sigma0_value, Lj_value, a_inj_value, E_data, z_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron SED at specific energies
   ! integrated up to certain heights for the given input parameters. 
@@ -311,7 +315,7 @@ subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_da
     use synrad
     use sscrad
     implicit none
-    real(dp), intent(in) :: sigma0_value, Lj_value, z0_value, a_inj_value
+    real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
     real(dp), intent(in) :: E_data(:), z_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
@@ -340,6 +344,6 @@ subroutine syn_model(sigma0_value, Lj_value, z0_value, a_inj_value, E_data, z_da
         print *, 'S_data[cgs] =', S_data
     endif
 
-end subroutine syn_model
+end subroutine syn_z_model
 
 !===================================================================

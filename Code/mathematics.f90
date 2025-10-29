@@ -81,7 +81,7 @@ contains
         logical, intent(in) :: small
         real(dp), dimension(n) :: a
         if (small) then
-           a = 1d-150
+           a = 1d-180
         else
            a = 0d0
         end if

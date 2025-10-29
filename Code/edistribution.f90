@@ -270,7 +270,7 @@ contains
         character(LEN=*), intent(in) :: particle
         real(dp), intent(in) :: E(:),N_tot(:,:) ! Sizes nIn, (nIn, Ns)
         integer, parameter :: N_bins = 6 ! For the plot dist_particle_bins
-        real(dp) :: N_bin_i(N_bins,nIn), N_total_i
+        real(dp) :: N_bin_i(N_bins,size(E)), N_total_i
         real(dp) :: zin, zvec(N_bins+1) 
 
         N_bin_i = 0.d0
@@ -283,7 +283,10 @@ contains
         enddo
         close(80)
 
-        open(81,file='N'//particle//'_total.dat')
+        
+        ! Open file for output and add a header line
+        open(81,file='N'//particle//'_bins_total.dat')    
+        write(81, '(A)') '# E[eV]   N_bin_1   N_bin_2   N_bin_3   N_bin_4   N_bin_5   N_bin_6   N_total'
         do i = 1, nIn
             N_total_i = 0.d0
             do l = 1, Ns
@@ -303,17 +306,11 @@ contains
                 end if  
                 N_total_i = N_total_i + N_tot(i,l) * VFF(l)
             end do
-            write(81,*) E(i)/eV, N_total_i 
-        end do
+            ! Write everything in one file (change this if N_bins != 6)
+            write(81,'(7(1x,ES15.7E3),1x,ES15.7E3)') E(i)/eV, (N_bin_i(j,i), j=1,N_bins), N_total_i 
+            end do
         close(81)
 
-        open(82,file='N'//particle//'_bin.dat')
-        do j = 1,N_bins
-            do i = 1, nIn
-                write(82,*) j, E(i)/eV, N_bin_i(j,i)
-            end do
-        end do
-        close(82)
     end subroutine N_bin
 
     !============================================================================
