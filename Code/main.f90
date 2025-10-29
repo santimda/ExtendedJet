@@ -4,7 +4,7 @@ PROGRAM main
     use controls
     implicit none
     real(dp) :: sigma0_value, Lj_value, z0_value, a_inj_value
-    real(dp), allocatable :: E_data(:), z_data(:)
+    real(dp), allocatable :: E_data(:)
     real(dp) :: S_data(m_data_max)
     logical, parameter :: verbose = .True.
 
@@ -25,14 +25,13 @@ PROGRAM main
     end interface 
 
     interface
-        subroutine syn_z_model(sigma0_value, Lj_value, a_inj_value, E_vector, z_vector, S_vector) 
+        subroutine syn_model(sigma0_value, Lj_value, a_inj_value, E_vector, S_vector) 
             use globals
             use constants
             real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
             real(dp), intent(in) :: E_vector(:)
-            real(dp), intent(in) :: z_vector(:)
             real(dp), intent(out) :: S_vector(m_data_max)
-        end subroutine syn_z_model
+        end subroutine syn_model
     end interface 
 
     !----------------------------------------------------------------
@@ -45,15 +44,14 @@ PROGRAM main
     ! certain jet heights. Used for fitting SEDs.
     
     if (run_sed_calc) then
-        allocate( E_data(4), z_data(4) )
+        allocate( E_data(4) )
         E_data = (/1d-6*eV, 1d-2*eV, 1.d2*eV, 1.d5*eV/)
-        z_data = (/5d2*R_g, 1d2*R_g, 3d1*R_g, 1.5d1*R_g/)
         sigma0_value = 1.d1
         Lj_value = L_Edd*1d-4
         a_inj_value = 0.5d0        
-        call syn_model(sigma0_value, Lj_value, a_inj_value, E_data, z_data, S_data) ! Energies in cgs
+        call syn_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data) ! Energies in cgs
         call sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data) ! Energies in cgs
-        deallocate( E_data, z_data )
+        deallocate( E_data )
     endif
 
 
@@ -298,10 +296,10 @@ end subroutine sed_model
 !============================================================================
 ! syn_model(START)
 !============================================================================
-subroutine syn_z_model(sigma0_value, Lj_value, a_inj_value, E_data, z_data, S_data)
+subroutine syn_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data)
   !===================================================================
   ! Subroutine to calculate the synchrotron SED at specific energies
-  ! integrated up to certain heights for the given input parameters. 
+  ! for the given input parameters. 
   ! Calculates both J and CJ
   !===================================================================
     use controls
@@ -316,7 +314,7 @@ subroutine syn_z_model(sigma0_value, Lj_value, a_inj_value, E_data, z_data, S_da
     use sscrad
     implicit none
     real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
-    real(dp), intent(in) :: E_data(:), z_data(:)
+    real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .False.
@@ -327,23 +325,22 @@ subroutine syn_z_model(sigma0_value, Lj_value, a_inj_value, E_data, z_data, S_da
     call Quantities('')    
     call Edist('e')   
     !Synchrotron SED at the given values
-    call SEDsyn_z_data(E_data, z_data, S_data_J, '', 'e')   
+    call SEDsyn_data(E_data, S_data_J, '', 'e')   
     call SEDsyn_data(E_data, S_data_J, '', 'e')  
 
     ! Calculate everything for the counter-jet next
     call trajectory_calc('CJ')  
     call Quantities('CJ')       
-    call SEDsyn_z_data(E_data, z_data, S_data_CJ, 'CJ', 'e')
+    call SEDsyn_data(E_data, S_data_CJ, 'CJ', 'e')
     call initialize_deallocate 
 
     S_data = S_data_J + S_data_CJ
 
     if (verbose) then
         print *, 'E_data[eV] =', E_data/eV
-        print *, 'z_data[Rg] =', z_data/R_g
         print *, 'S_data[cgs] =', S_data
     endif
 
-end subroutine syn_z_model
+end subroutine syn_model
 
 !===================================================================
