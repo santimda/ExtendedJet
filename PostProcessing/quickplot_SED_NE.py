@@ -252,11 +252,11 @@ colors = cmap(np.arange(N_bins_count)/(N_bins_count-1))
 
 # Plot each flux bin
 for i in range(N_bins_count):
-    ax.loglog(E/eV, Flux_bins[:, i] * mJy * nu * E * a, color=colors[i], lw=1.5)
+    ax.loglog(E/eV, Flux_bins[:, i] * mJy * nu * a, color=colors[i], lw=1.5)
 
 # Plot total flux in standout colour
-ax.loglog(E/eV, Flux_total * mJy * nu * E * a, color='darkred', lw=3, label='Total J')
-ax.loglog(E/eV, FluxCJ_total * mJy * nuCJ * ECJ * a, color='darkred', lw=3, linestyle='--', label='Total CJ')
+ax.loglog(E/eV, Flux_total * mJy * nu * a, color='darkred', lw=3, label='Total J')
+ax.loglog(E/eV, FluxCJ_total * mJy * nuCJ * a, color='darkred', lw=3, linestyle='--', label='Total CJ')
 
 # === Discrete colorbar ===
 bounds = np.arange(1, N_bins_count+2) - 0.5
@@ -269,9 +269,17 @@ cbar.set_label('Bin index')
 # === Axis limits and labels ===
 ax.set_xlabel(r"$\epsilon$ [eV]")
 ax.set_ylabel(r'$\epsilon L_{\epsilon}$ [erg\,s$^{-1}$]')
-ax.set_xlim(1e-5, 1e9)
-ax.set_ylim(1e21, 1e34)
+ax.set_xlim(1e-5, 1e7)
+ax.set_ylim(1e38, 1e41)
 
+# === Ticks ===
+numx = int(np.log10(xmax/xmin))
+x_major = matplotlib.ticker.LogLocator(base=100.0, numticks=numx)
+x_minor = matplotlib.ticker.LogLocator(base=10.0, numticks=numx*2)
+ax.xaxis.set_major_locator(x_major)
+ax.xaxis.set_minor_locator(x_minor)
+ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+ax.tick_params(axis='x', pad=6)
 ax.tick_params(direction='in', which='both', right=True, top=True)
 
 ax.legend(loc='best')
