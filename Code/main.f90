@@ -224,7 +224,7 @@ subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .False.
-    logical, parameter :: calc_SSC = .True.
+    logical, parameter :: calc_SSC = .False.
         
     S_data = 0.d0 ! Initialize
     ! Calculate everything for the jet first
@@ -246,7 +246,7 @@ subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data)
 
         if (calc_SSC) then
         !SSC SED at the given values  
-            call SEDssc_data(E_data, S_data_J, '', 'e') 
+            call SEDssc_data(E_data, S_data_J, '') 
             S_data = S_data + S_data_J
         endif   
         if (verbose) print *, 'S_data[cgs] =', S_data
@@ -274,7 +274,7 @@ subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data)
 
         !SSC SED at the given values  
         if (calc_SSC) then
-            call SEDssc_data(E_data, S_data_CJ, '', 'e') 
+            call SEDssc_data(E_data, S_data_CJ, '') 
             S_data = S_data + S_data_CJ  
         endif 
         if (verbose) print *, 'S_data[cgs] =', S_data
