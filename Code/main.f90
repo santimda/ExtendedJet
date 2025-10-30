@@ -224,7 +224,7 @@ subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data)
     real(dp), intent(out) :: S_data(m_data_max)
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .False.
-    logical, parameter :: calc_SSC = .False.
+    logical, parameter :: calc_SSC = .True.
         
     S_data = 0.d0 ! Initialize
     ! Calculate everything for the jet first
