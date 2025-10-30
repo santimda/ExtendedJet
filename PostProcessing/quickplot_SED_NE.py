@@ -317,7 +317,7 @@ cbar.set_label('Bin index')
 ax.set_xlabel(r"$\nu$ [GHz]")
 ax.set_ylabel(r"$S_\nu$ [mJy]")
 ax.set_xlim(1e-2, 1e3)
-ax.set_ylim(1e-1, 1e4)
+ax.set_ylim(1e-1, 5e3)
 
 ax.tick_params(direction='in', which='both', right=True, top=True)
 
