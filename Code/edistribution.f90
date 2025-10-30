@@ -160,17 +160,18 @@ contains
     real(dp) function Q_E (K, Ecut, E, EminFF2, EmaxFF2)
         implicit none
         real(dp), intent(in) :: K, Ecut, E, EminFF2, EmaxFF2
-
-        !Q(E) = 0 if outside the injection energy limits
-        if (E > EmaxFF2 .or. E < EminFF2) then
+        real(dp) :: EEcut
+        EEcut = E/Ecut
+        !Q(E) = 0 if outside the injection energy limits or >> Ecut
+        if (E > EmaxFF2 .or. E < EminFF2 .or. EEcut > 100.d0) then
             Q_E = 0d0
             return
         end if
 
         ! If E/Ecut is very small, skip exp()
         Q_E = K * (E/EminFF2)**(-p)
-        if (E/Ecut > 5d-4) then
-            Q_E = Q_E * exp(-E/Ecut)
+        if (EEcut > 5d-4) then
+            Q_E = Q_E * exp(-EEcut)
         end if
     end function Q_E
     !************************************************************************************
@@ -231,7 +232,7 @@ contains
     !************************************************************************************
     real(dp) function qp_E(E, zz, BB, particle)
     real(dp), intent(in) :: E, zz, BB
-    real(dp) :: Ecut, EminFF2, EmaxFF2, q0p, fact
+    real(dp) :: Ecut, EEcut, EminFF2, EmaxFF2, q0p, fact
     character(1), intent(in) :: particle
 
         ! Compute cutoff energy for Q(E) in the FF and normalisation constant
@@ -250,16 +251,17 @@ contains
         !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
         !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
 
-        ! Return 0 if outside bounds
-        if (E < EminFF2 .or. E > EmaxFF2) then
+        EEcut = E/Ecut
+        ! Return 0 if outside bounds or if E >> Ecut
+        if (E < EminFF2 .or. E > EmaxFF2 .or. EEcut > 100.d0) then
             qp_E = 0d0
             return
         endif
 
         ! If E/Ecut is very small, skip exp()
         qp_E = q0p * (E/EminFF2)**(-p)
-        if (E/Ecut > 5d-4) then
-            qp_E = qp_E * exp(-E/Ecut)
+        if (EEcut > 5d-4) then
+            qp_E = qp_E * exp(-EEcut)
         end if
     end function qp_E
 
