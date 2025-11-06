@@ -9,12 +9,11 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (START)
     !============================================================================
-    subroutine initialize_allocate(sigma_value, Lj_value, z0_value, a_inj_value)
+    subroutine initialize_allocate(sigma_value, Lj_value, a_inj_value) !,z0_value
     !============================================================================
     ! allocate and initialize vectors 
     !============================================================================
-        real(dp), intent(in) :: sigma_value, Lj_value, z0_value, a_inj_value
-        real(dp) :: zx
+        real(dp), intent(in) :: sigma_value, Lj_value, a_inj_value !,z0_value 
         logical :: fexist
 
         dlogz = (zmax/z0)**(1d0/(Ns-1d0))
@@ -27,7 +26,7 @@ MODULE initialize
         ! Initialize values given by free parameters:
         sigma_0 = sigma_value !Update the value of sigma_0 (default value defined in system_parameters.f90)
         Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
-        z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
+        !z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
         a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
 
         LnT = Lj*fnT          !Available nonthermal luminosity

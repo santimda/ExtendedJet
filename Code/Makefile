@@ -1,38 +1,77 @@
-DEBUG  = N
+# ===============================
+# Makefile for JetCode (Fortran + f2py)
+# ===============================
 
-FC     = gfortran -fopenmp
-FFLAGS = -ffree-line-length-none -fbackslash
-LIBS   = -llapack -lblas
+DEBUG   = N
+FC      = gfortran -fopenmp
+LIBS    = -llapack -lblas
 
+# Compiler flags
+FFLAGS  = -ffree-line-length-none -fbackslash
 ifeq ($(DEBUG), Y)
   FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow
 else
-  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops 
-#  FFLAGS += -Wall -Wno-tabs -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
-#  FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -Werror -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops -ffree-line-length-none -fbackslash
+  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
 endif
 
+# Sources
 SOURCES = $(wildcard *.f90)
-OBJECTS = $(subst .f90,.o,$(SOURCES)) 
+OBJECTS = $(SOURCES:.f90=.o)
 
-.PHONY: clean test
+.PHONY: all clean run f2py depend
 
+# Default target: compile executable
+all: run.x
+
+# Compile executable
 run.x: $(OBJECTS)
-	$(FC) $(OBJECTS) $(LIBS) -o run.x
+	$(FC) $(FFLAGS) $(OBJECTS) $(LIBS) -o $@
 
-.SUFFIXES:
-.SUFFIXES: .f90 .f .o
-.f90.o:
-	$(FC) -c $(FFLAGS) $<
+# Compile each object file and generate .mod files in $(MODDIR)
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $< -o $@
 
-.f.o:
-	$(FC) -c $(FFLAGS) $<
+# Run the executable with timing
+run: run.x
+	@echo "Running program..."
+	@start_time=$$(date +%s); \
+	./run.x; \
+	end_time=$$(date +%s); \
+	elapsed=$$((end_time - start_time)); \
+	echo "Execution time: $${elapsed} s"
 
-test:
-	sh test_set.sh
+# --------------------------
+# Python module via f2py (use python <= 3.11)
+# --------------------------
+f2py: clean
+	@echo "Building Python module JetCode..."
+	f2py -c \
+	  controls.f90 \
+	  constants.f90 \
+	  system_parameters.f90 \
+	  globals.f90 \
+	  initialize.f90 \
+	  trajectory.f90 \
+	  evolution.f90 \
+	  losses.f90 \
+	  mathematics.f90 \
+	  edistribution.f90 \
+	  synrad.f90 \
+	  icrad.f90 \
+	  sscrad.f90 \
+	  main.f90 \
+	  -m JetCode \
+	  --f90flags="$(FFLAGS)"
 
+# Clean everything
 clean:
-	rm -f *.x *.o *.mod *.dat *.bin *.log *~
-	rm -rf ./test
+	$(RM) *.x *.o *.mod *.dat *.bin *.log *~
+	$(RM) -rf $(MODDIR)
 
-include Makefile.depend
+# Generate dependencies
+depend:
+	$(FC) $(FFLAGS) -cpp -MM $(SOURCES) > Makefile.depend
+
+# Include dependencies
+-include Makefile.depend
+

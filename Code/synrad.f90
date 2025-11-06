@@ -16,20 +16,15 @@ contains
     !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' or 'jet'
     character(1), intent(in) :: particle
-    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF, dEphFF(Ns)
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF, dEphFF(Ns), dFdz
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
     real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
-    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo
+    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo, dil
     logical, parameter :: bin_SEDsyn = .False.
     integer :: k
 
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
-    open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
-    open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
-    open(50,file='SED'//particle//'_syn_jet'//jet//'.dat')
-    open(245,file="dFlux_dz"//jet//".dat")
-    open(122,file='Flux'//jet//'.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -39,26 +34,41 @@ contains
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
     sjo = sin(jo)
+    dil = 4.d0 * pi * dist**2
 
-    write(122,'(8(A9, 8X))') 'Eph/eV', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
+    open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat') 
+    open(245,file="dFlux_dz"//jet//".dat")
+    open(122,file='Flux'//jet//'_'//particle//'.dat')
+    write(40,'(3(A9, 8X))') '#E[eV]', 'L[erg/s]', 'segment'
+    write(122,'(8(A9, 8X))') 'nu', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
+    write(245,*)'nu',(z(j),j=2,Ns)
     do l = 1, NSED_sy
-        Total_flux=0d0
+        Total_flux = 0d0
+        FT1 = 0d0
+        FT2 = 0d0
+        FT3 = 0d0
+        FT4 = 0d0
+        FT5 = 0d0
+        FT6 = 0d0
         do j = 2, Ns
             NEcut = NE(:,j)
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            Total_flux = Total_flux + dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j)
+            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            Total_flux = Total_flux + dFdz*h
             !Jet and c-jet contribution of the segments up to given lengths
-            z_proj = z(j) * sjo
-            if (z_proj <= 7.3*R_g) FT1 = Total_flux
-            if (z_proj <= 2.6d1*R_g) FT2 = Total_flux
-            if (z_proj <= 6.5d1*R_g) FT3 = Total_flux
-            if (z_proj <= 1.95d2*R_g) FT4 = Total_flux
-            if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
-            if (z_proj <= 2d3*R_g) FT6 = Total_flux
+            z_proj = abs(z(j)) * sjo
+            if (z_proj <= 5d2*R_g) FT1 = Total_flux
+            if (z_proj <= 8d2*R_g) FT2 = Total_flux
+            if (z_proj <= 1d3*R_g) FT3 = Total_flux
+            if (z_proj <= 5d3*R_g) FT4 = Total_flux
+            if (z_proj <= 8d3*R_g) FT5 = Total_flux
+            if (z_proj <= 1d4*R_g) FT6 = Total_flux
             !write(*,*) l, j, Ns
+            write(40,'(2(ES15.7E3, 2X), I3)') Eph/eV, Eph*dFdz*dil, j
         enddo
-        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j))*DeltaZ(j), j=2,Ns)
-        write(122,'(8(ES15.7, 2X))') Eph/eV, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
+        
+        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j), j=2,Ns)
+        write(122,'(8(ES15.7E3, 2X))') Eph/h, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
     
@@ -69,7 +79,7 @@ contains
     do l=1, NSED_sy
         do j=1,Ns
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            write(133,*)EphFF, jsync(EphFF, BFF(j), NE(:,j), E), alpha_sync(EphFF, BFF(j), NE(:,j), E), j
+            write(133,*) Eph/h, jsync(EphFF, BFF(j), NE(:,j), E, particle)*h, alpha_sync(EphFF, BFF(j), NE(:,j), E, particle), j
         enddo
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
@@ -79,8 +89,7 @@ contains
     close(133)
     close(40)
     close(122)
-    close(45)
-    close(50)
+    close(122)
     
     ! Calculate the integrated SED for different z-ranges and for the total jet
     if (bin_SEDsyn .and. jet=='') call SEDsyn_bin(jet,particle)
@@ -96,7 +105,7 @@ contains
     !************************************************************************************
     real(dp) function SyncLum(B,Eph,E,NE,particle)
     character(1), intent(in) :: particle
-    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp), intent(in) :: B, Eph, E(:), NE(:) ! sizes nIn
     real(dp) :: dE, Ec, x, Psync, E_step, factor
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
@@ -138,18 +147,22 @@ contains
     !****************************************************************************
     ! Synchrotron emitted power for a specific photon energy
     !****************************************************************************
-    real(dp) function PSynchrotron(E_ph, E_e, B) result(resultado)
+    real(dp) function PSynchrotron(E_ph, E, B, particle)
     implicit none
-        real(dp), intent(in) :: E_ph, B, E_e
-        real(dp) :: K
-        real(dp) :: x, R
-        real(dp) :: Ec, g
+        real(dp), intent(in) :: E_ph, B, E
+        character(1), intent(in) :: particle
+        real(dp) :: K, x, R, Ec, g, m
     
     ! Define constants
-    g = E_e / (me * c**2)
-    K = sqrt(3.0d0) * qe**3 / (h * me * c**2)
+    if (particle == 'e') then
+        m = me
+    else if (particle == 'p') then
+        m = mp
+    end if
+    g = E / (m * c**2)
+    K = sqrt(3.0d0) * qe**3 / (h * m * c**2)
     
-    Ec = (3.0d0 / (4.0d0 * pi)) * (qe * h * B) / (me**3 * c**5) * E_e**2
+    Ec =  (3d0 * qe * h * B) / (4d0 * pi * m * c) * g**2
         ! Calculate x and R for each element of E
         x = E_ph / Ec
         R = (1.808 * x**(1.0d0 / 3.0d0) / sqrt(1.0d0 + 3.4 * x**(2.0d0 / 3.0d0))) * &
@@ -157,17 +170,18 @@ contains
                 (1.0d0 + 1.353 * x**(2.0d0 / 3.0d0) + 0.217 * x**(4.0d0 / 3.0d0))) * exp(-x)
 
     ! Compute the emitted power for each element of E
-    resultado = K * B * R
+    PSynchrotron = K * B * R
 
     end function PSynchrotron
 
     !****************************************************************************
     ! Synchrotron emissivity for a specific photon energy
     !****************************************************************************
-    function jsync(E_ph, B, N, E) result(integral)
+    function jsync(E_ph, B, N, E, particle) result(integral)
     implicit none
     integer :: nsize  ! Number of elements in arrays
     real(dp), intent(in) :: E_ph, B
+    character(1), intent(in) :: particle
     real(dp), dimension(:), intent(in) :: E
     real(dp), dimension(:), intent(in) :: N
     real(dp) :: integral, dE
@@ -178,7 +192,7 @@ contains
     allocate(integ(nsize))
     ! The values inside the integral
     do i=1, nsize
-        integ(i) = PSynchrotron(E_ph, E(i), B)
+        integ(i) = PSynchrotron(E_ph, E(i), B, particle)
     enddo
     integ = integ*N
     ! The integral is solved with the trapezoid method
@@ -196,11 +210,12 @@ contains
     !****************************************************************************
     ! Synchrotron absorption coefficient for a specific photon energy
     !****************************************************************************
-    function alpha_sync(E_ph, B, Ne, E) result(alpha)
+    function alpha_sync(E_ph, B, Ne, E, particle) result(alpha)
     implicit none
     real(dp), dimension(:), intent(in) :: E, Ne
     real(dp), dimension(:), ALLOCATABLE :: log_eVec, log_neVec
     real(dp), intent(in) :: B, E_ph
+    character(1), intent(in) :: particle
     real(dp) :: alpha
     real(dp) :: df
     real(dp), dimension(:), allocatable :: integ
@@ -224,7 +239,7 @@ contains
       end if
 
       if (df < 2) then
-        integ(i) = PSynchrotron(E_ph, E(i), B) * Ne(i) * (df - 2)
+        integ(i) = PSynchrotron(E_ph, E(i), B, particle) * Ne(i) * (df - 2)
       else
         integ(i) = 0d0
       end if
@@ -245,10 +260,11 @@ contains
     ! Flux for a given N_e(E,z),B(z),E_ph/delta(z)
     !****************************************************************************
 
-    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in) result(flux)
+    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in, particle)
     implicit none
         real(dp), dimension(:), intent(in) :: N_e, E
         real(dp), intent (in) :: BFF, E_ph, delta_obs
+        character(1), intent(in) :: particle
         real(dp) :: j, alpha, S, R_out, R_in, R_avg
         real(dp) :: x, Step, tau, tau_avg, tau_max, variable_nan
         integer :: n
@@ -256,19 +272,19 @@ contains
 
         !R_out and R_in are not yet defined as a function of z, this is just for testing:
         !R_in=0.0!R_out/2.0
-        alpha=alpha_sync(E_ph, BFF, N_e, E)
-        j=jsync(E_ph, BFF, N_e, E)
+        alpha=alpha_sync(E_ph, BFF, N_e, E, particle)
+        j=jsync(E_ph, BFF, N_e, E, particle)
         R_avg=0.5*(R_in+R_out)
         !We consider the opt. thin case
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
         tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
 
         if (tau_max < 0.1) THEN
-            flux=delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2)
+            dFlux_dz=delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2)
             !write(*,*)delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2), flux
         !In case the jet at height z is opt thick
         else if (tau_avg > (10.0)) then
-            flux=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
+            dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
             !write(*,*)flux
         !In case the integral has to be calculated numerically
         else
@@ -280,8 +296,8 @@ contains
                 tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
                 FI(i)=1d0-exp(-tau) !The integrand vector
             enddo
-            call integrate(n,Step,FI,flux) !We call a function for Simpson integration
-            flux=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*flux !Add constants
+            call integrate(n,Step,FI,dFlux_dz) !We call a function for Simpson integration
+            dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*dFlux_dz !Add constants
             deallocate(FI)
         endif
         ! n=100
@@ -300,16 +316,16 @@ contains
     end function dFlux_dz
 
     !Function for the length of the section we cross in the jet
-    real(dp) function crossed_length(x, R_in, R_out) result(l)
+    real(dp) function crossed_length(x, R_in, R_out) 
     implicit none
         real(dp) :: x, R_in, R_out
         !write(*,*)x, R_in, R_out
         if ((abs(x) < abs(R_out)) .and. (abs(x) > abs(R_in))) then
-            l = 2d0 * sqrt(R_out**2 - x**2)
+            crossed_length = 2d0 * sqrt(R_out**2 - x**2)
         else if (abs(x) <= abs(R_in)) then
-            l = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(abs(R_in**2 - x**2)))
+            crossed_length = 2d0 * (sqrt(R_out**2 - x**2) - sqrt(abs(R_in**2 - x**2)))
         else
-            l = 0d0
+            crossed_length = 0d0
         endif
     end function crossed_length
 
@@ -408,8 +424,9 @@ contains
     ! Luminosity corrected for synchrotron self-absorption
     !============================================================================
     character, intent(in) :: particle
-    real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn,Ns),Lum(Ns)
-    real(dp), intent(out) :: LumA(Ns)
+    !real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn,Ns),Lum(Ns)
+    real(dp), intent(in) :: B(:),r_j(:),sjo(:),V(:),Eph(:),E(:),NE(:,:),Lum(:) 
+    real(dp), intent(out) :: LumA(:) ! size Ns
     real(dp) :: Absor_coef,Emmision_coef,Source_fun,depth,tau,Ap, mass
 
     !Loop for the segments
@@ -449,7 +466,7 @@ contains
     !   Integral for the particle energy in SSA
     !************************************************************************************
     real(dp) function EintSSA(B,Eph,E,NE,particle)
-    real(dp), intent(in) :: B, Eph, E(nIn), NE(nIn)
+    real(dp), intent(in) :: B, Eph, E(:), NE(:)
     character(1), intent(in) :: particle
     real(dp) :: dE, Ec, x, F, E_step, factor
     real(dp) :: f1, f2, sum
@@ -486,69 +503,6 @@ contains
 
     end function EintSSA
 
-
-    !============================================================================
-    ! Bin the particle energy distribution at different z ranges
-    !============================================================================
-    subroutine SEDsyn_bin(jet,particle)
-        character(LEN=*), intent(in) :: jet,particle
-        integer, parameter :: n_bins = 6 ! For the plot SEDsyn_bins
-        real(dp) :: SED_bin_i(n_bins,NSED_sy), SED_total_i
-        real(dp) :: SED_cut(NSED_sy,Ns), Esyn(NSED_sy)
-        real(dp) :: zin, zvec(n_bins+1) 
-
-        ! Read the synchrotron SED at each location
-        open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat')
-        write(*,*) Ns, NSED_sy
-        do i = 1, NSED_sy            
-            do l = 1, Ns
-                !The file contains Eph/eV, Eph*Lumcut(j), Eph*LumcutA(j), j
-                read(40,*) Esyn(i), SED_cut(i,l)
-            enddo
-        enddo
-
-        ! Build a logarithmically-spaced vector of z intervals
-        call vector_log(z(1), z(Ns), zin, zvec ) 
-        open(80,file='z_bin.dat') ! Store the z values
-        do i = 1, n_bins+1
-            write(80,*) zvec(i), zvec(i)/z0
-        enddo
-        close(80)
-
-        open(81,file='SEDsyn'//particle//'_total.dat')
-        SED_bin_i = 0.d0
-        do i = 1, NSED_sy
-            SED_total_i = 0.d0
-            do l = 1, Ns
-                ! The bin "i" is for z(i) < z < z(i+1)
-                if (z(l) >= zvec(1) .and. z(l) < zvec(2)) then
-                    SED_bin_i(1,i) = SED_bin_i(1,i) + SED_cut(i,l)
-                elseif (z(l) >= zvec(2) .and. z(l) < zvec(3)) then
-                    SED_bin_i(2,i) = SED_bin_i(2,i) + SED_cut(i,l)
-                elseif (z(l) >= zvec(3) .and. z(l) < zvec(4)) then
-                    SED_bin_i(3,i) = SED_bin_i(3,i) + SED_cut(i,l)
-                elseif (z(l) >= zvec(4) .and. z(l) < zvec(5)) then
-                    SED_bin_i(4,i) = SED_bin_i(4,i) + SED_cut(i,l)
-                elseif (z(l) >= zvec(5) .and. z(l) < zvec(6)) then
-                    SED_bin_i(5,i) = SED_bin_i(5,i) + SED_cut(i,l)
-                elseif (z(l) >= zvec(6) .and. z(l) < zvec(7)) then
-                    SED_bin_i(6,i) = SED_bin_i(6,i) + SED_cut(i,l)
-                end if  
-                SED_total_i = SED_total_i + SED_cut(i,l)
-            end do
-            write(81,*) Esyn(i), SED_total_i 
-        end do
-        close(81)
-
-        open(82,file='SEDsyn'//particle//'_bin.dat')
-        do j = 1,N_bins
-            do i = 1, NSED_sy
-                write(82,*) j, Esyn(i), SED_bin_i(j,i)
-            end do
-        end do
-        close(82)
-    end subroutine SEDsyn_bin
-
     !============================================================================
     ! SEDsyn (END)
     !============================================================================
@@ -562,22 +516,19 @@ contains
         real(dp) :: Esy(NSED_sy), Esy_step, dEsy
         real(dp) :: U_sy_FF
 
-        ! Read from a file: Esy(i,l), E*Lsy_unabs(i,l), E*Lsy_abs(i,l), l
+        ! Read from a file: Esy(i,l), E*Lsy_abs(i,l), l
         open(27, file='SEDe_syn_cuts_ord'//jet//'.dat')
+        read(27,*)  ! Skip the first line with the header
         do l = 1, Ns 
             do i = 1, NSED_sy
-                read(27,*) Esy(i), Lun(i,l), Lsy(i,l), dummy
+                read(27,*) Esy(i), Lsy(i,l), dummy
                 ! We need L_sy_FF, so we unboost
                 Lsy(i,l) = Lsy(i,l)/(Esy(i)*boost(l))
-                Lun(i,l) = Lun(i,l)/(Esy(i)*boost(l))
             enddo
         enddo
         close(27)
 
         ! Integrate the luminosity of each segment
-        ! Also calculate the total absorbed luminosity of each segment
-        L_tot = 0.d0
-        L_abs = 0.d0
         Esy_step = Esy(2)/Esy(1)
         open(28, file='U_FF'//jet//'.dat')
         open(29, file='L_inj'//jet//'.dat')
@@ -585,11 +536,10 @@ contains
             do i = 1, NSED_sy
                 dEsy = Esy(i)*(Esy_step-1.d0)
                 L_tot(l) = L_tot(l) + Lsy(i,l) * dEsy
-                L_abs(l) = L_abs(l) + (Lun(i,l) - Lsy(i,l)) * dEsy
             enddo
             U_sy_FF = ( L_tot(l)/VFF(l) ) * ( rj_out(l)/c ) !!! CHECK IF <t> = r/c, deltaz/c, or what
             write(28,*) l, z(l), U_sy_FF, BFF(l)**2/(8.d0*pi), U_sy_FF/(BFF(l)**2/(8.d0*pi))
-            write(29,*) l, z(l)/R_g, L_tot(l), L_abs(l)/LnTFF
+            write(29,*) l, z(l)/R_g, L_tot(l), L_tot(l)/LnTFF
         enddo
         close(28)
         close(29)
@@ -598,8 +548,7 @@ contains
     !============================================================================
     ! Calc_Usyn (END)
     !============================================================================
-
-
+    
     !============================================================================
     ! SEDsyn_data (START)
     !============================================================================
@@ -613,16 +562,16 @@ contains
     !============================================================================
     character(1), intent(in) :: particle
     real(dp), intent(in) :: E_data(:)
-    real(dp), intent(out) :: S_data(m_data_max)
+    real(dp), intent(out) :: S_data(:)  ! size m_data_max
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-    real(dp), allocatable :: Eph(:), LumA(:)
+    real(dp), allocatable :: Eph(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
     real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
-    real(dp) :: dil
+    real(dp) :: dFdz
     integer :: m_data
 
     !N(E) of each cut
-    open(30,file='Ne_cuts.dat')
+    open(30,file='N'//particle//'_cuts.dat')
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -635,113 +584,25 @@ contains
       print*, 'Too many points to fit, make m_data_max larger in global.f90!'
       stop
     endif
-    allocate( Eph(m_data), LumA(m_data) )
+    allocate( Eph(m_data) )
     Eph = E_data ! Here we can change units if needed          
 
-    do l = 1, m_data
-        do j = 1, Ns                        !Loop for the jet segments
-            EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
-            NEcut = NE(:,j)                 !N(E) for the segment j
-            !Unabsorbed synchrotron luminosity for each segment
-            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
-        enddo
-        
-        !Absorbed radiation for each cut
-        call SSA(BFF,rj_out,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
-        
-        LumA(l) = 0d0 ! Total luminosity at each photon energy
-        do j = 1, Ns
-            LumcutA(j) = boost(j)*LumcutAFF(j)  !(de)Boosted
-            LumA(l) = LumA(l) + LumcutA(j)            !Absorbed (de)boosted luminosity for Eph
-        enddo
-    enddo
 
-    ! Define the output vector for the first m_data positions
     S_data = 0.d0
-    dil = 4.d0*pi*dist**2
     do l = 1, m_data
-      S_data(l) = LumA(l)/dil
+        do j = 2, Ns                        !Loop for the jet segments
+            NEcut = NE(:,j)                 !N(E) for the segment j
+            EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
+            dFdz = dFlux_dz(NEcut, BFF(j), EphFF(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            S_data(l) = S_data(l) + dFdz
+        enddo
     enddo
     
-    deallocate( Eph, LumA )
+    deallocate( Eph )
     
     end subroutine SEDsyn_data
     !============================================================================
     ! SEDsyn_data (END)
-    !============================================================================
-    
-    !============================================================================
-    ! SEDsyn_data (START)
-    !============================================================================
-    subroutine SEDsyn_z_data(E_data, z_data, S_data, jet, particle)
-    !============================================================================
-    ! This routine calculates the intrinsic synchrotron emission in the fluid frame
-    ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
-    ! of those energies [cgs] (also a vector) integrated up to the height z_data. 
-    ! The number of points in E_data has 
-    ! to be smaller than m_data_max defined in globals.f90.
-    ! The input is the '' (jet) or 'CJ' (counter-jet). 
-    !============================================================================
-    character(1), intent(in) :: particle
-    real(dp), intent(in) :: E_data(:)
-    real(dp), intent(in) :: z_data(:)
-    real(dp), intent(out) :: S_data(m_data_max)
-    character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-    real(dp), allocatable :: Eph(:), LumA(:)
-    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
-    real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
-    real(dp) :: dil
-    integer :: m_data
-
-    !N(E) of each cut
-    open(30,file='Ne_cuts.dat')
-    do i = 1, nIn
-        do j = 1, Ns
-            read(30,*) E(i), NE(i,j), dummy
-        enddo
-    enddo
-    close(30)
-
-    m_data = SIZE(E_data)
-    if (m_data > m_data_max) then
-      print*, 'Too many points to fit, make m_data_max larger in global.f90!'
-      stop
-    endif
-    allocate( Eph(m_data), LumA(m_data) )
-    Eph = E_data ! Here we can change units if needed          
-
-    do l = 1, m_data
-        do j = 1, Ns                        !Loop for the jet segments
-            EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
-            NEcut = NE(:,j)                 !N(E) for the segment j
-            !Unabsorbed synchrotron luminosity for each segment
-            LumcutFF(j) = SyncLum(BFF(j),EphFF(j),E,NEcut,particle)
-        enddo
-        
-        !Absorbed radiation for each cut
-        call SSA(BFF,rj_out,sjoFF,VFF,EphFF,E,NE,LumcutFF,LumcutAFF,particle)
-        
-        LumA(l) = 0d0 ! Total luminosity at each photon energy
-        j = 1
-        do while ( (abs(z(j)) <= z_data(l) .and. j <= Ns ) .or. j==1) 
-            LumcutA(j) = boost(j)*LumcutAFF(j)  !(de)Boosted
-            LumA(l) = LumA(l) + LumcutA(j)      !Absorbed (de)boosted luminosity for Eph
-            j = j + 1
-        enddo
-    enddo
-
-    ! Define the output vector for the first m_data positions
-    S_data = 0.d0
-    dil = 4.d0*pi*dist**2
-    do l = 1, m_data
-      S_data(l) = LumA(l)/dil
-    enddo
-    
-    deallocate( Eph, LumA )
-    
-    end subroutine SEDsyn_z_data
-    !============================================================================
-    ! SEDsyn_z_data (END)
     !============================================================================
 
 !================================================================================
