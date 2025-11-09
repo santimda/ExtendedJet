@@ -27,7 +27,7 @@ MODULE initialize
         sigma_0 = sigma_value !Update the value of sigma_0 (default value defined in system_parameters.f90)
         Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
         !z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
-        a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
+        a_inj = a_inj_value   !Update the value of a_inj (default value defined in system_parameters.f90)
 
         LnT = Lj*fnT          !Available nonthermal luminosity
         LnTFF = LnT!/gj0**2   !Available nonthermal luminosity in the FF
