@@ -33,7 +33,7 @@ contains
 
 
     !N(E) of each cut
-    open(30,file='NE_cuts.dat')
+    open(30,file='Ne_cuts.dat')
     do i = 1, nIn
        do j = 1, Ns
           read(30,*) E_e(i), NE_e(i,j), dummy
@@ -91,7 +91,6 @@ contains
     
     close(40)
     close(50)
-    
     deallocate( delta_obs )
 
   END subroutine SEDIC

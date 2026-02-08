@@ -16,6 +16,7 @@ MODULE evolution
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
       real(dp) :: dir, cjo
+      
       allocate( joFF(Ns) )
 
       open(30,file='quant_FF'//jet//'.dat')
@@ -33,7 +34,6 @@ MODULE evolution
 
       cjo = cos(jo)
       do i = 1, Ns
-
          if (abs(z(i)) < zmax_inj) Ninj = i
 
          gj(i) = lorentzFactor(z(i))
@@ -66,10 +66,8 @@ MODULE evolution
 
          !Doppler boosting factor (used to transform FF -> OF); the expression assumes that delta z is defined in the LF
          boost(i) = delta_obs(i)**2 
-
          write(30,*) z(i), BFF(i), rj_out(i), rj_in(i), gj(i), delta_obs(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i), sigma_B(z(i)), Le_z(z(i))
          write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj_out(i)/rj_out(1), rj_in(i)/rj_in(1), VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
-
       end do
       close(30)
       close(31)

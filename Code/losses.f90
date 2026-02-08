@@ -99,7 +99,6 @@ contains
     !============================================================================
     real(dp) function t_cell(segN)
     integer, intent(in) :: segN
-
     if (segN==Ns) then
         t_cell = abs(z(segN) - z(segN-1))/(c*bj(segN))/gj(segN)
     else   

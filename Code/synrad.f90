@@ -34,7 +34,7 @@ contains
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     Eph = Emin_sy                               !Initialization
     sjo = sin(jo)
-    dil = 4.d0 * pi * dist**2
+    dil = 4.d0 * pi * dist**2			!Dilution factor
 
     open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat') 
     open(245,file="dFlux_dz"//jet//".dat")
@@ -53,7 +53,7 @@ contains
         do j = 2, Ns
             NEcut = NE(:,j)
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*deltaZ(j)
             Total_flux = Total_flux + dFdz*h
             !Jet and c-jet contribution of the segments up to given lengths
             z_proj = abs(z(j)) * sjo
@@ -67,7 +67,7 @@ contains
             write(40,'(2(ES15.7E3, 2X), I3)') Eph/eV, Eph*dFdz*dil, j
         enddo
         
-        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j), j=2,Ns)
+        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*deltaZ(j), j=2,Ns)
         write(122,'(8(ES15.7E3, 2X))') Eph/h, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
@@ -593,11 +593,10 @@ contains
         do j = 2, Ns                        !Loop for the jet segments
             NEcut = NE(:,j)                 !N(E) for the segment j
             EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
-            dFdz = dFlux_dz(NEcut, BFF(j), EphFF(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            dFdz = dFlux_dz(NEcut, BFF(j), EphFF(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*deltaZ(j)
             S_data(l) = S_data(l) + dFdz
         enddo
     enddo
-    
     deallocate( Eph )
     
     end subroutine SEDsyn_data

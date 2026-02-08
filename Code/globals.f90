@@ -16,10 +16,11 @@ MODULE globals
 
   !===========================================================
   ! Simulation grid/vectors size
-  integer, parameter :: Ns = 200        !Number of jet segments up to zmax_inj (default: 200)
+  integer, parameter :: Ns1 = 500        !Number of jet segments up to zmax_inj (default: 200)
+  integer :: Ns        !Number of jet segments up to zmax
   integer, parameter :: nIn = 150      !Number of points in the electron energy distribution (default: 150)
   integer, parameter :: numbins = 500  !Number of integration bins for the energy distribution (default: 300)
-  integer, parameter :: numdt = 100000  !Number of segments for integrating the energy distribution (default: 100000)
+  integer, parameter :: numdt = 1000000  !Number of segments for integrating the energy distribution (default: 100000)
   real(dp), parameter :: dttFF_min = 1.d-6 !Precision in timestep for N(E) (default: 1.d-10)
   integer, parameter :: m_data_max = 100 !Maximum number of points to fit
   integer, parameter :: NSED_sy = 150    !Number of points for the synchrotron SED

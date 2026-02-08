@@ -37,7 +37,6 @@ contains
         
     open(11,file='E'//particle//'_max_FF.dat')
     open(20,file='N'//particle//'_cuts.dat')
-
     ! Calculate the cutoff energy for particle injection at each segment
     do i = 1, Ns
         Ecut = CutE(BFF(i),z(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
@@ -52,12 +51,9 @@ contains
     
     ! Build a logarithmically-spaced energy vector
     call vector_log(EminFF2, EmaxFF2, Ein, Evec )
-
     NEmatrix = 0d0
     call calcNE_paramo(Evec, NEmatrix, particle)
-
     NEmatrix(:,Ns) = 0d0
-
     if (print_quantities) then
         flux = 0d0
         energyFlux = 0d0
@@ -220,7 +216,6 @@ contains
         !$omp end parallel do
 
         Norm_q0p = dLe_dz(zz) / ( QInt * lorentzFactor(zz) * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) )
-
         deallocate(Egrid)
         deallocate(f)
     end function Norm_q0p
@@ -403,11 +398,11 @@ contains
             EmaxFF2 = EpmaxFF
             mc2 = mpc2
         endif
-
         t(0) = 0d0
         zz(0) = z0*1.001
         g_min = EminFF2 / mc2
         g_max = EmaxFF2 / mc2
+        
         !$OMP PARALLEL DO PRIVATE(k)
         build_g: do k = 1, numbins
             gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
@@ -418,6 +413,7 @@ contains
             if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
         end do build_g
         !$OMP END PARALLEL DO
+        
         dg(1) = dg(2)
 
         const_z0 = mc2 * pi *(r_fun_out(zz(0))**2-r_fun_in(zz(0))**2)
@@ -426,7 +422,6 @@ contains
             Qinj(k, 0) = qp_E(Ee(k), zz(0), Bz0, particle) * const_z0        ! dQ'(g', z)/dz
         end do build_Q
         !$OMP END PARALLEL DO
-
         nn(:, 0) = 0d0
         Ddiff(:, 0) = 1d-200
 
@@ -466,15 +461,16 @@ contains
             !if (zz(jz) < zmax_inj) then
             !$OMP PARALLEL DO PRIVATE(k)
             build_Qin: do k = 1, numbins
-              Qinj(k, jz) = qp_E(Ee(k), zz(jz), Bjz, particle) * const_zjz
+            	Qinj(k, jz) = qp_E(Ee(k), zz(jz), Bjz, particle) * const_zjz
             end do build_Qin
-            !$OMP END PARALLEL DO
+            	!$OMP END PARALLEL DO
             !else
             !    Qinj(:, jz) = 0d0
             !end if
 
         end do z_loop
-
+        
+        
         ! INTERPOLATION
         !$OMP PARALLEL DO PRIVATE(i2, m, E1, E2, jz, izz, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope)
         do i2=1, nIn
@@ -488,6 +484,7 @@ contains
             E2 = Ee(m+1)
             jz = 0
             do izz=2, Ns
+            	!write(*,*)zz(jz),z(izz)
                 do while (zz(jz) < z(izz))
                     jz = jz + 1
                 end do
@@ -510,7 +507,7 @@ contains
             enddo
         enddo
         !$OMP END PARALLEL DO
-
+	
     end subroutine
     !============================================================================
     ! calcNE_paramo (END)

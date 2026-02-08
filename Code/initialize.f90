@@ -14,9 +14,16 @@ MODULE initialize
     ! allocate and initialize vectors 
     !============================================================================
         real(dp), intent(in) :: sigma_value, Lj_value, a_inj_value !,z0_value 
+        real(dp) :: zx
         logical :: fexist
 
-        dlogz = (zmax/z0)**(1d0/(Ns-1d0))
+        Ns = Ns1
+        zx = zmax_inj
+        dlogz = (zmax_inj/z0)**(1d0/(Ns1-1d0))
+        do while (zx < zmax)
+          zx = zx * dlogz
+          Ns = Ns +1
+        end do
 
         allocate( z(Ns), rj_out(Ns), rj_in(Ns), gj(Ns), bj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 
