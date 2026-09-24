@@ -249,17 +249,15 @@ contains
             EminFF2 = EpminFF
             EmaxFF2 = EpmaxFF
         endif
-        ! TODO fix_inj_emin (awaiting author): A pivots the injection shape at
-        ! EminFF2 = 1.1*mec2 while Norm_q0p above normalises against EminFF,
-        ! i.e. the pivot and the normalisation energy are inconsistent. Fixing
-        ! this would presumably use EminFF consistently in both places.
-        EminFF2 = 1.1d0*mec2
+        ! Legacy A pivots the power law at 1.1 m_e c^2 while Norm_q0p normalises it at EminFF, so the
+        ! injected power is ~ (1.1 m_e c^2/EminFF)^p ~ 0.3 of nominal. fix_inj_emin uses EminFF in both.
+        if (.not. fix_inj_emin) EminFF2 = 1.1d0*mec2
         !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
         !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
 
         EEcut = E/Ecut
         ! Return 0 if outside bounds or if E >> Ecut
-        if (E < EminFF2 .or. E > EmaxFF2 .or. EEcut > 100.d0) then
+        if (E < EminFF2*(1d0-1d-12) .or. E > EmaxFF2*(1d0+1d-12) .or. EEcut > 100.d0) then
             qp_E = 0d0
             return
         endif
