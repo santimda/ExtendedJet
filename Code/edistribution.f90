@@ -522,7 +522,7 @@ contains
         real(dp), allocatable, dimension(:) :: t, Ntot, gg, dt, dg, zz, Ee
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
         real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2, Bz0, Bjz, const_z0, const_zjz
-        integer :: jz, jE, m, izz, i2
+        integer :: jz, jE, m, izz, i2, jlast
         real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
         real(dp) :: g_min, g_max, Ebr, dz_aux, Naux
         
@@ -568,7 +568,7 @@ contains
         Ddiff(:, 0) = 1d-200
 
         jz = 0
-        z_loop: do while (zz(jz) < zmax*1.01)
+        z_loop: do while (zz(jz) < zmax*1.01 .and. jz < numdt)
             dz_aux = zz(jz)*(sqrt(dlogz)-1d0/sqrt(dlogz))
             Bjz = BFF_fun(zz(jz))
             Ebr = BreakE(Bjz, zz(jz), dz_aux, particle)
@@ -614,25 +614,26 @@ contains
             !end if
 
         end do z_loop
+        jlast = jz   ! last computed step (arrays are only filled up to here)
 
         ! INTERPOLATION
         !$OMP PARALLEL DO PRIVATE(i2, m, E1, E2, jz, izz, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope)
         do i2=1, nIn
             m = 1
-            do while (Ee(m) < Evec(i2))
+            do while (m < numbins .and. Ee(m) < Evec(i2))
                 m = m + 1
             enddo
             m = max(1, m-1)
-            m = min(numbins, m)
+            m = min(numbins-1, m)   ! Ee(m+1), nn(m+1,:) must exist
             E1 = Ee(m)
             E2 = Ee(m+1)
             jz = 0
             do izz=2, Ns
-                do while (zz(jz) < z(izz))
+                do while (jz < jlast .and. zz(jz) < z(izz))
                     jz = jz + 1
                 end do
                 jz = max(0, jz-1)
-                jz = min(numdt-1, jz)
+                jz = min(jlast-1, jz)
                 z1 = zz(jz)
                 z2 = zz(jz+1)
                 N11 = safeLog10(nn(m, jz))
