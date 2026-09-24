@@ -12,16 +12,12 @@ MODULE globals
 
   integer, parameter :: nth = 4   ! number of threads (parallelization)
 
-  !integer :: i,i2,j,j2,l,n
-
   !===========================================================
   ! Simulation grid/vectors size
-  integer, parameter :: Ns_inj = 200        !Number of jet segments up to zmax_inj (default: 200)
-  integer :: Ns                             !Maximum number of segments (to be defined in initialize_allocate)
+  ! Ns, numbins and dttFF_min are now runtime variables set by the &run
+  ! namelist (see system_parameters.f90); their defaults live there.
   integer, parameter :: nIn = 150      !Number of points in the electron energy distribution (default: 150)
-  integer, parameter :: numbins = 200  !Number of integration bins for the energy distribution (default: 300)
   integer, parameter :: numdt = 100000  !Number of segments for integrating the energy distribution (default: 100000)
-  real(dp), parameter :: dttFF_min = 1.d-8 !Precision in timestep for N(E) (default: 1.d-10)
   integer, parameter :: m_data_max = 300 !Maximum number of points to fit
   integer, parameter :: NSED_sy = 150    !Number of points for the synchrotron SED
   integer, parameter :: NSED_IC = 100    !Number of points for the IC SED

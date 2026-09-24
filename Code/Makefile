@@ -62,7 +62,7 @@ clean:
 
 # Generate dependencies
 depend:
-	$(FC) $(FFLAGS) -cpp -MM $(SOURCES) > Makefile.depend
+	python3 gen_depend.py
 
 # Include dependencies
 -include Makefile.depend

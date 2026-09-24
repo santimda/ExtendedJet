@@ -35,8 +35,8 @@ contains
         stop
     endif
         
-    open(11,file='E'//particle//'_max_FF.dat')
-    open(20,file='N'//particle//'_cuts.dat')
+    open(11,file=trim(opath('E'//particle//'_max_FF.dat')))
+    open(20,file=trim(opath('N'//particle//'_cuts.dat')))
 
     ! Calculate the cutoff energy for particle injection at each segment
     do i = 1, Ns
@@ -63,7 +63,7 @@ contains
         flux = 0d0
         energyFlux = 0d0
         sqrt_factor = sqrt(Ein) - 1d0/sqrt(Ein)
-        open(50, file='Quantities.dat')
+        open(50, file=trim(opath('Quantities.dat')))
         do izz = 1, Ns
             Nparticles = 0d0
             Eparticles = 0d0
@@ -183,7 +183,7 @@ contains
         character(1), intent(in) :: particle
         real(dp) :: EminFF2, EmaxFF2, Einc, QInt, dE
         real(dp), allocatable :: Egrid(:), f(:)
-        integer, parameter :: N = 120
+        integer, parameter :: N = 300   !Number of subintervals for the integral (A's value)
         integer :: i
 
         ! choose ranges depending on particle
@@ -206,23 +206,24 @@ contains
             Egrid(i) = Egrid(i-1) * Einc
         end do
 
-        ! compute integrand values in parallel (thread-safe if Q_E is)
-        !$omp parallel do default(shared) private(i) schedule(static)
+        ! compute integrand values (this function is called from inside an
+        ! already-parallel region elsewhere, so it must not spawn its own
+        ! nested OpenMP threads)
         do i = 1, N
             f(i) = Egrid(i) * (Egrid(i)/EminFF2)**(-p) * exp(-Egrid(i)/Ecut)
         end do
-        !$omp end parallel do
 
         ! trapezoidal integration
         QInt = 0d0
-        !$omp parallel do default(shared) private(i,dE) reduction(+:QInt) schedule(static)
         do i = 1, N-1
             dE = Egrid(i) * (Einc - 1d0)
             QInt = QInt + 0.5d0*(f(i) + f(i+1)) * dE
         end do
-        !$omp end parallel do
 
         Norm_q0p = dLe_dz(zz) / ( QInt * lorentzFactor(zz) * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) )
+        ! TODO fix 4 (awaiting author): B tapers/normalises Q(E) with N=300
+        ! subintervals directly against dLe_dz(zz); a "fix_norm_taper" option
+        ! would instead account for the injection taper near zmax_inj here.
 
         deallocate(Egrid)
         deallocate(f)
@@ -249,7 +250,11 @@ contains
             EminFF2 = EpminFF
             EmaxFF2 = EpmaxFF
         endif
-        !EminFF2 = 1.1*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
+        ! TODO fix_inj_emin (awaiting author): A pivots the injection shape at
+        ! EminFF2 = 1.1*mec2 while Norm_q0p above normalises against EminFF,
+        ! i.e. the pivot and the normalisation energy are inconsistent. Fixing
+        ! this would presumably use EminFF consistently in both places.
+        EminFF2 = 1.1d0*mec2
         !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
         !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
 
@@ -288,21 +293,19 @@ contains
         Egrid(i) = Egrid(i-1) * Einc
     end do
 
-    !$omp parallel do default(shared) private(i) schedule(static)
+    ! This function is called from inside an already-parallel region
+    ! elsewhere, so it must not spawn its own nested OpenMP threads.
     do i = 1, N
         f(i) = Egrid(i) * qp_E(Egrid(i), zz, BFF_fun(zz), 'e')
     end do
-    !$omp end parallel do
 
     ! trapezoidal integration
     dLe_dz2 = 0d0
     if (zz < zmax_inj) then
-      !$omp parallel do default(shared) private(i,dE) reduction(+:dLe_dz2) schedule(static)
       do i = 1, N-1
           dE = Egrid(i) * (Einc - 1d0)
           dLe_dz2 = dLe_dz2 + 0.5d0*(f(i) + f(i+1)) * dE
       end do
-      !$omp end parallel do
 
       dLe_dz2 = dLe_dz2 * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) * lorentzFactor(zz)
     endif
@@ -361,7 +364,7 @@ contains
     real(dp) :: z_current, factor
     real(dp) :: E(nIn), NE(nIn, Ns), NE_(nIn)
 
-    open(30,file='Ne_cuts.dat')
+    open(30,file=trim(opath('Ne_cuts.dat')))
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -417,7 +420,7 @@ contains
 
         
         ! Open file for output and add a header line
-        open(81,file='N'//particle//'_bins_total.dat')    
+        open(81,file=trim(opath('N'//particle//'_bins_total.dat')))
         write(81, '(A)') '# E[eV]   N_bin_1   N_bin_2   N_bin_3   N_bin_4   N_bin_5   N_bin_6   N_total'
         do i = 1, nIn
             N_total_i = 0.d0
@@ -453,7 +456,7 @@ contains
         integer :: i, l
 
         ! Read from a file: Ee(i), Ne(i,l)
-        open(70,file='Ne_cuts.dat')
+        open(70,file=trim(opath('Ne_cuts.dat')))
         do i = 1, nIn
             do l = 1, Ns
                 read(70,*) Ee(i), Ne(i,l), dummy
@@ -462,7 +465,7 @@ contains
         close(70)
         ! Integrate the particle energy distribution of each segment
         Ee_step = Ee(2)/Ee(1)
-        open(28, file='U_e.dat')
+        open(28, file=trim(opath('U_e.dat')))
         do l = 1, Ns
             E_tot = 0.d0
             do i = 1, nIn
@@ -541,11 +544,11 @@ contains
         zz(0) = z0*1.001
         g_min = EminFF2 / mc2
         g_max = EmaxFF2 / mc2
+        Bz0 = BFF_fun(zz(0))   ! hoisted out of the parallel loop (loop-invariant)
         !$OMP PARALLEL DO PRIVATE(jE)
         build_g: do jE = 1, numbins
             gg(jE) = g_min * (g_max / g_min)**(dble(jE - 1) / dble(numbins - 1))
             Ee(jE) = gg(jE) * mc2
-            Bz0 = BFF_fun(zz(0))
             !dotg(jE, 0) = -abs(TLosses(Bz0, zz(0), 1d0, 1d0, Ee(jE), particle)) / mc2             ! dotg'
             dotg(jE, 0) = -abs(TLosses_mod(Bz0, zz(0), Ee(jE), 0d0, particle)) / mc2
             dotg(jE, 0) = dotg(jE, 0) / (betaGamma(zz(0)) *c)                                                ! dotg' / (betaGamma c)
@@ -667,7 +670,7 @@ contains
 
         do i=1,nIn
             do j=1,Ns
-                if (j < Ns_inj) then
+                if (z(j) < zmax_inj) then
                     Q = qp_E(Evec(i), z(j), BFF_fun(z(j)), particle)
                 else
                     Q = 0d0

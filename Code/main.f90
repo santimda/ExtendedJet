@@ -2,11 +2,13 @@ PROGRAM main
     use constants
     use globals
     use controls
+    use system_parameters
     implicit none
     real(dp) :: sigma0_value, Lj_value, z0_value, a_inj_value
     real(dp), allocatable :: E_data(:)
     real(dp) :: S_data(m_data_max)
     logical, parameter :: verbose = .True.
+    character(len=512) :: nml_path
 
     interface
         subroutine run_jet(verbose) 
@@ -50,7 +52,14 @@ PROGRAM main
     !----------------------------------------------------------------
     ! Original Fortran program
 
-    if (run_jet_calc) call run_jet(verbose)   
+    if (command_argument_count() < 1) then
+        print *, 'Usage: ./run.x params.nml'
+        stop 1
+    endif
+    call get_command_argument(1, nml_path)
+    call read_namelist(nml_path)
+
+    if (run_jet_calc) call run_jet(verbose)
 
     !----------------------------------------------------------------
     ! Short version to calculate specific fluxes integrated up to 
@@ -86,9 +95,9 @@ subroutine run_jet(verbose)
     use synrad
     use icrad
     use sscrad
+    use system_parameters
     implicit none
     logical, intent(in) :: verbose
-    logical, parameter :: print_tlosses = .True.
     
     !real(dp) :: EphSy(NSED_sy), Lsy(NSED_sy), Lsy_CJ(NSED_sy)
     !real(dp) :: EphIC(NSED_IC), LIC(NSED_IC), LIC_CJ(NSED_IC)
@@ -114,7 +123,7 @@ subroutine run_jet(verbose)
         if (NE_calc) then 
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
             call Edist('e')        ! Calculate the particle energy distribution
-            call execute_command_line('./SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
+            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
 
             call Calc_Ue()      ! Calculate energy densities
             if (print_tlosses) then
@@ -128,20 +137,20 @@ subroutine run_jet(verbose)
 
         if (Np_calc) then
             call Edist('p')
-            call execute_command_line('./SortNp.sh '//trim(adjustl(numNE)))   !Sort N(E) file
+            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortNp.sh '//trim(adjustl(numNE)))   !Sort N(E) file
         endif
 
         !Synchrotron SED
         if (radsyn_calc) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
             call SEDsyn('', 'e')      ! Calculate synchrotron SED
-            call execute_command_line('./SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
+            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             !call Calc_Usyn('')   ! Calculate the energy density of synchrotron photons
         endif
 
         if (radpsyn_calc) then
             call SEDsyn('', 'p')
-            call execute_command_line('./SortSEDpsyn.sh '//trim(adjustl(numSED))) !Sort SED file
+            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDpsyn.sh '//trim(adjustl(numSED))) !Sort SED file
         endif
         
         !IC SED     
@@ -173,7 +182,7 @@ subroutine run_jet(verbose)
             if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
             call Edist('e')        ! Calculate the particle energy distribution
             !call Edist('p')
-            call execute_command_line('./SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
+            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
             call Calc_Ue()      ! Calculate energy densities
             if (print_tlosses) then
                 if (verbose) print *, '\n Creating the tloss files for plots'
@@ -187,13 +196,13 @@ subroutine run_jet(verbose)
         if (radsyn_calc) then
             if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
             call SEDsyn('CJ', 'e')      ! Calculate synchrotron SED
-            call execute_command_line('./SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
+            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             !call Calc_Usyn('CJ')   ! Calculate the energy density of synchrotron photons
         endif
 
         if (radpsyn_calc) then
             call SEDsyn('', 'p')
-            call execute_command_line('./SortSEDpsyn.sh '//trim(adjustl(numSED))) !Sort SED file
+            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDpsyn.sh '//trim(adjustl(numSED))) !Sort SED file
         endif
         
         !IC SED     
@@ -337,11 +346,13 @@ subroutine syn_model(sigma0_value, zmax_value, Lj_value, a_inj_value, &
     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
     logical, parameter :: verbose = .False.
 
-    ! Set system parameters from input values
-    zmax_inj = zmax_inj_value
+    ! Set system parameters from input values (lengths go through their *_rg
+    ! mirrors because derive_parameters() recomputes the cm values from them)
+    call derive_parameters()   ! makes sure R_g is set
+    zmax_inj_rg = zmax_inj_value/R_g
     gammaIndex = gammaIndex_value
     geomIndex_out = geomIndex_out_value
-    z0 = z0_value
+    z0_rg = z0_value/R_g
     fnT = fnT_value
     facc = facc_value
     p = p_value

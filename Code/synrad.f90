@@ -19,13 +19,13 @@ contains
     character(1), intent(in) :: particle
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF, dEphFF(Ns), dFdz
     real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
-    real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
+    real(dp) :: Total_flux, FT(max_apertures)
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo, dil
     logical, parameter :: bin_SEDsyn = .False.
     integer :: k, i, j, l
 
     !N(E) of each cut
-    open(30,file='N'//particle//'_cuts.dat')
+    open(30,file=trim(opath('N'//particle//'_cuts.dat')))
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -37,60 +37,32 @@ contains
     sjo = sin(jo)
     dil = 4.d0 * pi * dist**2
 
-    open(40,file='SED'//particle//'_syn_cuts'//jet//'.dat') 
-    open(245,file="dFlux_dz"//jet//".dat")
-    open(122,file='Flux'//jet//'_'//particle//'.dat')
+    open(40,file=trim(opath('SED'//particle//'_syn_cuts'//jet//'.dat')))
+    open(122,file=trim(opath('Flux'//jet//'_'//particle//'.dat')))
     write(40,'(3(A9, 8X))') '#E[eV]', 'L[erg/s]', 'segment'
-    write(122,'(8(A9, 8X))') '#nu/Hz', 'Flujo_1', 'Flujo_2', 'Flujo_3', 'Flujo_4', 'Flujo_5', 'Flujo_6', 'Flujo_Tot'
+    write(122,'(A)') '# col 0: nu [Hz]; then flux integrated up to each aperture R* [R_g] (row 2); last col: total'
+    write(122,'(A,*(ES10.3E2,1X))') '# R* [R_g]: ', (apertures_rg(k), k=1,n_ap)
     do l = 1, NSED_sy
         Total_flux = 0d0
-        FT1 = 0d0
-        FT2 = 0d0
-        FT3 = 0d0
-        FT4 = 0d0
-        FT5 = 0d0
-        FT6 = 0d0
+        FT = 0d0
         do j = 2, Ns
-            !write(*,*) l, j, Ns
             NEcut = NE(:,j)
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
             dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
             Total_flux = Total_flux + dFdz*h
             !Jet and c-jet contribution of the segments up to given lengths
             z_proj = abs(z(j)) * sjo
-            if (z_proj <= 7.3*R_g) FT1 = Total_flux
-            if (z_proj <= 2.6d1*R_g) FT2 = Total_flux
-            if (z_proj <= 6.5d1*R_g) FT3 = Total_flux
-            if (z_proj <= 1.95d2*R_g) FT4 = Total_flux
-            if (z_proj <= 6.5d2*R_g) FT5 = Total_flux
-            if (z_proj <= 2d3*R_g) FT6 = Total_flux
-            !write(*,*) l, j, Ns
+            do k = 1, n_ap
+                if (z_proj <= apertures_rg(k)*R_g) FT(k) = Total_flux
+            enddo
             write(40,'(2(ES15.7E3, 2X), I3)') Eph/eV, Eph*dFdz*dil, j
         enddo
-        write(245,*)Eph/eV, (dFlux_dz(NE(:,j), BFF(j), Eph/delta_obs(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j), j=2,Ns)
-        write(122,'(8(ES15.7E3, 2X))') Eph/h, FT1, FT2, FT3, FT4, FT5, FT6, Total_flux
+        write(122,'(*(ES15.7E3, 2X))') Eph/h, (FT(k), k=1,n_ap), Total_flux
         Eph = Eph*Ein       !Increase in the photon energy
     enddo
-    
-    !Pruebas
-    open(133,file="Em_Abs"//jet//".dat")
-    Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
-    Eph = Emin_sy                               !Initialization
-    do l=1, NSED_sy
-        do j=1,Ns
-            EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            write(133,*) Eph/h, jsync(EphFF, BFF(j), NE(:,j), E, particle)*h, alpha_sync(EphFF, BFF(j), NE(:,j), E, particle), j
-        enddo
-        Eph = Eph*Ein       !Increase in the photon energy
-    enddo
-    ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
-    ! write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet absorbed synchrotron luminosity (FF):',LBolAFF,'erg/s'
-    close(245)
-    close(133)
     close(40)
     close(122)
-    close(122)
-    
+
     ! Calculate the integrated SED for different z-ranges and for the total jet
     if (bin_SEDsyn .and. jet=='') call SEDsyn_bin(jet,particle)
     
@@ -206,6 +178,7 @@ contains
     integral = integral/(4d0*pi)
     deallocate(integ)
 
+    if (sync_approx == 'delta') then
     eps = E_ph / (mec2)
     gamma = sqrt(eps * 4.4e13 / B)
     Eaux = gamma * mec2
@@ -219,6 +192,7 @@ contains
       Ng_ = 0d0
     end if
     integral = sigma_T*c*(4.4d13)**2 * sqrt(eps)/(48d0*pi**2) * sqrt(B/4.4d13) * Ng_
+    endif
 
     end function jsync
 
@@ -268,6 +242,7 @@ contains
     alpha = -h**3*c**2/ (8.*pi*E_ph*E_ph)*alpha
     deallocate(log_eVec, log_neVec, integ)
 
+    if (sync_approx == 'delta') then
     eps = E_ph / (mec2)
     gamma = sqrt(eps * 4.4e13 / B)
     Eaux = gamma * mec2
@@ -284,6 +259,7 @@ contains
     alpha = 137d0 / 2d0 * pi * sigma_T * B/4.4e13 / eps**2 * Ng_*mec2
     !write(*,*) E_ph/h, alpha, alpha2
     !write(*,*) Eaux/EmaxFF, Ng_, alpha
+    endif
 
     end function alpha_sync
 
@@ -553,7 +529,7 @@ contains
         integer :: i, l
 
         ! Read from a file: Esy(i,l), E*Lsy_abs(i,l), l
-        open(27, file='SEDe_syn_cuts_ord'//jet//'.dat')
+        open(27,file=trim(opath('SEDe_syn_cuts_ord'//jet//'.dat')))
         read(27,*)  ! Skip the first line with the header
         do l = 1, Ns 
             do i = 1, NSED_sy
@@ -566,8 +542,8 @@ contains
 
         ! Integrate the luminosity of each segment
         Esy_step = Esy(2)/Esy(1)
-        open(28, file='U_FF'//jet//'.dat')
-        open(29, file='L_inj'//jet//'.dat')
+        open(28,file=trim(opath('U_FF'//jet//'.dat')))
+        open(29,file=trim(opath('L_inj'//jet//'.dat')))
         do l = 1, Ns
             do i = 1, NSED_sy
                 dEsy = Esy(i)*(Esy_step-1.d0)
@@ -608,7 +584,7 @@ contains
     integer :: i, j, l
 
     !N(E) of each cut
-    open(30,file='N'//particle//'_cuts.dat')
+    open(30,file=trim(opath('N'//particle//'_cuts.dat')))
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy
@@ -683,7 +659,7 @@ contains
     real(dp) :: z_current, factor
     real(dp) :: E(nIn), NE(nIn, Ns), NE_(nIn)
 
-    open(30,file='Ne_cuts.dat')
+    open(30,file=trim(opath('Ne_cuts.dat')))
     do i = 1, nIn
         do j = 1, Ns
             read(30,*) E(i), NE(i,j), dummy

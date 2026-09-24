@@ -48,6 +48,3 @@ Code/.vscode
 .ipynb_checkpoints/
 Code/.ipynb_checkpoints/
 PostProcessing/__pycache__/
-
-# Local stub kept out of commit 1; replaced by a real tracked module in commit 2
-Code/system_parameters.f90

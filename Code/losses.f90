@@ -126,7 +126,7 @@ contains
     Eint = (EmaxFF/EminFF)**(1d0/(nIn-1))
     
     write(num_seg,'(I3)') segN
-    open(20,file='losses_'//trim(adjustl(num_seg))//'.dat')  
+    open(20,file=trim(opath('losses_'//trim(adjustl(num_seg))//'.dat')))
     tcell = t_cell(segN)
     tconv = abs(z(segN))/(c*bj(segN))/gj(segN)
 

@@ -38,7 +38,7 @@ MODULE trajectory
       rj_in(i) = r_fun_in(z(i))
     end do
 
-    open(10, file='trajectory'//jet//'.dat')
+    open(10, file=trim(opath('trajectory'//jet//'.dat')))
     do i = 1, Ns
       write(10,*) z(i), rj_out(i), rj_in(i)
     enddo
