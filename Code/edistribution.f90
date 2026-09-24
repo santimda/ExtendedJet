@@ -409,7 +409,7 @@ contains
 
         ! Build a logarithmically-spaced vector of z intervals
         call vector_log(z(1), z(Ns), zin, zvec ) 
-        open(80,file='z_bin.dat') ! Store the z values
+        open(80,file=trim(opath('z_bin.dat'))) ! Store the z values
         do i = 1, N_bins+1
             write(80,*) zvec(i), zvec(i)/z0
         enddo
