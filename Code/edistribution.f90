@@ -19,7 +19,7 @@ contains
     real(dp) :: NEmatrix(nIn, Ns), Evec(nIn)
     real(dp) :: Nparticles, flux, Eparticles, energyFlux, vol, fluxp, eFluxp, Ljett, magnetization
     real(dp) :: sqrt_factor, dEdt_factor
-    integer :: izz
+    integer :: izz, i, i2
     logical :: print_quantities = .False.
 
     if (particle == 'e') then
@@ -54,6 +54,7 @@ contains
     call vector_log(EminFF2, EmaxFF2, Ein, Evec )
 
     NEmatrix = 0d0
+    !call calcNE_onezone(Evec, NEmatrix, particle)
     call calcNE_paramo(Evec, NEmatrix, particle)
 
     NEmatrix(:,Ns) = 0d0
@@ -183,6 +184,7 @@ contains
         real(dp) :: EminFF2, EmaxFF2, Einc, QInt, dE
         real(dp), allocatable :: Egrid(:), f(:)
         integer, parameter :: N = 120
+        integer :: i
 
         ! choose ranges depending on particle
         if (particle == 'e') then
@@ -207,7 +209,7 @@ contains
         ! compute integrand values in parallel (thread-safe if Q_E is)
         !$omp parallel do default(shared) private(i) schedule(static)
         do i = 1, N
-            f(i) = Egrid(i) * Q_E(1d0, Ecut, Egrid(i), EminFF2, EmaxFF2)
+            f(i) = Egrid(i) * (Egrid(i)/EminFF2)**(-p) * exp(-Egrid(i)/Ecut)
         end do
         !$omp end parallel do
 
@@ -247,7 +249,7 @@ contains
             EminFF2 = EpminFF
             EmaxFF2 = EpmaxFF
         endif
-        EminFF2 = 1.1*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
+        !EminFF2 = 1.1*mec2 !MAX(EminFF2, (p-2d0)/(p-1d0)*mpc2*(1d0+sigma_B(zz)))
         !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
         !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
 
@@ -265,6 +267,133 @@ contains
         end if
     end function qp_E
 
+    !************************************************************************************
+    !   Injection function (at a specific injection cell)
+
+    real(dp) function dLe_dz2(zz)
+    real(dp), intent(in) :: zz
+    real(dp) :: EminFF2, EmaxFF2, dE, Einc
+    real(dp), allocatable :: Egrid(:), f(:)
+    integer, parameter :: N = 120
+    integer :: i
+
+    ! allocate
+    allocate(Egrid(N))
+    allocate(f(N))
+
+    ! geometric grid
+    Einc = (EmaxFF/EminFF)**(1d0/(N-1d0))  !Increase factor of the energy
+    Egrid(1) = EminFF
+    do i = 2, N
+        Egrid(i) = Egrid(i-1) * Einc
+    end do
+
+    !$omp parallel do default(shared) private(i) schedule(static)
+    do i = 1, N
+        f(i) = Egrid(i) * qp_E(Egrid(i), zz, BFF_fun(zz), 'e')
+    end do
+    !$omp end parallel do
+
+    ! trapezoidal integration
+    dLe_dz2 = 0d0
+    if (zz < zmax_inj) then
+      !$omp parallel do default(shared) private(i,dE) reduction(+:dLe_dz2) schedule(static)
+      do i = 1, N-1
+          dE = Egrid(i) * (Einc - 1d0)
+          dLe_dz2 = dLe_dz2 + 0.5d0*(f(i) + f(i+1)) * dE
+      end do
+      !$omp end parallel do
+
+      dLe_dz2 = dLe_dz2 * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) * lorentzFactor(zz)
+    endif
+
+    end function dLe_dz2
+
+
+    !************************************************************************************
+    !   Injection function (for multiple injection cells)
+    !************************************************************************************
+    real(dp) function Le_z2(zz)
+    real(dp), intent(in) :: zz
+
+    real(dp) :: z_current
+
+    Le_z2 = 0.d0
+    z_current = z0
+    do while (z_current <= zz)
+      Le_z2 = Le_z2 + dLe_dz2(z_current) * (dlogz - 1d0) * z_current
+      z_current = z_current*dlogz
+    end do
+       
+    end function Le_z2
+    !============================================================================
+    !============================================================================
+
+
+    real(dp) function dL_syn_dz(zz_, NE_)
+    !============================================================================
+    ! This function computes the differential synchrotron luminosity per unit length
+    ! along the jet at a given height zz (in the FF).
+    !============================================================================
+    real(dp), intent(in) :: zz_, NE_(:)
+    integer :: j, i
+    real(dp) :: B_FF_, dE, Eint, aux, Evec(nIn)
+
+    ! Fill the output arrays using the system_parameters functions
+    Eint = (EmaxFF/EminFF)**(1d0/(nIn-1d0))
+    call vector_log(EminFF,EmaxFF,Eint,Evec)
+
+    dL_syn_dz = 0d0
+    do i=1,nIn
+      dE = Evec(i) * (Eint - 1d0)
+      dL_syn_dz = dL_syn_dz + dE * NE_(i) * abs(SyncLoss(BFF_fun(zz_), Evec(i), 'e'))
+    enddo
+    end function dL_syn_dz
+
+    !============================================================================
+    real(dp) function L_syn(zz)
+    !============================================================================
+    ! This function computes the synchrotron luminosity at a given height zz (in the
+    ! FF).
+    !============================================================================
+    real(dp), intent(in) :: zz
+    integer :: j, i
+    real(dp) :: z_current, factor
+    real(dp) :: E(nIn), NE(nIn, Ns), NE_(nIn)
+
+    open(30,file='Ne_cuts.dat')
+    do i = 1, nIn
+        do j = 1, Ns
+            read(30,*) E(i), NE(i,j), dummy
+        enddo
+    enddo
+    close(30)
+
+    L_syn = 0d0
+    z_current = z0
+    do while (z_current <= zz)
+      ! Let us find zz
+      do j = 1, Ns
+        if (z(j) > z_current) exit
+      end do
+      if (j > 1 .and. j <= Ns) then
+        do i=1,nIn
+          !NE_(i) = 10**(safeLog10(NE(i,j-1)) + safeLog10(NE(i,j)/NE(i,j-1))/safeLog10(z(j)/z(j-1))) * safeLog10(zz/z(j-1))
+          NE_(i) = NE(i,j-1) + (NE(i,j)-NE(i,j-1))/(z(j)-z(j-1))*(z_current - z(j-1))
+        end do
+      else
+        NE_ = 0d0
+      endif
+      factor = lorentzFactor(z_current)**2 * (1d0 + betaJet(z_current)**2/3d0)
+      L_syn = L_syn + dL_syn_dz(z_current, NE_) * (dlogz - 1d0) * z_current * pi * ( r_fun_out(z_current)**2 - r_fun_in(z_current)**2 ) * factor
+      !write(*,*) zz, L_syn
+      z_current = z_current*dlogz
+    end do
+
+    end function L_syn
+    !=========================================================================
+
+
     !============================================================================
     ! Bin the particle energy distribution at different z ranges
     !============================================================================
@@ -274,6 +403,7 @@ contains
         integer, parameter :: N_bins = 6 ! For the plot dist_particle_bins
         real(dp) :: N_bin_i(N_bins,size(E)), N_total_i
         real(dp) :: zin, zvec(N_bins+1) 
+        integer :: i, l, j
 
         N_bin_i = 0.d0
 
@@ -320,6 +450,7 @@ contains
     !============================================================================
     subroutine Calc_Ue()
         real(dp) :: Ue, Ne(nIn, Ns), Ee(nIn), Ee_step, dEe, E_tot
+        integer :: i, l
 
         ! Read from a file: Ee(i), Ne(i,l)
         open(70,file='Ne_cuts.dat')
@@ -388,9 +519,9 @@ contains
         real(dp), allocatable, dimension(:) :: t, Ntot, gg, dt, dg, zz, Ee
         real(dp), allocatable, dimension(:,:) :: dotg, nn, Qinj, Ddiff
         real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2, Bz0, Bjz, const_z0, const_zjz
-        integer :: jz, k, m, izz
+        integer :: jz, jE, m, izz, i2
         real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
-        real(dp) :: g_min, g_max, Ebr, dz_aux
+        real(dp) :: g_min, g_max, Ebr, dz_aux, Naux
         
         allocate(t(0:numdt), Ntot(numdt), dt(numdt), dg(numbins), zz(0:numdt))
         allocate(nn(numbins, 0:numdt), dotg(numbins, 0:numdt), gg(numbins), &
@@ -410,22 +541,23 @@ contains
         zz(0) = z0*1.001
         g_min = EminFF2 / mc2
         g_max = EmaxFF2 / mc2
-        !$OMP PARALLEL DO PRIVATE(k)
-        build_g: do k = 1, numbins
-            gg(k) = g_min * (g_max / g_min)**(dble(k - 1) / dble(numbins - 1))
-            Ee(k) = gg(k) * mc2
+        !$OMP PARALLEL DO PRIVATE(jE)
+        build_g: do jE = 1, numbins
+            gg(jE) = g_min * (g_max / g_min)**(dble(jE - 1) / dble(numbins - 1))
+            Ee(jE) = gg(jE) * mc2
             Bz0 = BFF_fun(zz(0))
-            dotg(k, 0) = -abs(TLosses(Bz0, zz(0), 1d0, 1d0, Ee(k), particle)) / mc2             ! dotg'
-            dotg(k, 0) = dotg(k, 0) / (betaGamma(zz(0)) *c)                                                ! dotg' / (betaGamma c)
-            if ( k > 1 ) dg(k) = gg(k) - gg(k - 1)
+            !dotg(jE, 0) = -abs(TLosses(Bz0, zz(0), 1d0, 1d0, Ee(jE), particle)) / mc2             ! dotg'
+            dotg(jE, 0) = -abs(TLosses_mod(Bz0, zz(0), Ee(jE), 0d0, particle)) / mc2
+            dotg(jE, 0) = dotg(jE, 0) / (betaGamma(zz(0)) *c)                                                ! dotg' / (betaGamma c)
+            if ( jE > 1 ) dg(jE) = gg(jE) - gg(jE - 1)
         end do build_g
         !$OMP END PARALLEL DO
         dg(1) = dg(2)
 
         const_z0 = mc2 * pi *(r_fun_out(zz(0))**2-r_fun_in(zz(0))**2)
-        !$OMP PARALLEL DO PRIVATE(k)
-        build_Q: do k = 1, numbins
-            Qinj(k, 0) = qp_E(Ee(k), zz(0), Bz0, particle) * const_z0        ! dQ'(g', z)/dz
+        !$OMP PARALLEL DO PRIVATE(jE)
+        build_Q: do jE = 1, numbins
+            Qinj(jE, 0) = qp_E(Ee(jE), zz(0), Bz0, particle) * const_z0        ! dQ'(g', z)/dz
         end do build_Q
         !$OMP END PARALLEL DO
 
@@ -456,19 +588,22 @@ contains
             &                   1d200)
 
             !write(*,*) nn(:,jz)
-            !$OMP PARALLEL DO PRIVATE(k)
-            build_dotg: do k = 1, numbins
-                dotg(k, jz) = -abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ee(k), particle))/mc2!, &
-                                     !nn(k, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
-                dotg(k, jz) = dotg(k, jz) / (betaGamma(zz(jz))*c)
+            !$OMP PARALLEL DO PRIVATE(jE)
+            build_dotg: do jE = 1, numbins
+                dotg(jE, jz) = -abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ee(jE), particle))/mc2!, &
+                !write(*,*) jE, jz, nn(jE, jz), betaGamma(zz(jz)), r_fun_out(zz(jz))/R_g, zz(jz)/R_g
+                Naux = nn(jE, jz) / ((pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)) * betaGamma(zz(jz)) * c)
+                !dotg(jE, jz) = -abs(TLosses_mod(Bjz, zz(jz), Ee(jE), Naux, particle))/mc2
+                                     !nn(jE, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
+                dotg(jE, jz) = dotg(jE, jz) / (betaGamma(zz(jz))*c)
             end do build_dotg
             !$OMP END PARALLEL DO
 
             const_zjz = mc2 * pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)* exp(-(zz(jz)/zmax_inj))
             !if (zz(jz) < zmax_inj) then
-            !$OMP PARALLEL DO PRIVATE(k)
-            build_Qin: do k = 1, numbins
-              Qinj(k, jz) = qp_E(Ee(k), zz(jz), Bjz, particle) * const_zjz
+            !$OMP PARALLEL DO PRIVATE(jE)
+            build_Qin: do jE = 1, numbins
+              Qinj(jE, jz) = qp_E(Ee(jE), zz(jz), Bjz, particle) * const_zjz
             end do build_Qin
             !$OMP END PARALLEL DO
             !else
@@ -518,5 +653,32 @@ contains
     ! calcNE_paramo (END)
     !============================================================================
     
+
+    !============================================================================
+    ! ONEZONE
+    !============================================================================
+    subroutine calcNE_onezone(Evec, NEmatrix, particle)
+
+        real(dp), intent(in) :: Evec(:)
+        character(1), intent(in) :: particle
+        real(dp), intent(out) :: NEmatrix(:, :)
+        real(dp) :: t_cool, t_adv, Q
+        integer :: i, j
+
+        do i=1,nIn
+            do j=1,Ns
+                if (j < Ns_inj) then
+                    Q = qp_E(Evec(i), z(j), BFF_fun(z(j)), particle)
+                else
+                    Q = 0d0
+                endif
+                t_cool = Evec(i)/abs(TLosses(BFF_fun(z(j)), z(j), 1d0, 1d0, Evec(i), particle))
+                t_adv = z(j)/(betaGamma(z(j))*c)
+                NEmatrix(i, j) = Q * min(t_cool, t_adv)
+            end do
+        end do
+    end subroutine calcNE_onezone
+    !============================================================================
+
 
 END MODULE edistribution

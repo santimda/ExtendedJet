@@ -21,6 +21,7 @@ module sscrad
       real(dp) :: Eg_int, EgFF_int, dEgFF, q_gamma, P_g, Lic_tot
       real(dp) :: Lic_jet(NSED_IC), Lic2_jet(NSED_IC), Lic3_jet(NSED_IC)
       real(dp) :: cte_ic, dEph
+      integer :: i, l, i2, j
       !allocate ( delta_obs(Ns) )
 
       !------------------------------------------------------------------------
@@ -166,6 +167,7 @@ module sscrad
       real(dp) :: Eg_int, EgFF_int, dEgFF, q_gamma, P_g, Lic_tot
       real(dp) :: Lic_jet(NSED_IC), Lic2_jet(NSED_IC), Lic3_jet(NSED_IC)
       real(dp) :: cte_ic, dEph
+      integer :: i, l, i2, j
       !allocate ( delta_obs(Ns) )
 
       !------------------------------------------------------------------------

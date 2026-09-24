@@ -9,25 +9,33 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (START)
     !============================================================================
-    subroutine initialize_allocate(sigma_value, Lj_value, a_inj_value) !,z0_value
+    subroutine initialize_allocate(sigma_value, zmax_value, Lj_value, a_inj_value) !,z0_value
     !============================================================================
     ! allocate and initialize vectors 
     !============================================================================
-        real(dp), intent(in) :: sigma_value, Lj_value, a_inj_value !,z0_value 
+        real(dp), intent(in) :: sigma_value, zmax_value, Lj_value, a_inj_value !,z0_value
+        integer :: i
         logical :: fexist
 
-        dlogz = (zmax/z0)**(1d0/(Ns-1d0))
+        ! Recompute derived quantities that depend on mutable system parameters
+        rout_0 = r_br * (z0/z_br)**geomIndex_out
+
+        dlogz = (zmax_inj/z0)**(1d0/(Ns_inj-1d0))
+        Ns = INT(1 + (Ns_inj-1)*log(zmax_value/z0)/log(zmax_inj/z0))
+        !write(*,*) Ns_inj, 1+ (Ns_inj-1)*log(zmax_value/z0)/log(zmax_inj/z0), log(zmax_value/z0)/log(zmax_inj/z0)
 
         allocate( z(Ns), rj_out(Ns), rj_in(Ns), gj(Ns), bj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 
         allocate( deltaZ(Ns), deltatFF(Ns) )
         allocate( delta_obs(Ns), boost(Ns) )
 
+
         ! Initialize values given by free parameters:
         sigma_0 = sigma_value !Update the value of sigma_0 (default value defined in system_parameters.f90)
         Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
         !z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
         a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
+        zmax = zmax_value   !Update the value of zmax (default value defined in system_parameters.f90)
 
         LnT = Lj*fnT          !Available nonthermal luminosity
         LnTFF = LnT!/gj0**2   !Available nonthermal luminosity in the FF

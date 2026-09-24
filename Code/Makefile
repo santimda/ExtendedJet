@@ -65,7 +65,7 @@ f2py: clean
 
 # Clean everything
 clean:
-	$(RM) *.x *.o *.mod *.dat *.bin *.log *~
+	$(RM) *.x *.o *.mod *.dat *.bin *.log *.so *~
 	$(RM) -rf $(MODDIR)
 
 # Generate dependencies

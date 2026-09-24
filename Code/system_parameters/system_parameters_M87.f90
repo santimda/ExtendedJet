@@ -22,39 +22,43 @@ module system_parameters
    
    real(dp), parameter :: gj0 = 1.01d0             !Lorentz factor at the base of the jet  (Algaba+2021: Gamma ~ 1-3)
    real(dp), parameter :: vj0  = sqrt(gj0**2-1d0)*c/gj0 !Fluid bulk speed at the base of the jet
-   real(dp), parameter :: zmax = 1d6*R_g           !Jet maximum height !~~~~
-   real(dp), parameter :: zmax_inj = 1000*R_g       !Jet maximum cell of injection
-   real(dp), parameter :: rout_0 = 30d0*R_g             !Jet launching radius (Kim+2018)
-   real(dp), parameter :: geomIndex_out = 0.6d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
+   real(dp) :: zmax_inj = 1e4*R_g                  !Jet maximum cell of injection
+   real(dp), parameter :: r_br = 23.0 * 2*R_g
+   real(dp), parameter :: z_br = 70 * 2*R_g
+   real(dp) :: z0 = 30d0 * R_g
+   real(dp), parameter :: z_acc = 2d2 * R_g        !Acceleration region starts at z_acc (Algaba+2021)
+   !real(dp), parameter :: geomIndex_out = 0.6d0        !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
+   real(dp) :: geomIndex_out = 0.56d0                    !Jet opening parameter (Kim+2018); for r > 10^3 R_S see Mertens+2016
+   real(dp) :: rout_0                                    !Jet launching radius (Kim+2018) - computed at runtime in initialize_allocate
    real(dp), parameter :: rin_0 = 0.0*R_g             
    real(dp), parameter :: geomIndex_in = 0.6d0        
 
    !===NONTHERMAL PARTICLES======================================================================================
 
    !Particle injection
-   real(dp), parameter :: LnTpFF = L_Edd * 1d-4
-   real(dp), parameter :: facc = 1d-3           !Acceleration efficiency
+   real(dp), parameter :: LnTpFF = 1d43
+   real(dp) :: facc = 1d-2                      !Acceleration efficiency
    real(dp), parameter :: EminFF = 1d6*eV       !Minimum electron energy in the FF  !~~~~
    real(dp), parameter :: Emin_injFF = 2d6*eV   !Minimum electron energy of injected particles in the FF
                                                 !~~~~
    real(dp), parameter :: EmaxFF = 5d15*eV      !Maximum electron energy in the FF
                                                 !~~~~
-   real(dp), parameter :: fnT = 5.d-2           !Nonthermal energy fraction
+   real(dp) :: fnT = 1.d-1                      !Nonthermal energy fraction
    real(dp), parameter :: EpminFF = 1d9*eV      !Minimum proton energy in the FF
    real(dp), parameter :: Epmin_injFF = 2d9*eV  !Minimum proton energy of injected particles in the FF
    real(dp), parameter :: EpmaxFF = 1d18*eV     !Maximum proton energy in the FF
-   real(dp), parameter :: p = 2.01d0             !Power law exponent for Q(E) = cte * E**-p
+   real(dp) :: p = 2.05d0                        !Power law exponent for Q(E) = cte * E**-p
 
    !===FREE PARAMETERS=========================================================================================
 
-   real(dp) :: Lj = 1.5d43                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp) :: sigma_0 = 10d0                    !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
+   real(dp) :: Lj = 1d43                        !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
+   real(dp) :: sigma_0 = 100d0                    !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
    real(dp) :: mu  != gj0 * (10d0 + 1d0)!= gj0 * (sigma_0 + 1d0)    !!  !Total energy flux per unit of rest-mass energy flux
    real(dp) :: Mdot_j  != Lj / (c**2 * gj0 * (sigma_0 + 1d0)) !! !Mass flux
-   real(dp) :: z0 = 28d0*R_g                    !Jet launching height
    real(dp) :: a_inj = 0.01d0                    !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj)),
+   real(dp) :: zmax = 1.2d6*R_g           !Jet maximum height !~~~~
                                                 !a_inj =/ 0 (else error!)
-   real(dp) :: gammaIndex = 0.13              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
+   real(dp) :: gammaIndex = 0.0016              !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
    !===GLOBAL VARIABLES (TIED TO FREE PARAMETERS)================================================================
 
@@ -78,10 +82,13 @@ module system_parameters
       !*************************************************************************************
       real(dp) function r_fun_out(zz)
          real(dp), intent(in) :: zz
-         real(dp) :: r_fun1, r_fun2
-         r_fun1 = rout_0 * (abs(zz)/z0)**geomIndex_out
-         r_fun2 = 0.0 !40 * (abs(zz)/z0)**0.15
-         r_fun_out = max(r_fun1, r_fun2)
+         real(dp) :: r_fun
+         !r_fun1 = rout_0 * (abs(zz)/z0)**geomIndex_out
+         !r_fun2 = 0.0 !40 * (abs(zz)/z0)**0.15
+          !r_fun1 = r_br * (abs(zz)/z_br)**0.76
+          r_fun = rout_0 * (abs(zz)/z0)**geomIndex_out
+          r_fun_out = r_fun
+          !r_fun_out = min(r_fun1, r_fun2)
       end function
 
       !*************************************************************************************
@@ -107,7 +114,8 @@ module system_parameters
       real(dp) function lorentzFactor(zz)
          real(dp), intent(in) :: zz
          !lorentzFactor = sqrt(1d0 + betaGamma(abs(zz))**2)
-         lorentzFactor = gj0 * (abs(zz)/z0)**gammaIndex
+         !lorentzFactor = max(gj0, (abs(zz)/(2e2*R_g))**gammaIndex)
+         lorentzFactor = (gj0 + (abs(zz)/z_acc))**gammaIndex
          !lorentzFactor = min(lorentzFactor, 0.99*mu/max_enthalpy) 
          ! The factor 0.99 is included to avoid numerical errors if B = 0
       end function
@@ -188,6 +196,17 @@ module system_parameters
          sB = sigma_B(abs(zz))
          BFF_fun = 2d0/(Gamma*rr) * sqrt( Lj/(betaJet(abs(zz))*c) * sB/(sB+1d0))
       end function
+
+      !*************************************************************************************
+      !  Jet magnetic power at height z
+      !*************************************************************************************
+      real(dp) function L_B(zz)
+          real(dp), intent(in) :: zz
+          real(dp) :: rr, Bff
+          rr = sqrt(r_fun_out(zz)**2-r_fun_in(zz)**2)
+          Bff = BFF_fun(zz)
+          L_B = (Bff**2/(4d0*pi)) * (pi*rr**2) * betaJet(abs(zz)) * c * lorentzFactor(abs(zz))**2
+        end function
       
       !*************************************************************************************
       !   Jet lateral velocity at height z ( = dr/dz * vj)

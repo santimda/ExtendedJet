@@ -17,6 +17,7 @@ MODULE trajectory
   !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp) :: dir
+    integer :: i
 
     ! The jet goes upwards, the CJ goes downwards (negative z)
     if (jet == '') then

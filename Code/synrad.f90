@@ -2,6 +2,7 @@ MODULE synrad
     use globals
     use constants
     use mathematics
+    use losses
     implicit none
 
 contains
@@ -21,7 +22,7 @@ contains
     real(dp) :: Total_flux, FT1, FT2, FT3, FT4, FT5, FT6
     real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo, dil
     logical, parameter :: bin_SEDsyn = .False.
-    integer :: k
+    integer :: k, i, j, l
 
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
@@ -50,6 +51,7 @@ contains
         FT5 = 0d0
         FT6 = 0d0
         do j = 2, Ns
+            !write(*,*) l, j, Ns
             NEcut = NE(:,j)
             EphFF = Eph/delta_obs(j)     !Photon energy in the FF
             dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
@@ -108,6 +110,7 @@ contains
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     real(dp), parameter :: cte_sy = 1.85d0*sqrt(2d0)*qe**3/(h*me*c**2) 
     real(dp) :: f, f1, f2
+    integer :: i
     !Initialization
     SyncLum = 0d0
     factor = 1d0
@@ -182,7 +185,7 @@ contains
     character(1), intent(in) :: particle
     real(dp), dimension(:), intent(in) :: E
     real(dp), dimension(:), intent(in) :: N
-    real(dp) :: integral, dE
+    real(dp) :: integral, dE, eps, gamma, Eaux, Ng_
     real(dp) , dimension(:), allocatable :: integ
     integer :: i
 
@@ -203,6 +206,20 @@ contains
     integral = integral/(4d0*pi)
     deallocate(integ)
 
+    eps = E_ph / (mec2)
+    gamma = sqrt(eps * 4.4e13 / B)
+    Eaux = gamma * mec2
+    if (Eaux < EmaxFF) then
+      if (Eaux > EminFF) then
+        Ng_ = Interpol1d(Eaux, E, N)
+      else
+        Ng_ = N(1)
+      endif
+    else
+      Ng_ = 0d0
+    end if
+    integral = sigma_T*c*(4.4d13)**2 * sqrt(eps)/(48d0*pi**2) * sqrt(B/4.4d13) * Ng_
+
     end function jsync
 
     !****************************************************************************
@@ -215,9 +232,9 @@ contains
     real(dp), intent(in) :: B, E_ph
     character(1), intent(in) :: particle
     real(dp) :: alpha
-    real(dp) :: df
+    real(dp) :: df, Eaux, Ng_, eps, gamma, alpha2
     real(dp), dimension(:), allocatable :: integ
-    integer(dp) :: nsize
+    integer(dp) :: nsize, i
 
     nsize = size(E)
     allocate(log_eVec(nsize), log_neVec(nsize), integ(nsize))
@@ -251,6 +268,23 @@ contains
     alpha = -h**3*c**2/ (8.*pi*E_ph*E_ph)*alpha
     deallocate(log_eVec, log_neVec, integ)
 
+    eps = E_ph / (mec2)
+    gamma = sqrt(eps * 4.4e13 / B)
+    Eaux = gamma * mec2
+    if (Eaux < EmaxFF) then
+      if (Eaux > EminFF) then
+        Ng_ = Interpol1d(Eaux, E, Ne)
+      else
+        Ng_ = Ne(1)
+      endif
+    else
+      Ng_ = 0d0
+    end if
+    
+    alpha = 137d0 / 2d0 * pi * sigma_T * B/4.4e13 / eps**2 * Ng_*mec2
+    !write(*,*) E_ph/h, alpha, alpha2
+    !write(*,*) Eaux/EmaxFF, Ng_, alpha
+
     end function alpha_sync
 
     
@@ -263,39 +297,40 @@ contains
         real(dp), dimension(:), intent(in) :: N_e, E
         real(dp), intent (in) :: BFF, E_ph, delta_obs
         character(1), intent(in) :: particle
-        real(dp) :: j, alpha, S, R_out, R_in, R_avg
+        real(dp) :: jem, alpha, S, R_out, R_in, R_avg
         real(dp) :: x, Step, tau, tau_avg, tau_max, variable_nan
-        integer :: n
+        integer :: n, i, j
         real(dp), dimension(:), allocatable :: FI
 
         !R_out and R_in are not yet defined as a function of z, this is just for testing:
         !R_in=0.0!R_out/2.0
-        alpha=alpha_sync(E_ph, BFF, N_e, E, particle)
-        j=jsync(E_ph, BFF, N_e, E, particle)
-        R_avg=0.5*(R_in+R_out)
+        alpha = alpha_sync(E_ph, BFF, N_e, E, particle)
+        jem = jsync(E_ph, BFF, N_e, E, particle)
+        R_avg = 0.5*(R_in+R_out)
         !We consider the opt. thin case
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
         tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
 
-        if (tau_max < 0.1) THEN
-            dFlux_dz=delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2)
+        !tau_max = 0d0 ! for testing purposes
+        if (tau_max < 1e-15) THEN
+            dFlux_dz=delta_obs**2/(dist**2)*jem*pi*(R_out**2-R_in**2)
             !write(*,*)delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2), flux
         !In case the jet at height z is opt thick
-        else if (tau_avg > (10.0)) then
-            dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
+        !else if (tau_avg > (10.0)) then
+            !dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
             !write(*,*)flux
         !In case the integral has to be calculated numerically
         else
-            n=100
+            n=50
             allocate(FI(n))
-            Step=R_out/n !Step
+            Step=1d0/n !Step
             do i=1,n
-                x=0.0+Step*(i-1)
-                tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+                x=0d0+Step*(i-1)
+                tau = crossed_length(x*R_out, R_in, R_out)*alpha/(sin(jo)*delta_obs)
                 FI(i)=1d0-exp(-tau) !The integrand vector
             enddo
             call integrate(n,Step,FI,dFlux_dz) !We call a function for Simpson integration
-            dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*dFlux_dz !Add constants
+            dFlux_dz = sin(jo) * delta_obs**3/(dist**2) * (jem/alpha) * R_out * (2*dFlux_dz) !Add constants
             deallocate(FI)
         endif
         ! n=100
@@ -426,6 +461,7 @@ contains
     real(dp), intent(in) :: B(:),r_j(:),sjo(:),V(:),Eph(:),E(:),NE(:,:),Lum(:) 
     real(dp), intent(out) :: LumA(:) ! size Ns
     real(dp) :: Absor_coef,Emmision_coef,Source_fun,depth,tau,Ap, mass
+    integer :: j
 
     !Loop for the segments
     do j = 2, Ns
@@ -469,6 +505,7 @@ contains
     real(dp) :: dE, Ec, x, F, E_step, factor
     real(dp) :: f1, f2, sum
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
+    integer :: i
     !Initialization
     EIntSSA = 0d0   
     factor = 1d0
@@ -513,6 +550,7 @@ contains
         real(dp) :: L_tot(Ns), L_abs(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns)
         real(dp) :: Esy(NSED_sy), Esy_step, dEsy
         real(dp) :: U_sy_FF
+        integer :: i, l
 
         ! Read from a file: Esy(i,l), E*Lsy_abs(i,l), l
         open(27, file='SEDe_syn_cuts_ord'//jet//'.dat')
@@ -563,10 +601,11 @@ contains
     real(dp), intent(out) :: S_data(:)  ! size m_data_max
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp), allocatable :: Eph(:)
-    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF(Ns)
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF
     real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
     real(dp) :: dFdz
     integer :: m_data
+    integer :: i, j, l
 
     !N(E) of each cut
     open(30,file='N'//particle//'_cuts.dat')
@@ -590,8 +629,8 @@ contains
     do l = 1, m_data
         do j = 2, Ns                        !Loop for the jet segments
             NEcut = NE(:,j)                 !N(E) for the segment j
-            EphFF(j) = Eph(l)/delta_obs(j)  !Photon energy in the FF
-            dFdz = dFlux_dz(NEcut, BFF(j), EphFF(j), E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            EphFF = Eph(l)/delta_obs(j)  !Photon energy in the FF
+            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
             S_data(l) = S_data(l) + dFdz
         enddo
     enddo
@@ -602,6 +641,79 @@ contains
     !============================================================================
     ! SEDsyn_data (END)
     !============================================================================
+
+    !============================================================================
+    ! L_syn2 (START)
+    !============================================================================
+    real(dp) function dL_syn_dz2(z_current, NE_, Evec)
+    !============================================================================
+    ! This routine calculates the intrinsic synchrotron emission in the fluid frame
+    ! at the energies E_data [cgs] (vector), and returns the specific flux at each 
+    ! of those energies [cgs] (also a vector). The number of points in E_data has
+    ! to be smaller than m_data_max defined in globals.f90.
+    ! The input is the '' (jet) or 'CJ' (counter-jet). 
+    !============================================================================
+    real(dp), intent(in) :: z_current, NE_(:), Evec(:)
+    real(dp) :: dFdz, Ein, EphFF
+    real(dp) :: Eph
+    integer :: i, j, l
+
+    Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
+    dL_syn_dz2 = 0d0                               !Initialization
+
+    Eph = Emin_sy
+    do l = 1, NSED_sy                       !Loop for the jet segments
+      dL_syn_dz2 = dL_syn_dz2 + jsync(Eph, BFF_fun(z_current), NE_, Evec, 'e') * 4*pi * Eph * (Ein-1d0) ! [erg s^-1 cm^-3]
+      Eph = Eph*Ein       !Increase in the photon energy
+    enddo
+    
+    end function dL_syn_dz2
+    !============================================================================
+    ! dL_syn_dz2 (END)
+    !============================================================================
+
+     !============================================================================
+    real(dp) function L_syn2(zz)
+    !============================================================================
+    ! This function computes the synchrotron luminosity at a given height zz (in the
+    ! FF).
+    !============================================================================
+    real(dp), intent(in) :: zz
+    integer :: j, i
+    real(dp) :: z_current, factor
+    real(dp) :: E(nIn), NE(nIn, Ns), NE_(nIn)
+
+    open(30,file='Ne_cuts.dat')
+    do i = 1, nIn
+        do j = 1, Ns
+            read(30,*) E(i), NE(i,j), dummy
+        enddo
+    enddo
+    close(30)
+
+    L_syn2 = 0d0
+    z_current = z0
+    do while (z_current <= zz)
+      ! Let us find zz
+      do j = 1, Ns
+        if (z(j) > z_current) exit
+      end do
+      if (j > 1 .and. j <= Ns) then
+        do i=1,nIn
+          !NE_(i) = 10**(safeLog10(NE(i,j-1)) + safeLog10(NE(i,j)/NE(i,j-1))/safeLog10(z(j)/z(j-1))) * safeLog10(zz/z(j-1))
+          NE_(i) = NE(i,j-1) + (NE(i,j)-NE(i,j-1))/(z(j)-z(j-1))*(z_current - z(j-1))
+        end do
+      else
+        NE_ = 0d0
+      endif
+      factor = lorentzFactor(z_current)**2 * (1d0 + betaJet(z_current)**2/3d0)
+      L_syn2 = L_syn2 + dL_syn_dz2(z_current, NE_, E) * (dlogz - 1d0) * z_current * pi * ( r_fun_out(z_current)**2 - r_fun_in(z_current)**2 ) * factor
+      !write(*,*) zz, L_syn
+      z_current = z_current*dlogz
+    end do
+
+    end function L_syn2
+  !=========================================================================
 
 !================================================================================
 

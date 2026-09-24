@@ -16,6 +16,7 @@ MODULE evolution
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
       real(dp) :: dir, cjo
+      integer :: i
       allocate( joFF(Ns) )
 
       open(30,file='quant_FF'//jet//'.dat')

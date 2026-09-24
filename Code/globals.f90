@@ -12,16 +12,17 @@ MODULE globals
 
   integer, parameter :: nth = 4   ! number of threads (parallelization)
 
-  integer :: i,i2,j,j2,l,n
+  !integer :: i,i2,j,j2,l,n
 
   !===========================================================
   ! Simulation grid/vectors size
-  integer, parameter :: Ns = 200        !Number of jet segments up to zmax_inj (default: 200)
+  integer, parameter :: Ns_inj = 200        !Number of jet segments up to zmax_inj (default: 200)
+  integer :: Ns                             !Maximum number of segments (to be defined in initialize_allocate)
   integer, parameter :: nIn = 150      !Number of points in the electron energy distribution (default: 150)
-  integer, parameter :: numbins = 500  !Number of integration bins for the energy distribution (default: 300)
+  integer, parameter :: numbins = 200  !Number of integration bins for the energy distribution (default: 300)
   integer, parameter :: numdt = 100000  !Number of segments for integrating the energy distribution (default: 100000)
-  real(dp), parameter :: dttFF_min = 1.d-6 !Precision in timestep for N(E) (default: 1.d-10)
-  integer, parameter :: m_data_max = 100 !Maximum number of points to fit
+  real(dp), parameter :: dttFF_min = 1.d-8 !Precision in timestep for N(E) (default: 1.d-10)
+  integer, parameter :: m_data_max = 300 !Maximum number of points to fit
   integer, parameter :: NSED_sy = 150    !Number of points for the synchrotron SED
   integer, parameter :: NSED_IC = 100    !Number of points for the IC SED
 
@@ -96,6 +97,7 @@ MODULE globals
     real(dp), intent(in) :: H,FI(N)
     real(dp), intent(out) :: S
     real(dp) :: S0,S1,S2
+    integer :: I
 
     S  = 0.d0
     S0 = 0.d0
@@ -205,6 +207,7 @@ MODULE globals
     ! subroutine to calculate the versor: (V1-V2)/|V1-V2|
     integer, parameter :: dp = kind(1.d0)
     integer, intent(in) :: N
+    integer :: i,j
     real(dp), intent(in) :: V1,V2
     real(dp), intent(out) :: versor
     real(dp) :: resta,suma
@@ -249,6 +252,7 @@ MODULE globals
     ! xx(j) and xx(j+1) . xx(1:n) must be monotonic, either increasing or decreasing. j=0
     ! or j=n is returned to indicate that x is out of range.
     integer :: jl, jm, ju
+    integer :: j, n
 
     n = SIZE(xx) ! x and v have to have the same size
     jl = 0                            ! Initialize lower
