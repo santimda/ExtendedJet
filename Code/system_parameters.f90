@@ -90,6 +90,7 @@ module system_parameters
    real(dp) :: max_enthalpy
    real(dp) :: dlogz
    real(dp) :: cte_inj
+   real(dp) :: taper_norm = 1d0                    !Rescaling of the injection so that the exp(-z/zmax_inj)-tapered power integrates to LnT (fix_norm_taper)
    real(dp) :: dt
    real(dp) :: dtFF
 
@@ -225,7 +226,32 @@ module system_parameters
 
          dlogz = (zmax/z0)**(1d0/(Ns-1d0))
 
+         taper_norm = 1d0
+         if (fix_norm_taper) taper_norm = taper_correction()
+
       end subroutine derive_parameters
+
+      !*************************************************************************************
+      !   Injection is multiplied by exp(-z/zmax_inj) (edistribution: const_zjz) but dLe_dz is
+      !   normalised without it, so the injected power falls short of LnT. This returns the
+      !   factor LnT / int_{z0}^{zmax} dLe_dz(z) exp(-z/zmax_inj) dz that restores it.
+      !*************************************************************************************
+      real(dp) function taper_correction()
+         integer, parameter :: n = 4000
+         real(dp) :: lz, dlz, z1, z2, f1, f2, tot
+         integer :: i
+         dlz = log(zmax/z0)/n
+         tot = 0d0
+         z1 = z0
+         f1 = dLe_dz(z1)*z1*exp(-z1/zmax_inj)
+         do i = 1, n
+            z2 = z0*exp(i*dlz)
+            f2 = dLe_dz(z2)*z2*exp(-z2/zmax_inj)
+            tot = tot + 0.5d0*(f1+f2)*dlz
+            f1 = f2
+         end do
+         taper_correction = LnT/tot
+      end function taper_correction
 
       !*************************************************************************************
       !   Jet outer radius as a function of z

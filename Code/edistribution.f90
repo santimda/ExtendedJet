@@ -221,9 +221,8 @@ contains
         end do
 
         Norm_q0p = dLe_dz(zz) / ( QInt * lorentzFactor(zz) * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) )
-        ! TODO fix 4 (awaiting author): B tapers/normalises Q(E) with N=300
-        ! subintervals directly against dLe_dz(zz); a "fix_norm_taper" option
-        ! would instead account for the injection taper near zmax_inj here.
+        ! taper_norm = 1 unless fix_norm_taper (see system_parameters::taper_correction)
+        Norm_q0p = Norm_q0p * taper_norm
 
         deallocate(Egrid)
         deallocate(f)
