@@ -4,7 +4,6 @@
 
 DEBUG   = N
 FC      = gfortran -fopenmp
-LIBS    = -llapack -lblas
 
 # Compiler flags
 FFLAGS  = -ffree-line-length-none -fbackslash
@@ -25,7 +24,7 @@ all: run.x
 
 # Compile executable
 run.x: $(OBJECTS)
-	$(FC) $(FFLAGS) $(OBJECTS) $(LIBS) -o $@
+	$(FC) $(FFLAGS) $(OBJECTS) -o $@
 
 # Compile each object file and generate .mod files in $(MODDIR)
 %.o: %.f90
@@ -41,32 +40,25 @@ run: run.x
 	echo "Execution time: $${elapsed} s"
 
 # --------------------------
-# Python module via f2py (use python <= 3.11)
+# Python module via f2py (meson backend, numpy >= 1.26 / py3.12)
 # --------------------------
-f2py: clean
+F2PY_SOURCES = constants.f90 system_parameters.f90 globals.f90 controls.f90 \
+	mathematics.f90 losses.f90 initialize.f90 trajectory.f90 evolution.f90 \
+	edistribution.f90 synrad.f90 icrad.f90 sscrad.f90 main.f90
+
+f2py:
 	@echo "Building Python module JetCode..."
 	f2py -c \
-	  controls.f90 \
-	  constants.f90 \
-	  system_parameters.f90 \
-	  globals.f90 \
-	  initialize.f90 \
-	  trajectory.f90 \
-	  evolution.f90 \
-	  losses.f90 \
-	  mathematics.f90 \
-	  edistribution.f90 \
-	  synrad.f90 \
-	  icrad.f90 \
-	  sscrad.f90 \
-	  main.f90 \
+	  $(F2PY_SOURCES) \
 	  -m JetCode \
-	  --f90flags="$(FFLAGS)"
+	  --backend meson \
+	  --f90flags="$(FFLAGS) -fopenmp" \
+	  -lgomp
 
-# Clean everything
+# Clean everything (build products only)
 clean:
-	$(RM) *.x *.o *.mod *.dat *.bin *.log *.so *~
-	$(RM) -rf $(MODDIR)
+	$(RM) *.x *.o *.mod *.bin *.log *.so *~
+	$(RM) -rf build
 
 # Generate dependencies
 depend:
@@ -74,4 +66,3 @@ depend:
 
 # Include dependencies
 -include Makefile.depend
-

@@ -32,15 +32,22 @@ run.x
 *.out
 *.app
 
-# Output files
-*.dat
+# Output files (run outputs only; data tables under tests/reference and ObsData are tracked)
+Code/*.dat
+runs/
+out/
+out_regression/
 *.ps
-*.png 
+*.png
 *.pdf
+!tests/reference/*.dat
+!ObsData/**
 
 # Dirs
 Code/.vscode
 .ipynb_checkpoints/
 Code/.ipynb_checkpoints/
-Code/system_parameters.f90
 PostProcessing/__pycache__/
+
+# Local stub kept out of commit 1; replaced by a real tracked module in commit 2
+Code/system_parameters.f90
