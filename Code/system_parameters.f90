@@ -91,6 +91,8 @@ module system_parameters
    real(dp) :: dlogz
    real(dp) :: cte_inj
    real(dp) :: taper_norm = 1d0                    !Rescaling of the injection so that the exp(-z/zmax_inj)-tapered power integrates to LnT (fix_norm_taper)
+   integer, parameter :: n_taper = 4000             !Log-z grid of the tapered cumulative injected power (fix_norm_taper)
+   real(dp) :: Le_tab(0:n_taper)                    !Tapered power injected up to z0*(zmax/z0)**(i/n_taper) (fix_norm_taper)
    real(dp) :: dt
    real(dp) :: dtFF
 
@@ -234,23 +236,24 @@ module system_parameters
       !*************************************************************************************
       !   Injection is multiplied by exp(-z/zmax_inj) (edistribution: const_zjz) but dLe_dz is
       !   normalised without it, so the injected power falls short of LnT. This returns the
-      !   factor LnT / int_{z0}^{zmax} dLe_dz(z) exp(-z/zmax_inj) dz that restores it.
+      !   factor LnT / int_{z0}^{zmax} dLe_dz(z) exp(-z/zmax_inj) dz that restores it, and stores
+      !   the rescaled cumulative power in Le_tab so that Le_z (enthalpy, sigma) matches the injection.
       !*************************************************************************************
       real(dp) function taper_correction()
-         integer, parameter :: n = 4000
-         real(dp) :: lz, dlz, z1, z2, f1, f2, tot
+         real(dp) :: dlz, z1, z2, f1, f2
          integer :: i
-         dlz = log(zmax/z0)/n
-         tot = 0d0
+         dlz = log(zmax/z0)/n_taper
+         Le_tab(0) = 0d0
          z1 = z0
          f1 = dLe_dz(z1)*z1*exp(-z1/zmax_inj)
-         do i = 1, n
+         do i = 1, n_taper
             z2 = z0*exp(i*dlz)
             f2 = dLe_dz(z2)*z2*exp(-z2/zmax_inj)
-            tot = tot + 0.5d0*(f1+f2)*dlz
+            Le_tab(i) = Le_tab(i-1) + 0.5d0*(f1+f2)*dlz
             f1 = f2
          end do
-         taper_correction = LnT/tot
+         taper_correction = LnT/Le_tab(n_taper)
+         Le_tab = Le_tab*taper_correction
       end function taper_correction
 
       !*************************************************************************************
@@ -318,6 +321,18 @@ module system_parameters
       !*************************************************************************************
       real(dp) function Le_z(zz)
          real(dp), intent(in) :: zz
+         real(dp) :: x
+         integer :: i
+         if (fix_norm_taper) then   ! tapered injection: interpolate the cumulative table
+            x = log(max(abs(zz), z0)/z0)/log(zmax/z0)*n_taper
+            i = min(int(x), n_taper-1)
+            if (x >= n_taper) then
+               Le_z = LnT
+            else
+               Le_z = Le_tab(i) + (x-i)*(Le_tab(i+1)-Le_tab(i))
+            end if
+            return
+         end if
          if (zz < zmax_inj) then
             Le_z = LnT * (1d0 - (z0/abs(zz))**a_inj)/(1d0 - (z0/zmax_inj)**a_inj)
          else
