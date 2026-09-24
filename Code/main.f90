@@ -201,7 +201,7 @@ subroutine run_jet(verbose)
         endif
 
         if (radpsyn_calc) then
-            call SEDsyn('', 'p')
+            call SEDsyn('CJ', 'p')
             if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDpsyn.sh '//trim(adjustl(numSED))) !Sort SED file
         endif
         
