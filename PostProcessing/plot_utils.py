@@ -3,41 +3,34 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # My colors
-iar_aut = ['peru','maroon','darkgreen','indigo', 'plum'] # autumn at IAR
+nice_colors = ['peru', 'maroon', 'darkgreen',
+               'indigo', 'plum']  # autumn at IAR
 
 # My plot config
-def luc_std_plot(ax=None):
-    luc_config = {
-            # Use LaTeX to write all text
-            "text.usetex": True,
-            "font.family": "serif",
-            # Use 10pt font in plots, to match 10pt font in document
-            "axes.labelsize": 22,
-            "font.size": 24,
-            # Make the legend/label fonts a little smaller
-            "legend.fontsize": 20,
-            "xtick.labelsize": 20,
-            "ytick.labelsize": 20,
-            "axes.linewidth" : 1.5,
-            "axes.grid": True,
-            "xtick.major.size":    10,     # major tick size in points
-            "xtick.minor.size":    10,       # minor tick size in points
-            "xtick.major.width":   1.6,     # major tick width in points
-            "xtick.minor.width":   1.6,     # minor tick width in points
-            "grid.color":     'grey',  # grid color
-            "grid.linestyle": '--',       # solid
-            "grid.linewidth": 0.5,   # in points
-            "grid.alpha":     0.5,    # transparency, between 0.0 and 1.0
-    }
+nice_fonts = {
+    # Use LaTeX to write all text
+    "text.usetex": True,
+    "font.family": 'serif',
+    # Use 10pt font in plots, to match 10pt font in the document
+    "axes.labelsize": 18,
+    "font.size": 20,
+    "axes.linewidth": 1.5,
+    "axes.titlesize": 16,
+    # Make the legend/label fonts a little smaller
+    "legend.fontsize": 14,
+    "xtick.labelsize": 16,
+    "ytick.labelsize": 16,
+    "xtick.major.size": 5.5,  # major tick size in points
+    "xtick.minor.size": 4,    # minor tick size in points
+    "ytick.major.size": 5.5,  # major tick size in points
+    "ytick.minor.size": 3.5,  # minor tick size in points
+    "xtick.major.width": 1.4,  # major tick width in points
+    "xtick.minor.width": 1.3,  # minor tick width in points
+    "ytick.major.width": 1.4,  # major tick width in points
+    "ytick.minor.width": 1.3,  # minor tick width in points
+}
 
-    # Update the fonts
-    matplotlib.rcParams.update(luc_config)
-    if ax is not None:
-       ax.tick_params(axis="y", direction="in", length=10, width=1, color="black")
-       ax.tick_params(which='minor', axis="y", direction="in", length=5, width=1, color="black")
-       ax.tick_params(axis="x", direction="in", length=10, width=1, color="black")
-       ax.tick_params(which='minor', axis="x", direction="in", length=5, width=1, color="black")
-       ax.set_axisbelow(False)
+matplotlib.rcParams.update(nice_fonts)
 
 def color_from_cmap(cmap,ncol=10, vmin=0.0, vmax=1.0):
     cmap = matplotlib.cm.get_cmap(cmap)

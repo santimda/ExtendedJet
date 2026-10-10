@@ -17,7 +17,7 @@ contains
     real(dp) :: LIC_FF(NSED_IC), LIC_cut(NSED_IC), LIC1(NSED_IC), LIC2(NSED_IC), LIC(NSED_IC)
     real(dp) :: LIC_bol_FF, LIC_bol_cut_FF
     real(dp) :: dummy, boost(Ns), cang
-    integer :: j_s
+    integer :: j_s, i, j
     logical, intent(in) :: aniso 
     allocate( delta_obs(Ns) )
 
@@ -111,12 +111,13 @@ contains
 !============================================================================
 
 subroutine IC_Khang(Ee, Ne, Ef, aniso, cang, Eph0, Kapp, L_IC, sum_IC)
-  real(dp), intent(in) :: Ee(nIn), Ne(nIn), Ef(NSED_IC), cang, Eph0, Kapp
-  real(dp), intent(out) :: L_IC(NSED_IC), sum_IC
+  real(dp), intent(in) :: Ee(:), Ne(:), Ef(:), cang, Eph0, Kapp ! sizes nIn, nIn, NSED_IC
+  real(dp), intent(out) :: L_IC(:), sum_IC  ! size NSED_IC
   logical, intent(in) :: aniso
   real(dp) :: P_eps, dP_eps, dEe, Eint_e
   real(dp) :: gamma_e(nIn), Eps(NSED_IC), Eps_int, dEps
   real(dp) :: T_ad, T_ad_ang, cte_Ndot, Ndot, x0, z_IC, t_K, sum
+  integer :: i, j
 
   T_ad = Eph0/(2.7*mec2)     ! adimensional temperature, Eph0 = 2.7*k*T
   T_ad_ang = T_ad  !  dummy definition so compiler doesn't warn possible uninitialization

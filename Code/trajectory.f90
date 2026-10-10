@@ -17,6 +17,7 @@ MODULE trajectory
   !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp) :: dir
+    integer :: i
 
     ! The jet goes upwards, the CJ goes downwards (negative z)
     if (jet == '') then
@@ -37,7 +38,7 @@ MODULE trajectory
       rj_in(i) = r_fun_in(z(i))
     end do
 
-    open(10, file='trajectory'//jet//'.dat')
+    open(10, file=trim(opath('trajectory'//jet//'.dat')))
     do i = 1, Ns
       write(10,*) z(i), rj_out(i), rj_in(i)
     enddo

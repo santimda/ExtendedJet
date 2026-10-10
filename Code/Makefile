@@ -1,38 +1,68 @@
-DEBUG  = N
+# ===============================
+# Makefile for JetCode (Fortran + f2py)
+# ===============================
 
-FC     = gfortran -fopenmp
-FFLAGS = -ffree-line-length-none -fbackslash
-LIBS   = -llapack -lblas
+DEBUG   = N
+FC      = gfortran -fopenmp
 
+# Compiler flags
+FFLAGS  = -ffree-line-length-none -fbackslash
 ifeq ($(DEBUG), Y)
   FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow
 else
-  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops 
-#  FFLAGS += -Wall -Wno-tabs -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
-#  FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -Werror -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops -ffree-line-length-none -fbackslash
+  FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
 endif
 
+# Sources
 SOURCES = $(wildcard *.f90)
-OBJECTS = $(subst .f90,.o,$(SOURCES)) 
+OBJECTS = $(SOURCES:.f90=.o)
 
-.PHONY: clean test
+.PHONY: all clean run f2py depend
 
+# Default target: compile executable
+all: run.x
+
+# Compile executable
 run.x: $(OBJECTS)
-	$(FC) $(OBJECTS) $(LIBS) -o run.x
+	$(FC) $(FFLAGS) $(OBJECTS) -o $@
 
-.SUFFIXES:
-.SUFFIXES: .f90 .f .o
-.f90.o:
-	$(FC) -c $(FFLAGS) $<
+# Compile each object file and generate .mod files in $(MODDIR)
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $< -o $@
 
-.f.o:
-	$(FC) -c $(FFLAGS) $<
+# Run the executable with timing
+run: run.x
+	@echo "Running program..."
+	@start_time=$$(date +%s); \
+	./run.x; \
+	end_time=$$(date +%s); \
+	elapsed=$$((end_time - start_time)); \
+	echo "Execution time: $${elapsed} s"
 
-test:
-	sh test_set.sh
+# --------------------------
+# Python module via f2py (meson backend, numpy >= 1.26 / py3.12)
+# --------------------------
+F2PY_SOURCES = constants.f90 system_parameters.f90 globals.f90 controls.f90 \
+	mathematics.f90 losses.f90 initialize.f90 trajectory.f90 evolution.f90 \
+	edistribution.f90 synrad.f90 icrad.f90 sscrad.f90 main.f90
 
+f2py:
+	@echo "Building Python module JetCode..."
+	f2py -c \
+	  $(F2PY_SOURCES) \
+	  -m JetCode \
+	  --backend meson \
+	  --f90flags="$(FFLAGS) -fopenmp" \
+	  -lgomp
+
+# Clean everything (build products only)
 clean:
-	rm -f *.x *.o *.mod *.dat *.bin *.log *~
-	rm -rf ./test
+	$(RM) *.x *.o *.mod *.bin *.log *.so *~
+	$(RM) -rf build
 
-include Makefile.depend
+# Generate dependencies
+depend:
+	python3 gen_depend.py
+
+# Include dependencies
+-include Makefile.depend

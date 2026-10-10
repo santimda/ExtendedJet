@@ -16,10 +16,11 @@ MODULE evolution
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
       real(dp) :: dir, cjo
+      integer :: i
       allocate( joFF(Ns) )
 
-      open(30,file='quant_FF'//jet//'.dat')
-      open(31,file='quant_FF_norm'//jet//'.dat')
+      open(30,file=trim(opath('quant_FF'//jet//'.dat')))
+      open(31,file=trim(opath('quant_FF_norm'//jet//'.dat')))
 
       ! The jet goes upwards, the CJ goes downwards (negative v_z)
       if (jet == '') then
