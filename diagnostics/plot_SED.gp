@@ -9,9 +9,9 @@ set yrange [1e28:1e45]
 set xtics 1e2
 set key noautotitles top left Left spacing 1.35 width -2
 
-plot '../Code/SEDe_syn_jet.dat' u 1:3 w l dt 3 lw 2 lc 1 ,\
-'../Code/SEDe_syn_jet.dat' u 1:4 w l dt 2 lw 1 lc rgb 'black' ,\
-'../Code/SEDe_syn_jet.dat' u 1:7 w l dt 1 lw 2 lc 1 t 'Jet' ,\
+plot '../output/SEDe_syn_jet.dat' u 1:3 w l dt 3 lw 2 lc 1 ,\
+'../output/SEDe_syn_jet.dat' u 1:4 w l dt 2 lw 1 lc rgb 'black' ,\
+'../output/SEDe_syn_jet.dat' u 1:7 w l dt 1 lw 2 lc 1 t 'Jet' ,\
 'SEDIC_final_jet.dat' u 1:3 w l dt 3 lw 2 lc 1 ,\
 'SEDIC_final_jet.dat' u 1:4 w l dt 2 lw 1 lc rgb 'black' ,\
 'SEDIC_final_jet.dat' u 1:6 w l dt 1 lw 2 lc 1 ,\

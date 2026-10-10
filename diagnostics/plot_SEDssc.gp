@@ -9,10 +9,10 @@ set format y '10^{%T}'
 set yrange [1e32:]
 set key noautotitles top right spacing 1.35 width -2
 
-plot '../Code/SEDssc_jet.dat' u 1:3 w l dt 2 lw 3 lc 2 t 'z < 10 z_{0}',\
-	'../Code/SEDssc_jet.dat' u 1:4 w l dt 3 lw 3 lc 2 t 'z < 100 z_{0}',\
-	'../Code/SEDssc_jet.dat' u 1:2 w l dt 1 lw 3 lc 2 t 'Total',\
-	'../Code/SEDssc_cuts.dat' u 1:2:3 w l dt 1 lw 1 lc palette
+plot '../output/SEDssc_jet.dat' u 1:3 w l dt 2 lw 3 lc 2 t 'z < 10 z_{0}',\
+	'../output/SEDssc_jet.dat' u 1:4 w l dt 3 lw 3 lc 2 t 'z < 100 z_{0}',\
+	'../output/SEDssc_jet.dat' u 1:2 w l dt 1 lw 3 lc 2 t 'Total',\
+	'../output/SEDssc_cuts.dat' u 1:2:3 w l dt 1 lw 1 lc palette
 
 set term postscript color enhanced dl 1.3 lw 2 'Helvetica' 20
 set output 'SED_ssc.ps'

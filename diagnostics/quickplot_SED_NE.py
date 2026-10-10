@@ -3,9 +3,17 @@
 
 # # Plot the output of the code
 
+import sys
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+OUTPUT_DIR = REPO_ROOT / 'output'
+
 from postprocessing.plot_utils import nice_fonts  # Import the shared plot settings
 import matplotlib.ticker
 
@@ -19,7 +27,7 @@ mJy = 1e-26
 # ### First read and plot the electron density energy distribution per segment
 
 # Read the output of the jet model
-NE_output_ord = np.loadtxt('../Code/Ne_cuts_ord.dat')
+NE_output_ord = np.loadtxt(OUTPUT_DIR / 'Ne_cuts_ord.dat')
 
 # Define quantities for N cuts
 Eecut = NE_output_ord[:,0]
@@ -80,7 +88,7 @@ plt.close(fig)  # Close the figure to avoid large empty output
 # ### Repeat for the distribution of total number of electrons up to certain heights
 
 # === Input file ===
-fname = '../Code/Ne_bins_total.dat'
+fname = OUTPUT_DIR / 'Ne_bins_total.dat'
 data = np.loadtxt(fname, skiprows=1)
 
 E = data[:, 0]
@@ -126,7 +134,7 @@ plt.close(fig)  # Close the figure to avoid large empty output
 # ### Read the output SEDs per segment
 
 
-def read_SEDsyn_cuts(filename='../Code/SEDe_syn_cuts_ord.dat'):
+def read_SEDsyn_cuts(filename=OUTPUT_DIR / 'SEDe_syn_cuts_ord.dat'):
     fname = filename
     #fname format: Esy, Esy*Lsy, l
     data = np.loadtxt(fname, skiprows=1).T
@@ -219,13 +227,13 @@ D = 16.8e6 * pc
 a = 4 * np.pi * D**2
 
 # Read zmin and zmax from the trajectory
-traj = np.loadtxt('../Code/trajectory.dat')
+traj = np.loadtxt(OUTPUT_DIR / 'trajectory.dat')
 zmin = np.min(traj[:,0])
 zmax = np.max(traj[:,0])
 
 # === Input file ===
 # Read a file containing nu/Hz, F1, F2, ..., Ftot (F1, ... are fluxes integrated up to certain heights) in erg/s/cm2/Hz
-fname = '../Code/Flux_e.dat'
+fname = OUTPUT_DIR / 'Flux_e.dat'
 data = np.loadtxt(fname, skiprows=1)
 
 # === Extract columns ===
@@ -235,7 +243,7 @@ Flux_bins = data[:, 1:-1] / mJy   # 6 flux columns
 Flux_total = data[:, -1]  / mJy   # total flux
 
 # Repeat for the CJ
-fname = '../Code/FluxCJ_e.dat'
+fname = OUTPUT_DIR / 'FluxCJ_e.dat'
 dataCJ = np.loadtxt(fname, skiprows=1)
 nuCJ = dataCJ[:, 0]                   # Hz
 ECJ = nuCJ * h                        # Energy
@@ -329,6 +337,5 @@ plt.close(fig)  # Close the figure to avoid large empty output
 
 
 # In[ ]:
-
 
 

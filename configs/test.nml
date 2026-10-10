@@ -29,7 +29,7 @@
 /
 
 &run
-  outdir = '../out/test'
+  outdir = '../tests/output'
   scriptdir = '../Code'
   Ns = 40
   numbins = 50

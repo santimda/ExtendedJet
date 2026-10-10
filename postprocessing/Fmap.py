@@ -1,4 +1,4 @@
-# 1. Leer tabla L(nu;z) de SEDsyn_cuts_ord.dat.
+# 1. Leer tabla L(nu;z) de SEDe_syn_cuts_ord.dat.
 # 2. Encontrar freq mas cercana (indice) y armar L(z).
 # 3. Armar mapa (x,y) en unidades de ''.
 # 4. Evaluar L(x,y) a partir de L(z) y funcion de peso en x. 
@@ -21,7 +21,7 @@ flux = 1.e26*(h/eV)/(4.0*np.pi*(distance*kpc)**2) # L[erg/s/erg] -> F[mJy]
 
 ###### General functions
 
-def read_SEDsyn_cuts( filename='./../Code/SEDsyn_cuts_ord.dat'):
+def read_SEDsyn_cuts( filename='./../output/SEDe_syn_cuts_ord.dat'):
     Ns = 512 # TODO: Leer de archivo
     nIn = 150 # TODO: Leer de archivo
     fname = filename
@@ -51,7 +51,7 @@ def get_Lsyn_z( Esy, Lsy, nu_target=43): # TODO: Pasar como argumento "n"GHz
     i_nu_target = int(np.log10( E_nu_target/Esy[0]) /log_Eint) 
     return Lsy[i_nu_target, :]
 
-def get_z_rz( filename='./../Code/quant_FF.dat'):
+def get_z_rz( filename='./../output/quant_FF.dat'):
     fname = filename
     data = np.loadtxt(fname, usecols=(0,2))
     return data[:,0], data[:,1]

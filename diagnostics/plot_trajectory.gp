@@ -14,8 +14,8 @@ a = 3e12
 Rstar = 7.4e11
 set object 1 circle at 0,0 size Rstar/a front fc rgb 'blue' fs solid 1.0
 
-plot '../Code/trajectory.dat' u ($2/a):($1/a) w l dt 2 lw 2 lc 1 t 'x-y' ,\
-	 '../Code/trajectory.dat' u ($3/a):($1/a) w l dt 1 lw 2 lc 2 t 'x-z' ,\
+plot '../output/trajectory.dat' u ($2/a):($1/a) w l dt 2 lw 2 lc 1 t 'x-y' ,\
+	 '../output/trajectory.dat' u ($3/a):($1/a) w l dt 1 lw 2 lc 2 t 'x-z' ,\
 	 'TrajectoryCJ.dat' u ($3/a):($1/a) w l dt 1 lw 2 lc 2 notitle
 
 set term postscript color enhanced dl 1.5 lw 2.0 'Helvetica' 20

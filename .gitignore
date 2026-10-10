@@ -33,9 +33,9 @@ run.x
 *.app
 
 # Output files (run outputs only; data tables under tests/reference are tracked)
-Code/*.dat
 runs/
-out/
+output/
+tests/output/
 out_regression/
 *.ps
 *.png

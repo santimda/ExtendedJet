@@ -39,7 +39,21 @@ external RIAF data used by some legacy notebooks are not included here.
 - `figures/`: repository figures and diagrams.
 - `postprocessing/`: synthetic-map notebooks, Python utilities, and data.
 - `tests/`: regression and f2py checks.
-- `out/`: generated model outputs.
+- `output/`: generated reference-model outputs.
+- `tests/output/`: disposable outputs from the reduced test configuration.
+
+Run the model from the repository root with a configuration file:
+
+```text
+make -C Code
+(cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/test.nml)
+(cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
+```
+
+The reduced run writes to `tests/output/`; the reference run writes to
+`output/`. Both directories are disposable and ignored by Git. Diagnostic
+Gnuplot scripts are run from `diagnostics/`, and post-processing utilities are
+run from `postprocessing/`.
 
 ## Important files
 

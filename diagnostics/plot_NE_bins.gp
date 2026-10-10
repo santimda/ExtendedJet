@@ -19,7 +19,7 @@ set palette defined ( 0 "#FF8C00", 1 "#8B0000" ) # From dark-orange to dark-red
 
 eV = 1.602176e-12
 
-plot '../Code/Ne_bin.dat' u 2:((($2*eV)**2)*$3):1 w l lw 3.0 dt 1 lc palette
+plot '../output/Ne_bin.dat' u 2:((($2*eV)**2)*$3):1 w l lw 3.0 dt 1 lc palette
 
 set terminal postscript color solid enhanced dl 1.5 lw 2.5 'Helvetica' 21
 set output 'NE_bins.ps'

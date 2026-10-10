@@ -11,12 +11,12 @@ set xtics 1e1
 
 
 
-plot '../Code/SEDsyne_total.dat' u 1:2 w l dt 3 lw 2 lc 2 t 'Syn-Jet(unabs)',\
-	'../Code/SEDe_syn_jet.dat' u 1:9 w l dt 1 lw 3 lc 2 t 'Syn-Jet(abs)' ,\
-	'../Code/SEDsyn_jetCJ.dat' u 1:8 w l dt 3 lw 2 lc 4 t 'Syn-CJ(unabs)',\
-	'../../Codse/SEDsyn_jetCJ.dat' u 1:9 w l dt 1 lw 3 lc 4 t 'Syn-CJ(abs)',\
-	'../Code/SEDssc_jet.dat' u 1:2 w l dt 1 lw 2 lc 6 t 'SSC-Jet',\
-	'../Code/SEDssc_jetCJ.dat' u 1:2 w l dt 1 lw 3 lc 7 t 'SSC-CJ'
+plot '../output/SEDsyne_total.dat' u 1:2 w l dt 3 lw 2 lc 2 t 'Syn-Jet(unabs)',\
+	'../output/SEDe_syn_jet.dat' u 1:9 w l dt 1 lw 3 lc 2 t 'Syn-Jet(abs)' ,\
+	'../output/SEDsyn_jetCJ.dat' u 1:8 w l dt 3 lw 2 lc 4 t 'Syn-CJ(unabs)',\
+	'../output/SEDsyn_jetCJ.dat' u 1:9 w l dt 1 lw 3 lc 4 t 'Syn-CJ(abs)',\
+	'../output/SEDssc_jet.dat' u 1:2 w l dt 1 lw 2 lc 6 t 'SSC-Jet',\
+	'../output/SEDssc_jetCJ.dat' u 1:2 w l dt 1 lw 3 lc 7 t 'SSC-CJ'
 	
 set arrow from 0, 5*10**39 to 1*10**9 ,5*10**39 nohead lc rgb "#000000"
 

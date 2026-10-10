@@ -29,7 +29,7 @@
 /
 
 &run
-  outdir = '../out/m87_reference'
+  outdir = '../output'
   scriptdir = '../Code'
   Ns = 200
   numbins = 500
@@ -45,7 +45,7 @@
   radpsyn_calc = .false.
   radic_calc = .false.
   print_tlosses = .true.
-  sort_outputs = .false.
+  sort_outputs = .true.
   fix_norm_taper = .false.
   fix_inj_emin = .false.
 /

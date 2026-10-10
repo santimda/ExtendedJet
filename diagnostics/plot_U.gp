@@ -22,9 +22,9 @@ f2(x) = 1.0/(x/3e15)**2
 #x1 = 4.e5
 #set arrow from x1, graph 0.007 to x1, graph 0.993 nohead lc rgb 'grey88' lw 140
 
-plot '../Code/U_FF.dat' u 2:4 t 'U_B' w l lw 3 lc 1,\
-	'../Code/U_FF.dat' u 2:3 t 'U_{sy}' w l lw 3 lc 2,\
-	'../Code/U_e.dat' u 2:3 t 'U_{e}' w l lw 3 lc 3,\
+plot '../output/U_FF.dat' u 2:4 t 'U_B' w l lw 3 lc 1,\
+	'../output/U_FF.dat' u 2:3 t 'U_{sy}' w l lw 3 lc 2,\
+	'../output/U_e.dat' u 2:3 t 'U_{e}' w l lw 3 lc 3,\
 	f1(x) t 'z^{-1}' w l lw 2 dt 2 lc rgb "grey30",\
 	f2(x) t 'z^{-2}' w l lw 2 dt 3 lc rgb "grey40"
 	
@@ -39,4 +39,3 @@ set terminal postscript color enhanced dl 1.2 lw 2 'Helvetica' 20
 set output 'U_FF.ps'
 replot
 !./fixbb U_FF.ps
-

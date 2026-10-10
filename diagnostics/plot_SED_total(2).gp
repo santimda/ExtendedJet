@@ -8,12 +8,12 @@ set yrange [1e32:]
 set xtics 1e2
 #set key noautotitles top left Left spacing 1.35 width -2
 
-plot '../Code/conversion.dat' u 1:8 w l dt 3 lw 2 lc 2 t 'Syn-Jet(unabs)',\
-	'../Code/conversion.dat' u 1:9 w l dt 1 lw 3 lc 2 t 'Syn-Jet(abs)' ,\
-#	'../Code/SEDsyn_jetCJ.dat' u 1:8 w l dt 3 lw 2 lc 4 t 'Syn-CJ(unabs)',\
+plot '../output/conversion.dat' u 1:8 w l dt 3 lw 2 lc 2 t 'Syn-Jet(unabs)',\
+	'../output/conversion.dat' u 1:9 w l dt 1 lw 3 lc 2 t 'Syn-Jet(abs)' ,\
+#	'../output/SEDsyn_jetCJ.dat' u 1:8 w l dt 3 lw 2 lc 4 t 'Syn-CJ(unabs)',\
 #	'../../Codse/SEDsyn_jetCJ.dat' u 1:9 w l dt 1 lw 3 lc 4 t 'Syn-CJ(abs)',\
-#	'../Code/SEDssc_jet.dat' u 1:2 w l dt 1 lw 2 lc 6 t 'SSC-Jet',\
-#	'../Code/SEDssc_jetCJ.dat' u 1:2 w l dt 1 lw 3 lc 7 t 'SSC-CJ'
+#	'../output/SEDssc_jet.dat' u 1:2 w l dt 1 lw 2 lc 6 t 'SSC-Jet',\
+#	'../output/SEDssc_jetCJ.dat' u 1:2 w l dt 1 lw 3 lc 7 t 'SSC-CJ'
 
 set term postscript color enhanced dl 1.3 lw 1 'Helvetica' 20
 set output 'SED_total.eps'
