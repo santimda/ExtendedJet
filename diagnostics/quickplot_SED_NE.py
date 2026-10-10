@@ -1,341 +1,267 @@
 #!/usr/bin/env python
-# coding: utf-8
-
-# # Plot the output of the code
+"""Create the standard ExtendedJet particle and synchrotron diagnostic plots."""
 
 import sys
 from pathlib import Path
 
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
-OUTPUT_DIR = REPO_ROOT / 'output'
 
-from postprocessing.plot_utils import nice_fonts  # Import the shared plot settings
-import matplotlib.ticker
+from postprocessing.plot_utils import nice_fonts  # noqa: F401
 
 
-# Useful constants
-eV = 1.60218e-12  
+OUTPUT_DIR = REPO_ROOT / "output"
+
+eV = 1.60218e-12
 h = 6.6260755e-27
 mJy = 1e-26
-
-
-# ### First read and plot the electron density energy distribution per segment
-
-# Read the output of the jet model
-NE_output_ord = np.loadtxt(OUTPUT_DIR / 'Ne_cuts_ord.dat')
-
-# Define quantities for N cuts
-Eecut = NE_output_ord[:,0]
-necut = NE_output_ord[:,1]
-
-# Take dimensions from array
-Ns = int( np.max(NE_output_ord[:,2]) )    # number of segments
-m_E = int( len(NE_output_ord[:,2]) / Ns ) # number of energy bins
-
-# Reshape arrays
-Eecut = np.reshape(Eecut,(Ns,m_E))
-necut = np.reshape(necut,(Ns,m_E))
-
-# === Plot ===
-fig, ax= plt.subplots(figsize=(8,5))
-
-cmap = matplotlib.colormaps['viridis']
-norm = matplotlib.colors.Normalize(vmin=1, vmax=Ns)
-sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-
-for i in range(Ns):
-    ax.loglog(Eecut[i]/eV,necut[i]*Eecut[i]**2, color=cmap(norm(i+1)))
-
-# === Colourbar ===
-z_ticks = np.linspace(0, Ns, 11)
-cbar = fig.colorbar(sm, ticks=z_ticks, ax=ax, pad=0.01)
-cbar.set_label(r"Segment index")
-
-# === Axes limits ===
-ymin, ymax = 1e-18, 1e-4
-ax.set_xlim([1e6, 1e13])
-ax.set_ylim(ymin, ymax)
-ax.set_xlabel(r"$E'$ [eV]")
-ax.set_ylabel(r"$E'^2 n'(E')$ [erg cm$^{-3}$]")
-
-# === Log ticks ===
-x_major = matplotlib.ticker.LogLocator(base=10.0)
-x_minor = matplotlib.ticker.LogLocator(base=10.0, subs=np.arange(2, 10)*0.1)
-ax.xaxis.set_major_locator(x_major)
-ax.xaxis.set_minor_locator(x_minor)
-ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-ax.tick_params(axis='x', pad=6)
-
-numy = int(np.log10(ymax/ymin))
-y_major = matplotlib.ticker.LogLocator(base = 10.0, numticks = numy)
-ax.yaxis.set_major_locator(y_major)
-y_minor = matplotlib.ticker.LogLocator(base = 10.0, numticks = numy*2)
-ax.yaxis.set_minor_locator(y_minor)
-ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-
-ax.tick_params(direction='in', which='both', right=True, top=True)
-
-# === Save and close ===
-fig.savefig('NEe_cuts.pdf', bbox_inches='tight', pad_inches=0)
-plt.close(fig)  # Close the figure to avoid large empty output
-
-
-# ### Repeat for the distribution of total number of electrons up to certain heights
-
-# === Input file ===
-fname = OUTPUT_DIR / 'Ne_bins_total.dat'
-data = np.loadtxt(fname, skiprows=1)
-
-E = data[:, 0]
-N_bins = data[:, 1:-1]
-N_total = data[:, -1]
-
-# === Plot setup ===
-fig, ax = plt.subplots(figsize=(8,5))
-
-# Discrete colormap for N_bins_count bins
-N_bins_count = N_bins.shape[1]
-cmap = matplotlib.colormaps['viridis'].resampled(N_bins_count)
-colors = cmap(np.arange(N_bins_count) / (N_bins_count-1))
-
-# Plot each bin
-for i in range(N_bins_count):
-    ax.loglog(E, N_bins[:, i] * (E*eV)**2, color=colors[i], lw=1.5)
-
-# Plot total in standout colour
-ax.loglog(E, (E*eV)**2 * N_total, color='darkred', lw=3, label='Total')
-
-# === Discrete colorbar ===
-bounds = np.arange(1, N_bins_count+2) - 0.5  # boundaries for discrete bins
-norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
-sm = matplotlib.cm.ScalarMappable(cmap=cmap, norm=norm)
-sm.set_array([])  # required for colorbar
-cbar = fig.colorbar(sm, ticks=np.arange(1, N_bins_count+1), pad=0.01, ax=ax)
-cbar.set_label('Bin index')
-
-# === Axis limits and labels ===
-ax.set_xlim(1e6, 1e13)
-ax.set_ylim(1e42, 1e49)
-ax.set_xlabel(r"$E'$ [eV]")
-ax.set_ylabel(r"$E'^2 N'(E')$ [erg]")
-ax.legend(loc='best')
-
-ax.tick_params(direction='in', which='both', right=True, top=True)
-
-fig.savefig('NEe_bins_total.pdf', bbox_inches='tight', pad_inches=0)
-plt.close(fig)  # Close the figure to avoid large empty output
-
-
-# ### Read the output SEDs per segment
-
-
-def read_SEDsyn_cuts(filename=OUTPUT_DIR / 'SEDe_syn_cuts_ord.dat'):
-    fname = filename
-    #fname format: Esy, Esy*Lsy, l
-    data = np.loadtxt(fname, skiprows=1).T
-
-    E_all, L_all, seg_all = data
-
-    # Segment indices (integer)
-    seg_all = seg_all.astype(int)
-    segments = np.unique(seg_all)
-    Ns = len(segments)
-
-    # Assume each segment has the same number of points
-    NSED_sy = int(np.sum(seg_all == segments[0]))
-
-    # Energy grid (assumed identical for all segments)
-    Esy = E_all[:NSED_sy]
-
-    # Allocate array: Lsy[segment_index, energy_index]
-    Lsy = np.zeros((Ns, NSED_sy))
-
-    for i, seg in enumerate(segments):
-        mask = seg_all == seg
-        Lsy[i] = L_all[mask] / E_all[mask]  # convert from E*L to L
-
-    return Esy, Lsy, Ns, NSED_sy
-
-# Read the synchrotron SED at each cut (segment) along the jet; file already sorted in Esy
-# Ns and NSED are the number of segments and of energy points, respectively
-Esy, Lsy, Ns, NSED = read_SEDsyn_cuts()
-
-
-# === Parameters ===
-xmin, xmax = 2e-8, 1e9
-ymin, ymax = 1e28, 1e39
-cmap_name = 'viridis'
-output_file = 'SEDsyn_cuts.pdf'
-
-# === Create plot ===
-fig, ax = plt.subplots(figsize=(8,5))
-ax.set_xscale('log')
-ax.set_yscale('log')
-ax.set_xlim(xmin, xmax)
-ax.set_ylim(ymin, ymax)
-ax.set_xlabel(r'$\epsilon$ [eV]')
-ax.set_ylabel(r'$\epsilon L_{\epsilon}$ [erg\,s$^{-1}$]')
-
-# === Colormap ===
-cmap = matplotlib.colormaps[cmap_name]
-norm = matplotlib.colors.Normalize(vmin=1, vmax=Ns)
-sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-
-# === Plot ===
-for i in range(Ns):
-    ax.loglog(Esy, Esy * Lsy[i], color=cmap(norm(i+1)))
-
-# === Colourbar ===
-z_ticks = np.linspace(0, Ns+1, 11)
-#z_ticks = [10, , 1500, 2000, 2500, 3000]
-cbar = fig.colorbar(sm, ticks=z_ticks, ax=ax, pad=0.01)
-cbar.set_label(r"Segment index")
-
-# === Ticks ===
-numx = int(np.log10(xmax/xmin))
-x_major = matplotlib.ticker.LogLocator(base=100.0, numticks=numx)
-x_minor = matplotlib.ticker.LogLocator(base=10.0, numticks=numx*2)
-ax.xaxis.set_major_locator(x_major)
-ax.xaxis.set_minor_locator(x_minor)
-ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-ax.tick_params(axis='x', pad=6)
-
-numy = int(np.log10(ymax/ymin))
-y_major = matplotlib.ticker.LogLocator(base=100.0, numticks=numy)
-y_minor = matplotlib.ticker.LogLocator(base=10.0, numticks=numy*2)
-ax.yaxis.set_major_locator(y_major)
-ax.yaxis.set_minor_locator(y_minor)
-ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-
-ax.tick_params(direction='in', which='both', right=True, top=True)
-
-# === Save and close ===
-fig.savefig(output_file, bbox_inches='tight', pad_inches=0)
-plt.close(fig)  # Close the figure to avoid large empty output
-
-
-# ### Read another output file containing fluxes integrated up to certain heights and total flux
-
-# Define some constants to convert fluxes to luminosities if needed
 pc = 3.086e18
 D = 16.8e6 * pc
-a = 4 * np.pi * D**2
-
-# Read zmin and zmax from the trajectory
-traj = np.loadtxt(OUTPUT_DIR / 'trajectory.dat')
-zmin = np.min(traj[:,0])
-zmax = np.max(traj[:,0])
-
-# === Input file ===
-# Read a file containing nu/Hz, F1, F2, ..., Ftot (F1, ... are fluxes integrated up to certain heights) in erg/s/cm2/Hz
-fname = OUTPUT_DIR / 'Flux_e.dat'
-data = np.loadtxt(fname, skiprows=1)
-
-# === Extract columns ===
-nu = data[:, 0]                   # Hz
-E = nu * h                        # Energy
-Flux_bins = data[:, 1:-1] / mJy   # 6 flux columns
-Flux_total = data[:, -1]  / mJy   # total flux
-
-# Repeat for the CJ
-fname = OUTPUT_DIR / 'FluxCJ_e.dat'
-dataCJ = np.loadtxt(fname, skiprows=1)
-nuCJ = dataCJ[:, 0]                   # Hz
-ECJ = nuCJ * h                        # Energy
-FluxCJ_total = dataCJ[:, -1]  / mJy   # total flux
+LUMINOSITY_FACTOR = 4 * np.pi * D**2
 
 
-# === Plot setup ===
-fig, ax = plt.subplots(figsize=(8,5))
-
-# Discrete colormap for 6 bins
-N_bins_count = Flux_bins.shape[1]
-cmap = matplotlib.colormaps['viridis'].resampled(N_bins_count)
-colors = cmap(np.arange(N_bins_count)/(N_bins_count-1))
-
-# Plot each flux bin
-for i in range(N_bins_count):
-    ax.loglog(E/eV, Flux_bins[:, i] * mJy * nu * a, color=colors[i], lw=1.5)
-
-# Plot total flux in standout colour
-ax.loglog(E/eV, Flux_total * mJy * nu * a, color='darkred', lw=3, label='Total J')
-ax.loglog(E/eV, FluxCJ_total * mJy * nuCJ * a, color='darkred', lw=3, linestyle='--', label='Total CJ')
-
-# === Discrete colorbar ===
-bounds = np.arange(1, N_bins_count+2) - 0.5
-norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
-sm = matplotlib.cm.ScalarMappable(cmap=cmap, norm=norm)
-sm.set_array([])
-cbar = fig.colorbar(sm, ticks=np.arange(1, N_bins_count+1), pad=0.01, ax=ax)
-cbar.set_label('Bin index')
-
-# === Axis limits and labels ===
-ax.set_xlabel(r"$\epsilon$ [eV]")
-ax.set_ylabel(r'$\epsilon L_{\epsilon}$ [erg\,s$^{-1}$]')
-ax.set_xlim(1e-5, 1e7)
-ax.set_ylim(1e38, 1e41)
-
-# === Ticks ===
-numx = int(np.log10(xmax/xmin))
-x_major = matplotlib.ticker.LogLocator(base=100.0, numticks=numx)
-x_minor = matplotlib.ticker.LogLocator(base=10.0, numticks=numx*2)
-ax.xaxis.set_major_locator(x_major)
-ax.xaxis.set_minor_locator(x_minor)
-ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-ax.tick_params(axis='x', pad=6)
-ax.tick_params(direction='in', which='both', right=True, top=True)
-
-ax.legend(loc='best')
-
-# === Save and close ===
-fig.savefig('Lum_e_bins.pdf', bbox_inches='tight', pad_inches=0)
-plt.close(fig)  # Close the figure to avoid large empty output
+def save_figure(fig, filename):
+    fig.savefig(filename, bbox_inches="tight", pad_inches=0)
+    plt.close(fig)
 
 
-# === Plot setup ===
-fig, ax = plt.subplots(figsize=(8,5))
-
-# Discrete colormap for 6 bins
-N_bins_count = Flux_bins.shape[1]
-cmap = matplotlib.colormaps['viridis'].resampled(N_bins_count)
-colors = cmap(np.arange(N_bins_count)/(N_bins_count-1))
-
-# Plot each flux bin
-for i in range(N_bins_count):
-    ax.loglog(nu/1e9, Flux_bins[:, i], color=colors[i], lw=1.5)
-
-# Plot total flux in standout colour
-ax.loglog(nu/1e9, Flux_total, color='darkred', lw=3, label='Total J')
-ax.loglog(nuCJ/1e9, FluxCJ_total, color='darkred', lw=3, linestyle='--', label='Total CJ')
-
-# === Discrete colorbar ===
-bounds = np.arange(1, N_bins_count+2) - 0.5
-norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
-sm = matplotlib.cm.ScalarMappable(cmap=cmap, norm=norm)
-sm.set_array([])
-cbar = fig.colorbar(sm, ticks=np.arange(1, N_bins_count+1), pad=0.01, ax=ax)
-cbar.set_label('Bin index')
-
-# === Axis limits and labels ===
-ax.set_xlabel(r"$\nu$ [GHz]")
-ax.set_ylabel(r"$S_\nu$ [mJy]")
-ax.set_xlim(1e-2, 1e3)
-ax.set_ylim(1e-1, 5e3)
-
-ax.tick_params(direction='in', which='both', right=True, top=True)
-
-ax.legend(loc='best')
-
-# === Save and close ===
-fig.savefig('Flux_e_bins_radio.pdf', bbox_inches='tight', pad_inches=0)
-plt.close(fig)  # Close the figure to avoid large empty output
+def add_continuous_colorbar(fig, ax, cmap, norm, ticks, label):
+    scalar_mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    colorbar = fig.colorbar(scalar_mappable, ticks=ticks, ax=ax, pad=0.01)
+    colorbar.set_label(label)
 
 
-# In[ ]:
+def add_discrete_colorbar(fig, ax, cmap, count, label):
+    bounds = np.arange(1, count + 2) - 0.5
+    norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
+    scalar_mappable = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    scalar_mappable.set_array([])
+    colorbar = fig.colorbar(
+        scalar_mappable,
+        ticks=np.arange(1, count + 1),
+        pad=0.01,
+        ax=ax,
+    )
+    colorbar.set_label(label)
 
 
+def plot_electron_cuts():
+    """Plot the electron energy distribution for each jet segment."""
+    data = np.loadtxt(OUTPUT_DIR / "Ne_cuts_ord.dat")
+    energies = data[:, 0]
+    densities = data[:, 1]
+    segment_count = int(np.max(data[:, 2]))
+    energy_count = len(data[:, 2]) // segment_count
+    energies = energies.reshape(segment_count, energy_count)
+    densities = densities.reshape(segment_count, energy_count)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    cmap = matplotlib.colormaps["viridis"]
+    norm = matplotlib.colors.Normalize(vmin=1, vmax=segment_count)
+    for index in range(segment_count):
+        ax.loglog(
+            energies[index] / eV,
+            densities[index] * energies[index] ** 2,
+            color=cmap(norm(index + 1)),
+        )
+
+    add_continuous_colorbar(
+        fig,
+        ax,
+        cmap,
+        norm,
+        np.linspace(0, segment_count, 11),
+        "Segment index",
+    )
+    ax.set_xlim(1e6, 1e13)
+    ax.set_ylim(1e-18, 1e-4)
+    ax.set_xlabel(r"$E'$ [eV]")
+    ax.set_ylabel(r"$E'^2 n'(E')$ [erg cm$^{-3}$]")
+    save_figure(fig, "NEe_cuts.pdf")
+
+
+def plot_total_electron_distribution():
+    """Plot the electron distribution integrated up to each jet height."""
+    data = np.loadtxt(OUTPUT_DIR / "Ne_bins_total.dat", skiprows=1)
+    energies = data[:, 0]
+    distributions = data[:, 1:-1]
+    total = data[:, -1]
+    bin_count = distributions.shape[1]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    cmap = matplotlib.colormaps["viridis"].resampled(bin_count)
+    colors = cmap(np.linspace(0, 1, bin_count))
+    for index in range(bin_count):
+        ax.loglog(
+            energies,
+            distributions[:, index] * (energies * eV) ** 2,
+            color=colors[index],
+            lw=1.5,
+        )
+    ax.loglog(
+        energies,
+        (energies * eV) ** 2 * total,
+        color="darkred",
+        lw=3,
+        label="Total",
+    )
+
+    add_discrete_colorbar(fig, ax, cmap, bin_count, "Bin index")
+    ax.set_xlim(1e6, 1e13)
+    ax.set_ylim(1e42, 1e49)
+    ax.set_xlabel(r"$E'$ [eV]")
+    ax.set_ylabel(r"$E'^2 N'(E')$ [erg]")
+    ax.legend(loc="best")
+    save_figure(fig, "NEe_bins_total.pdf")
+
+
+def read_synchrotron_cuts(filename):
+    data = np.loadtxt(filename, skiprows=1).T
+    energies, luminosities, segments = data
+    segments = segments.astype(int)
+    segment_ids = np.unique(segments)
+    segment_count = len(segment_ids)
+    energy_count = int(np.sum(segments == segment_ids[0]))
+    energy_grid = energies[:energy_count]
+    luminosity_grid = np.zeros((segment_count, energy_count))
+
+    for index, segment in enumerate(segment_ids):
+        mask = segments == segment
+        luminosity_grid[index] = luminosities[mask] / energies[mask]
+
+    return energy_grid, luminosity_grid, segment_count
+
+
+def plot_synchrotron_cuts():
+    """Plot the synchrotron SED for each jet segment."""
+    energies, luminosities, segment_count = read_synchrotron_cuts(
+        OUTPUT_DIR / "SEDe_syn_cuts_ord.dat"
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.set_xlim(2e-8, 1e9)
+    ax.set_ylim(1e28, 1e39)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"$\epsilon$ [eV]")
+    ax.set_ylabel(r"$\epsilon L_{\epsilon}$ [erg\,s$^{-1}$]")
+
+    cmap = matplotlib.colormaps["viridis"]
+    norm = matplotlib.colors.Normalize(vmin=1, vmax=segment_count)
+    for index in range(segment_count):
+        ax.loglog(
+            energies,
+            energies * luminosities[index],
+            color=cmap(norm(index + 1)),
+        )
+
+    add_continuous_colorbar(
+        fig,
+        ax,
+        cmap,
+        norm,
+        np.linspace(0, segment_count + 1, 11),
+        "Segment index",
+    )
+    save_figure(fig, "SEDsyn_cuts.pdf")
+
+
+def load_flux_outputs():
+    jet = np.loadtxt(OUTPUT_DIR / "Flux_e.dat", skiprows=1)
+    counter_jet = np.loadtxt(OUTPUT_DIR / "FluxCJ_e.dat", skiprows=1)
+    return jet, counter_jet
+
+
+def plot_luminosity_bins():
+    """Plot the luminosity integrated up to each jet aperture."""
+    jet, counter_jet = load_flux_outputs()
+    energy = jet[:, 0] * h / eV
+    counter_jet_energy = counter_jet[:, 0] * h / eV
+    flux_bins = jet[:, 1:-1] / mJy
+    flux_total = jet[:, -1] / mJy
+    counter_jet_total = counter_jet[:, -1] / mJy
+    bin_count = flux_bins.shape[1]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    cmap = matplotlib.colormaps["viridis"].resampled(bin_count)
+    colors = cmap(np.linspace(0, 1, bin_count))
+    for index in range(bin_count):
+        ax.loglog(
+            energy,
+            flux_bins[:, index] * mJy * jet[:, 0] * LUMINOSITY_FACTOR,
+            color=colors[index],
+            lw=1.5,
+        )
+    ax.loglog(
+        energy,
+        flux_total * mJy * jet[:, 0] * LUMINOSITY_FACTOR,
+        color="darkred",
+        lw=3,
+        label="Total J",
+    )
+    ax.loglog(
+        counter_jet_energy,
+        counter_jet_total * mJy * counter_jet[:, 0] * LUMINOSITY_FACTOR,
+        color="darkred",
+        lw=3,
+        linestyle="--",
+        label="Total CJ",
+    )
+
+    add_discrete_colorbar(fig, ax, cmap, bin_count, "Bin index")
+    ax.set_xlabel(r"$\epsilon$ [eV]")
+    ax.set_ylabel(r"$\epsilon L_{\epsilon}$ [erg\,s$^{-1}$]")
+    ax.set_xlim(1e-5, 1e7)
+    ax.set_ylim(1e38, 1e41)
+    ax.legend(loc="best")
+    save_figure(fig, "Lum_e_bins.pdf")
+
+
+def plot_radio_flux_bins():
+    """Plot the flux density integrated up to each jet aperture."""
+    jet, counter_jet = load_flux_outputs()
+    frequency = jet[:, 0] / 1e9
+    counter_jet_frequency = counter_jet[:, 0] / 1e9
+    flux_bins = jet[:, 1:-1] / mJy
+    flux_total = jet[:, -1] / mJy
+    counter_jet_total = counter_jet[:, -1] / mJy
+    bin_count = flux_bins.shape[1]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    cmap = matplotlib.colormaps["viridis"].resampled(bin_count)
+    colors = cmap(np.linspace(0, 1, bin_count))
+    for index in range(bin_count):
+        ax.loglog(frequency, flux_bins[:, index], color=colors[index], lw=1.5)
+    ax.loglog(frequency, flux_total, color="darkred", lw=3, label="Total J")
+    ax.loglog(
+        counter_jet_frequency,
+        counter_jet_total,
+        color="darkred",
+        lw=3,
+        linestyle="--",
+        label="Total CJ",
+    )
+
+    add_discrete_colorbar(fig, ax, cmap, bin_count, "Bin index")
+    ax.set_xlabel(r"$\nu$ [GHz]")
+    ax.set_ylabel(r"$S_{\nu}$ [mJy]")
+    ax.set_xlim(1e-2, 1e3)
+    ax.set_ylim(1e-1, 5e3)
+    ax.legend(loc="best")
+    save_figure(fig, "Flux_e_bins_radio.pdf")
+
+
+def main():
+    plot_electron_cuts()
+    plot_total_electron_distribution()
+    plot_synchrotron_cuts()
+    plot_luminosity_bins()
+    plot_radio_flux_bins()
+
+
+if __name__ == "__main__":
+    main()

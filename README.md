@@ -23,8 +23,11 @@ mamba env create -f environment-notebooks.yml
 mamba activate extendedjet-notebooks
 ```
 
-The extended environment adds Jupyter, SciPy, Astropy, pandas, `agnpy`,
-`naima`, Gnuplot, LaTeX, and `smplotlib`. `agnpy` is used by
+The Python plotting scripts use LaTeX by default through Matplotlib's
+`text.usetex`. Install the system package `texlive-latex-base` to use that
+default. If LaTeX is unavailable, set `text.usetex` to `False` in
+`postprocessing/plot_utils.py`. The extended environment adds Jupyter, SciPy,
+Astropy, pandas, `agnpy`, `naima`, Gnuplot, and `smplotlib`. `agnpy` is used by
 `emisividad1.ipynb` for synchrotron/absorption comparisons; `naima` is used by
 `Syn_SSC_sed.ipynb` for synchrotron and SSC comparisons. Neither is required
 by the Fortran model or its f2py wrapper. The `constants_cgs` module and

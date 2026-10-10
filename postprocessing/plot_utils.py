@@ -28,6 +28,10 @@ nice_fonts = {
     "xtick.minor.width": 1.3,  # minor tick width in points
     "ytick.major.width": 1.4,  # major tick width in points
     "ytick.minor.width": 1.3,  # minor tick width in points
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.top": True,
+    "ytick.right": True,
 }
 
 matplotlib.rcParams.update(nice_fonts)
