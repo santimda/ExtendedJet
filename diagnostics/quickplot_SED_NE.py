@@ -6,7 +6,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from plot_utils import nice_fonts       # Import the nice_fonts settings
+from postprocessing.plot_utils import nice_fonts  # Import the shared plot settings
 import matplotlib.ticker
 
 
@@ -19,7 +19,7 @@ mJy = 1e-26
 # ### First read and plot the electron density energy distribution per segment
 
 # Read the output of the jet model
-NE_output_ord = np.loadtxt('./../Code/Ne_cuts_ord.dat')
+NE_output_ord = np.loadtxt('../Code/Ne_cuts_ord.dat')
 
 # Define quantities for N cuts
 Eecut = NE_output_ord[:,0]
@@ -329,7 +329,6 @@ plt.close(fig)  # Close the figure to avoid large empty output
 
 
 # In[ ]:
-
 
 
 

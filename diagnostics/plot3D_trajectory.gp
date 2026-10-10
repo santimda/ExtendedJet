@@ -21,7 +21,7 @@ RCO = 1e11 # exagerated
 set object 1 circle at 0,0,0 size Rstar/a front fc rgb 'blue' fs solid 1.0
 set object 2 circle at 1,0,0 size RCO/a front fc rgb 'black' fs solid 1.0
 
-splot '../../Code/trajectory.dat' u ($1/a):($2/a):($3/a) w l dt 1 lw 2 lc 1 t ''
+splot '../Code/trajectory.dat' u ($1/a):($2/a):($3/a) w l dt 1 lw 2 lc 1 t ''
 
 set term postscript color enhanced dl 1.5 lw 2.0 'Helvetica' 20
 set output '3D_Trajectory.ps'

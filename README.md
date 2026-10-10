@@ -30,6 +30,17 @@ The extended environment adds Jupyter, SciPy, Astropy, pandas, `agnpy`,
 by the Fortran model or its f2py wrapper. The `constants_cgs` module and
 external RIAF data used by some legacy notebooks are not included here.
 
+## Layout
+
+- `Code/`: Fortran sources, Makefile, and generated build files.
+- `configs/`: runtime namelists.
+- `data/`: legacy and observational input data.
+- `diagnostics/`: diagnostic and validation notebooks and plotting scripts.
+- `figures/`: repository figures and diagrams.
+- `postprocessing/`: synthetic-map notebooks, Python utilities, and data.
+- `tests/`: regression and f2py checks.
+- `out/`: generated model outputs.
+
 ## Important files
 
 **Makefile**: instructions for compiling using *make*

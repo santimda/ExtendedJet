@@ -30,7 +30,7 @@
 
 &run
   outdir = '../out/test'
-  scriptdir = '.'
+  scriptdir = '../Code'
   Ns = 40
   numbins = 50
   dttFF_min = 1.d-6

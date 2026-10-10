@@ -12,7 +12,7 @@ set key noautotitles top left Left spacing 1.35 width -2
 x1=5.5
 x1_cut = 8
 g(x)=b0+b1*(x-x1)+b2*(x-x1)**2+b3*(x-x1)**3+b4*(x-x1)**4+b5*(x-x1)**5+b6*(x-x1)**6+b7*(x-x1)**7+b8*(x-x1)**8+b9*(x-x1)**9+b10*(x-x1)**10
-fit g(x) "< awk '($1 >2.e-4 && $1<2.e8) { print $1, $7 }' ../../Code/SEDe_syn_jet.dat" u (log10($1)):(log10($2)) via b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10
+fit g(x) "< awk '($1 >2.e-4 && $1<2.e8) { print $1, $7 }' ../Code/SEDe_syn_jet.dat" u (log10($1)):(log10($2)) via b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10
 g1(x)=x>x1_cut? g(x1_cut)*exp(-(x-x1_cut)**2.) : x<-3.8?0 : g(x)
 
 x0=11.5
@@ -48,8 +48,8 @@ eV = 1.602176e-12
 #-----------------------------------------------------
 plot log10(10**f1(x)+10**g1(x)) ls 1 dt 1 lw 3 lc 7 t 'Jet',\
 	 log10(10**h1(x)+10**i1(x)) ls 5 dt 1 lw 3 lc 4 t 'Counter-jet',\
-	'../../Code/SEDesyn_jet.dat' u (log10($1)):(log10($7)) w l dt 2 lw 2 lc 1 notitle,\
-	'../../Code/SEDesyn_jet.dat' u (log10($1)):(log10($4)) w l dt 4 lw 1 lc rgb 'black',\
+	'../Code/SEDesyn_jet.dat' u (log10($1)):(log10($7)) w l dt 2 lw 2 lc 1 notitle,\
+	'../Code/SEDesyn_jet.dat' u (log10($1)):(log10($4)) w l dt 4 lw 1 lc rgb 'black',\
 	'SEDIC_final_jet.dat' u (log10($1)):(log10($6)) w l dt 3 lw 2 lc 1 notitle,\
 	'SEDIC_final_jet.dat' u (log10($1)):(log10($4)) w l dt 4 lw 1 lc rgb 'black',\
 	'SEDsyn_final_CJ.dat' u (log10($1)):(log10($7)) w l dt 2 lw 2 lc 2 notitle,\

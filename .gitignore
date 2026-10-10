@@ -32,7 +32,7 @@ run.x
 *.out
 *.app
 
-# Output files (run outputs only; data tables under tests/reference and ObsData are tracked)
+# Output files (run outputs only; data tables under tests/reference are tracked)
 Code/*.dat
 runs/
 out/
@@ -41,10 +41,9 @@ out_regression/
 *.png
 *.pdf
 !tests/reference/*.dat
-!ObsData/**
 
 # Dirs
 Code/.vscode
 .ipynb_checkpoints/
 Code/.ipynb_checkpoints/
-PostProcessing/__pycache__/
+__pycache__/

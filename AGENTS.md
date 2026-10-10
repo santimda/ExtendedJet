@@ -7,7 +7,7 @@
 - `OMP_NUM_THREADS=1 ./run.x params.nml`. One full model takes about 40 s single-threaded (more threads are slower).
 - Namelist groups `&model` (physics; lengths in R_g, energies in eV) and `&run` (grid, apertures, switches, `outdir`,
   `sync_approx='full'|'delta'`, `fix_norm_taper`, `fix_inj_emin`). Defaults live in `Code/system_parameters.f90`.
-  Paper configs: `analysis/configs/jet_riaf.nml`, `jet_only.nml` in the parent repo.
+  Local configs: `configs/m87_reference.nml`, `configs/test.nml`.
 - SSC is compiled off (`controls.f90`); do not enable.
 
 ## Outputs (in `outdir`)

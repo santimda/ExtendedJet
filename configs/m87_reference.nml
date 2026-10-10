@@ -30,7 +30,7 @@
 
 &run
   outdir = '../out/m87_reference'
-  scriptdir = '.'
+  scriptdir = '../Code'
   Ns = 200
   numbins = 500
   dttFF_min = 1.d-6
