@@ -1,0 +1,26 @@
+name: extendedjet-notebooks
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy=1.26.*
+  # SciPy 1.11 retains scipy.misc.derivative, used by emisividad1.ipynb.
+  - scipy=1.11.*
+  # Matplotlib 3.9 removed cm.get_cmap, used by a legacy notebook.
+  - matplotlib>=3.5,<3.9
+  - pandas
+  - astropy
+  - agnpy
+  - naima
+  - jupyterlab
+  - ipykernel
+  - meson
+  - ninja
+  - make
+  - gcc_linux-64
+  - gfortran_linux-64
+  - gnuplot
+  - texlive-core
+  - pip
+  - pip:
+      - smplotlib
