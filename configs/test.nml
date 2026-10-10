@@ -1,0 +1,51 @@
+&model
+  M_BH = 6.5d9
+  dist_mpc = 16.8d0
+  incl_deg = 17.d0
+  gj0 = 1.01d0
+  z0_rg = 50.d0
+  zmax_rg = 1.2d6
+  zmax_inj_rg = 1.d5
+  r_br_rg = 46.d0
+  z_br_rg = 140.d0
+  z_acc_rg = 2.d2
+  rin_0_rg = 0.d0
+  geomIndex_out = 0.56d0
+  geomIndex_in = 0.6d0
+  LnTpFF = 1.d43
+  facc = 1.d-2
+  EminFF_eV = 1.d6
+  Emin_injFF_eV = 2.d6
+  EmaxFF_eV = 5.d15
+  fnT = 1.d-1
+  EpminFF_eV = 1.d9
+  Epmin_injFF_eV = 2.d9
+  EpmaxFF_eV = 1.d18
+  p = 2.05d0
+  Lj = 1.2d43
+  sigma_0 = 100.d0
+  a_inj = 0.01d0
+  gammaIndex = 0.16d0
+/
+
+&run
+  outdir = '../tests/output'
+  scriptdir = '../Code'
+  Ns = 40
+  numbins = 50
+  dttFF_min = 1.d-6
+  apertures_rg = 7.3d0, 26.d0, 65.d0, 195.d0, 650.d0, 3.5d5, 0.d0, 0.d0, 0.d0, 0.d0
+  n_ap = 6
+  sync_approx = 'full'
+  JET_ = .true.
+  CJ_ = .true.
+  NE_calc = .true.
+  Np_calc = .false.
+  radsyn_calc = .true.
+  radpsyn_calc = .false.
+  radic_calc = .false.
+  print_tlosses = .false.
+  sort_outputs = .false.
+  fix_norm_taper = .false.
+  fix_inj_emin = .false.
+/

@@ -9,54 +9,41 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (START)
     !============================================================================
-    subroutine initialize_allocate(sigma_value, Lj_value, z0_value, a_inj_value)
+    subroutine initialize_allocate(sigma_value, zmax_value, Lj_value, a_inj_value) !,z0_value
     !============================================================================
     ! allocate and initialize vectors 
     !============================================================================
-        real(dp), intent(in) :: sigma_value, Lj_value, z0_value, a_inj_value
+        real(dp), intent(in) :: sigma_value, zmax_value, Lj_value, a_inj_value !,z0_value
+        integer :: i
         logical :: fexist
-
-        allocate( z(Ns), rj(Ns), gj(Ns), bj(Ns) )
-        allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) ) 
-        allocate( deltaZ(Ns), deltatFF(Ns) )
-        allocate( delta_obs(Ns), boost(Ns) )
 
         ! Initialize values given by free parameters:
         sigma_0 = sigma_value !Update the value of sigma_0 (default value defined in system_parameters.f90)
         Lj = Lj_value         !Update the value of Lj (default value defined in system_parameters.f90)
-        z0 = z0_value         !Update the value of z0 (default value defined in system_parameters.f90)
-        a_inj = a_inj_value   !Update the value of z0 (default value defined in system_parameters.f90)
+        a_inj = a_inj_value   !Update the value of a_inj (default value defined in system_parameters.f90)
+        zmax_rg = zmax_value/R_g   !zmax is derived from zmax_rg (R_g is set by read_namelist/derive_parameters)
 
-        LnT = Lj*fnT          !Available nonthermal luminosity
-        LnTFF = LnT!/gj0**2   !Available nonthermal luminosity in the FF
-        
-        mu = gj0 * (sigma_0 + 1d0)
-        Mdot_j = Lj / (c**2 * gj0 * (sigma_0 + 1d0))
-        !B0 = sqrt(fB*8d0*Lj/(betaJet(z0)*c*r0**2)) / lorentzFactor(z0)
-        
-        zmax_inj = z0/(f_zmax**(1.d0/a_inj))!Jet maximum height of injection cell
-        if (zmax_inj > 1d5*R_g) zmax_inj = 1d5*R_g  !Give a reasonable limit for a_inj < 0.5
-        zmax = zmax_inj/f_zmax_inj          !Jet maximum height
-        if (zmax < 3d4*R_g) zmax = 3d4*R_g  !Minimum value to recover the low-frequency radio emission (~100 MHz)
-        dl = (zmax-z0)/Ns                   !Segment length
-        dlogz = (zmax/z0)**(1d0/(Ns-1d0))
-        cte_inj = LnTFF/( (zmax_inj**(-a_inj+1.) - z0**(-a_inj+1.))/(-a_inj+1.) )
+        ! Recompute every quantity tied to the parameters above (rout_0, mu,
+        ! Mdot_j, LnT, LnTFF, max_enthalpy, cte_inj, dlogz, ...)
+        call derive_parameters()
 
-        !write(*,'(A,Es9.2)') 'B0[G] = ', BFF_fun(z0)
-        !write(*,'(A,Es9.2)') 'Lj[erg/s] = ', Lj
+        allocate( z(Ns), rj_out(Ns), rj_in(Ns), gj(Ns), bj(Ns) )
+        allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) )
+        allocate( deltaZ(Ns), deltatFF(Ns) )
+        allocate( delta_obs(Ns), boost(Ns) )
 
         ! Initialize arrays
         if (.not.jet_calc) then 
             ! Initialize using the values from a previous run (if the file exists)
-            inquire(file='quant_FF.dat',exist=fexist)
+            inquire(file=trim(opath('quant_FF.dat')),exist=fexist)
             if (.not. fexist) then
                 print *,'You first have to run trajectory and evolution modules at least once!'
                 stop
             else
-                open(30,file='quant_FF.dat')  
+                open(30,file=trim(opath('quant_FF.dat')))
                 do i = 1, Ns
                     !Quantities at each segment
-                    read(30,*) z(i), BFF(i), rj(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
+                    read(30,*) z(i), BFF(i), rj_out(i), rj_in(i), vnorm(i), Kappa(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i)
                 enddo
                 close(30)
             endif
@@ -76,7 +63,7 @@ MODULE initialize
     ! deallocate vectors 
     !============================================================================
 
-        deallocate( z, rj, gj, bj )
+        deallocate( z, rj_out, rj_in, gj, bj )
         deallocate( BFF, vnorm, VFF, EphMFF, nfFF, Kappa, sjoFF )
         deallocate( deltaZ, deltatFF )
         deallocate( delta_obs, boost )

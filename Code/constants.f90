@@ -4,8 +4,8 @@ implicit none
 public
 
 integer, parameter :: dp = kind(1.d0)
-real(dp), parameter :: pi = acos(-1.d0)
-real(dp), parameter :: par = sqrt(2.d0/3.d0)
+real(dp), parameter :: pi = 3.14159265358979323846d0 !acos(-1.d0)
+real(dp), parameter :: par = 0.816496580927726032732d0 !sqrt(2.d0/3.d0)
 
 !===================================================
 !Physical constants in CGS units
@@ -43,7 +43,6 @@ real(dp), parameter :: Ry = 2.17987d-11   ! Rydberg unit = 2.18e-18 J
 ! Some useful constants for p-p
 real(dp), parameter :: TeV = 1.d12*eV  
 real(dp), parameter :: E_th = 1.22d9*eV   ! threshold energy for pi^0 production
-
 
 !============================================================================
 

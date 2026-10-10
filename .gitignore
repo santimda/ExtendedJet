@@ -32,13 +32,18 @@ run.x
 *.out
 *.app
 
-# Output files
-*.dat
+# Output files (run outputs only; data tables under tests/reference are tracked)
+runs/
+output/
+tests/output/
+out_regression/
 *.ps
-*.png 
+*.png
 *.pdf
+!tests/reference/*.dat
 
 # Dirs
+Code/.vscode
 .ipynb_checkpoints/
 Code/.ipynb_checkpoints/
-PostProcessing/__pycache__/
+__pycache__/
