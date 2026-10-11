@@ -21,21 +21,21 @@ MODULE controls
     ! read by system_parameters::read_namelist). All default to "do nothing"
     ! so that running without a namelist file is a safe no-op.
 
-    logical :: JET_ = .false.
-    logical :: CJ_ = .false.
-    logical :: NE_calc = .false.
-    logical :: Np_calc = .false.
-    logical :: radsyn_calc = .false.
-    logical :: radpsyn_calc = .false.
-    logical :: radic_calc = .false.
+    logical :: JET_ = off
+    logical :: CJ_ = off
+    logical :: NE_calc = off
+    logical :: Np_calc = off
+    logical :: radsyn_calc = off
+    logical :: radpsyn_calc = off
+    logical :: radic_calc = off
 
-    logical :: print_tlosses = .true.
-    logical :: sort_outputs = .false.
+    logical :: print_tlosses = on
+    logical :: sort_outputs = off
 
     ! Physics-fix flags (awaiting author's decision). Reading them does not
     ! change any behaviour yet; see the TODO comments at their call sites.
-    logical :: fix_norm_taper = .false.
-    logical :: fix_inj_emin = .false.
+    logical :: fix_norm_taper = off
+    logical :: fix_inj_emin = off
 
     !===================================================
 
