@@ -17,3 +17,5 @@
 
 ## Tests
 `tests/regress.py ref.dat new.dat` prints the max relative difference per column in the radio band.
+`make -C Code test` runs the numerical unit tests and the reduced `run.x` regression against
+the frozen references in `tests/reference/test/`.

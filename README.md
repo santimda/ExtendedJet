@@ -51,6 +51,7 @@ Run the model from the repository root with a configuration file:
 ```text
 make -C Code
 make -C Code test-unit
+(cd Code && make test)
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/test.nml)
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
@@ -59,6 +60,11 @@ The reduced run writes to `tests/output/`; the reference run writes to
 `output/`. Both directories are disposable and ignored by Git. Diagnostic
 Gnuplot scripts are run from `diagnostics/`, and post-processing utilities are
 run from `postprocessing/`.
+
+`make -C Code test` runs the numerical unit tests and a reduced Fortran
+regression. The regression runs `run.x` with `configs/test.nml` in a temporary
+output directory and compares the jet and counter-jet fluxes with the frozen
+references in `tests/reference/test/` over the radio band.
 
 The current model uses only the cosmic microwave background (CMB) as its
 external photon field. The generic IC kernel remains capable of receiving
