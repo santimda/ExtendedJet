@@ -17,7 +17,7 @@ module system_parameters
 
    !===SYSTEM PARAMETERS=========================================================================================
 
-   real(dp) :: dist_mpc = 16.8d0                   !Distance to the system [Mpc]
+   real(dp) :: dist_mpc = 16.8d0                    !Distance to the system [Mpc]
    real(dp) :: incl_deg = 17.d0                     !Observer's angle with the jet axis [deg]
    real(dp) :: M_BH = 6.5d9                         !Black hole mass [Msun]
 
@@ -67,7 +67,7 @@ module system_parameters
    real(dp) :: EpminFF_eV = 1d9                     !Minimum proton energy in the FF [eV]
    real(dp) :: Epmin_injFF_eV = 2d9                 !Minimum proton energy of injected particles in the FF [eV]
    real(dp) :: EpmaxFF_eV = 1d18                    !Maximum proton energy in the FF [eV]
-   real(dp) :: p = 2.05d0                            !Power law exponent for Q(E) = cte * E**-p
+   real(dp) :: p = 2.05d0                           !Power law exponent for Q(E) = cte * E**-p
 
    real(dp) :: EminFF, Emin_injFF, EmaxFF           !Electron energy bounds in the FF [erg] (derived)
    real(dp) :: EpminFF, Epmin_injFF, EpmaxFF        !Proton energy bounds in the FF [erg] (derived)
@@ -75,29 +75,28 @@ module system_parameters
    !===FREE PARAMETERS=========================================================================================
 
    real(dp) :: Lj = 1.2d43                          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp) :: sigma_0 = 100d0                       !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
-   real(dp) :: mu                                    !Total energy flux per unit of rest-mass energy flux (derived)
-   real(dp) :: Mdot_j                                !Mass flux (derived)
-   real(dp) :: a_inj = 0.01d0                        !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj))
-                                                     !a_inj =/ 0 (else error!)
-   real(dp) :: gammaIndex = 0.16d0                   !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
+   real(dp) :: sigma_0 = 100d0                      !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
+   real(dp) :: mu                                   !Total energy flux per unit of rest-mass energy flux (derived)
+   real(dp) :: Mdot_j                               !Mass flux (derived)
+   real(dp) :: a_inj = 0.01d0                       !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj))
+                                                    !a_inj =/ 0 (else error!)
+   real(dp) :: gammaIndex = 0.16d0                  !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
    !===GLOBAL VARIABLES (TIED TO FREE PARAMETERS)================================================================
-   ! All recomputed by derive_parameters(); never set directly.
+   ! Recomputed by derive_parameters(); never set directly.
 
-   real(dp) :: LnT                                   !Available nonthermal luminosity
-   real(dp) :: LnTFF                                 !Available nonthermal luminosity in the FF
+   real(dp) :: LnT                                  !Available nonthermal luminosity
+   real(dp) :: LnTFF                                !Available nonthermal luminosity in the FF
    real(dp) :: max_enthalpy
    real(dp) :: dlogz
    real(dp) :: cte_inj
-   real(dp) :: taper_norm = 1d0                    !Rescaling of the injection so that the exp(-z/zmax_inj)-tapered power integrates to LnT (fix_norm_taper)
+   real(dp) :: taper_norm = 1d0                     !Rescaling of the injection so that the exp(-z/zmax_inj)-tapered power integrates to LnT (fix_norm_taper)
    integer, parameter :: n_taper = 4000             !Log-z grid of the tapered cumulative injected power (fix_norm_taper)
    real(dp) :: Le_tab(0:n_taper)                    !Tapered power injected up to z0*(zmax/z0)**(i/n_taper) (fix_norm_taper)
    real(dp) :: dt
    real(dp) :: dtFF
 
    !===RUN-TIME CONTROLS (namelist &run)==========================================================================
-   ! These replace the old compile-time PARAMETERs in globals.f90.
 
    integer :: Ns = 200                               !Number of jet segments, log-spaced from z0 to zmax
    integer :: numbins = 500                          !Number of integration bins for the energy distribution
