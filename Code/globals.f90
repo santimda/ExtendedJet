@@ -136,15 +136,4 @@ MODULE globals
   return
   end function F_4
 
-  !======================================================================================
-
-  !real(dp) function nBB(Epho,T)
-  !use constants
-  !real(dp), intent(in) :: Epho,T
-  !nBB = 2d0*pi/((h*c)**3)*(Epho**2/(exp(Epho/(kB*T))-1d0))
-  !return
-  !end function nBB
-
-  !====================================================================================
-
 END MODULE globals
