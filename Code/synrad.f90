@@ -234,7 +234,6 @@ contains
       end if
     end do
 
-    !alpha = quad(integrand, log(E(1)*1.1d0), log(E(size(E))/1.1d0), E_ph, B, log_eVec, log_neVec)
     alpha = 0d0
     do i = 1, nsize-1
       alpha = alpha + 0.5d0 * (integ(i+1) + integ(i)) * (log_eVec(i+1) - log_eVec(i))
@@ -257,8 +256,6 @@ contains
     end if
     
     alpha = 137d0 / 2d0 * pi * sigma_T * B/4.4e13 / eps**2 * Ng_*mec2
-    !write(*,*) E_ph/h, alpha, alpha2
-    !write(*,*) Eaux/EmaxFF, Ng_, alpha
     endif
 
     end function alpha_sync
@@ -278,8 +275,6 @@ contains
         integer :: n, i, j
         real(dp), dimension(:), allocatable :: FI
 
-        !R_out and R_in are not yet defined as a function of z, this is just for testing:
-        !R_in=0.0!R_out/2.0
         alpha = alpha_sync(E_ph, BFF, N_e, E, particle)
         jem = jsync(E_ph, BFF, N_e, E, particle)
         R_avg = 0.5*(R_in+R_out)
@@ -287,15 +282,8 @@ contains
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
         tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
 
-        !tau_max = 0d0 ! for testing purposes
         if (tau_max < 1e-15) THEN
             dFlux_dz=delta_obs**2/(dist**2)*jem*pi*(R_out**2-R_in**2)
-            !write(*,*)delta_obs**2/(dist**2)*j*pi*(R_out**2-R_in**2), flux
-        !In case the jet at height z is opt thick
-        !else if (tau_avg > (10.0)) then
-            !dFlux_dz=sin(jo)*delta_obs**3/(dist**2)*j/alpha*2*R_out
-            !write(*,*)flux
-        !In case the integral has to be calculated numerically
         else
             n=50
             allocate(FI(n))
@@ -309,26 +297,12 @@ contains
             dFlux_dz = sin(jo) * delta_obs**3/(dist**2) * (jem/alpha) * R_out * (2*dFlux_dz) !Add constants
             deallocate(FI)
         endif
-        ! n=100
-        ! allocate(FI(n))
-
-        ! Step=R_out/n !Step
-        ! do i=1,n
-        !     x=0.0+Step*(i-1)
-        !     tau = crossed_length(x, R_in, R_out)*alpha/(sin(jo)*delta_obs)
-        !     FI(i)=1d0-exp(-tau) !The integrand vector
-        ! enddo
-
-        ! call integrate(n,Step,FI,flux) !We call a function for Simpson integration
-        ! flux=sin(jo)*delta_obs**3/(dist**2)*j/(alpha)*2*flux !Add constants
-        ! deallocate(FI)
     end function dFlux_dz
 
     !Function for the length of the section we cross in the jet
     real(dp) function crossed_length(x, R_in, R_out) 
     implicit none
         real(dp) :: x, R_in, R_out
-        !write(*,*)x, R_in, R_out
         if ((abs(x) < abs(R_out)) .and. (abs(x) > abs(R_in))) then
             crossed_length = 2d0 * sqrt(R_out**2 - x**2)
         else if (abs(x) <= abs(R_in)) then
@@ -338,93 +312,6 @@ contains
         endif
     end function crossed_length
 
-    ! !Function that calculates the interpolation
-    ! real(dp) function log_interp1d(x, xp, yp)
-    ! real(dp) :: x
-    ! real(dp), dimension(:) :: xp, yp
-    ! integer :: i, j, n
-    ! real(dp) :: t
-    
-    ! n = size(xp)
-    ! log_interp1d = 0.0  ! Initialize the output array
-    ! if (x .lt. xp(1)) THEN 
-    !     log_interp1d = yp(1) 
-    ! ELSE if (x .gt. xp(n)) THEN 
-    !     log_interp1d = yp(n) 
-    ! ELSE 
-    !     j = 1 
-    !     do WHILE (x .gt. xp(j)) 
-    !         j = j + 1 
-    !     end do 
-    !     t = (x - xp(j-1)) / (xp(j) - xp(j-1)) 
-    !     log_interp1d = yp(j-1) + t * (yp(j) - yp(j-1)) 
-    ! end if
-    ! end function log_interp1d
-
-    ! !Funtion that calculates the term inside the integral
-    ! function integrand(loge, E_ph, bField, log_eVec,log_neVec)
-    
-    ! real(dp) :: df
-    ! real(dp), dimension(:) :: log_eVec, log_neVec
-    ! real(dp) :: loge
-    ! real(dp) :: E_e, integrand
-    ! real(dp), dimension(1) :: E_e_int 
-    ! real(dp), intent(in) :: E_ph, bField
-    ! real(dp), dimension(1) :: p
-
-    ! E_e=exp(loge)
-    
-    ! call compute_derivative(log_interp1d, loge, 1d-4, df, log_eVec,log_neVec)
-    ! if (df < 2. .and. df > -10.) then  
-    !     integrand = PSynchrotron(E_ph, E_e, bField) * exp(log_interp1d(loge, log_eVec, log_neVec)) * (df-2)
-    ! else
-    !     integrand = 0.0
-    ! end if
-
-    ! end function integrand
-
-    ! !Integration function
-    ! function quad(f, a, b, E_ph, bField , log_eVec,log_neVec) result(q)
-    !     implicit none
-    !     real(dp), intent(in) :: a, b, E_ph, bField
-    !     interface
-    !         real(8) function f(x, E_ph, bField, log_eVec, log_neVec)
-    !         real(8) :: x
-    !         real(8), dimension(:) :: log_eVec, log_neVec
-    !         real(8), intent(in) :: E_ph, bField
-    !     end function f
-    !     end interface
-    !     real(dp), dimension(:) :: log_eVec, log_neVec
-    !     real(dp) :: q
-    !     real(dp) :: h, x
-    !     integer :: n, i
-
-    !     n = 200 ! Number of intervals, you can adjust this
-    !     h = (b - a) / n
-    !     q = 0.0
-    !     do i = 0, n
-    !         x = a + i * h
-    !         q = q + f(x, E_ph, bField, log_eVec, log_neVec)
-    !     end do
-
-    !     q = q * h
-
-    ! end function quad
-
-    ! !Subroutines that calculates the derivative  d(log(N))/d(log(E)) 
-    ! subroutine compute_derivative(f, x, h, df, log_eVec, log_neVec)
-    ! real(dp), intent(in) :: x, h
-    ! interface
-    !     real(8) function f(x,log_eVec, log_neVec)
-    !     real(8) :: x
-    !     real(8), dimension(:) :: log_eVec, log_neVec
-    !   end function f
-    ! end interface
-    ! real(dp), dimension(:) :: log_eVec, log_neVec
-    ! real(dp),intent(out) :: df
-    ! df = (f(x + h,log_eVec,log_neVec) - f(x - h,log_eVec,log_neVec)) / (2.0 * h)
-    ! end subroutine compute_derivative
-
     !============================================================================
     ! SSA (start)
     !============================================================================
@@ -433,7 +320,6 @@ contains
     ! Luminosity corrected for synchrotron self-absorption
     !============================================================================
     character, intent(in) :: particle
-    !real(dp), intent(in) :: B(Ns),r_j(Ns),sjo(Ns),V(Ns),Eph(Ns),E(nIn),NE(nIn,Ns),Lum(Ns)
     real(dp), intent(in) :: B(:),r_j(:),sjo(:),V(:),Eph(:),E(:),NE(:,:),Lum(:) 
     real(dp), intent(out) :: LumA(:) ! size Ns
     real(dp) :: Absor_coef,Emmision_coef,Source_fun,depth,tau,Ap, mass
@@ -452,10 +338,8 @@ contains
         depth = r_j(j)/sjo(j)
         !Optical depth for SSA
         tau = Absor_coef*depth / delta_obs(j)
-        !tau = Absor_coef*min(depth,z(j)/gj)!/delta_obs(j)
         !Estimation of the projected area, perpendicular to the observer's direction, obtained by equating
         !the unabsorbed Lum to its value for optically thin emission: 4*pi*Ap*Source_fun*tau
-        !Ap = V(j)/min(depth,z(j)/gj)
         Ap = V(j)*delta_obs(j)/depth
 
         !Luminosity corrected for synchrotron self-absorption

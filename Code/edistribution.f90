@@ -43,8 +43,6 @@ contains
         Ecut = CutE(BFF(i),z(i),EphMFF(i),Kappa(i),particle)   !Cutoff energy for Q(E) in the FF
         if (Ecut > EmaxFF2/2.d0) then
             Ecut = EmaxFF2/2d0
-            !print *, 'EmaxFF in system_parameters.f90 is too low!'
-            !stop
         endif
         write(11,*) i, z(i), Ecut/eV
     enddo
@@ -54,7 +52,6 @@ contains
     call vector_log(EminFF2, EmaxFF2, Ein, Evec )
 
     NEmatrix = 0d0
-    !call calcNE_onezone(Evec, NEmatrix, particle)
     call calcNE_paramo(Evec, NEmatrix, particle)
 
     NEmatrix(:,Ns) = 0d0
@@ -252,8 +249,6 @@ contains
         ! Legacy A pivots the power law at 1.1 m_e c^2 while Norm_q0p normalises it at EminFF, so the
         ! injected power is ~ (1.1 m_e c^2/EminFF)^p ~ 0.3 of nominal. fix_inj_emin uses EminFF in both.
         if (.not. fix_inj_emin) EminFF2 = 1.1d0*mec2
-        !fact = (mpc2-mec2) * (1.0 - exp(-zz/(z0*1000)))
-        !EminFF2 = MAX(EminFF2, (p-2d0)/(p-1d0)*(1d0+sigma_B(zz))* (mec2 + fact))
 
         EEcut = E/Ecut
         ! Return 0 if outside bounds or if E >> Ecut
@@ -521,7 +516,7 @@ contains
         real(dp) :: Ecut, tlossFF, dttFF, dzz, EminFF2, EmaxFF2, mc2, Bz0, Bjz, const_z0, const_zjz
         integer :: jz, jE, m, izz, i2, jlast
         real(dp) :: E1, E2, z1, z2, N11, N12, N21, N22, N1, N2, slope1, slope2, slope
-        real(dp) :: g_min, g_max, Ebr, dz_aux, Naux
+        real(dp) :: g_min, g_max, Ebr, dz_aux
         
         allocate(t(0:numdt), Ntot(numdt), dt(numdt), dg(numbins), zz(0:numdt))
         allocate(nn(numbins, 0:numdt), dotg(numbins, 0:numdt), gg(numbins), &
@@ -546,7 +541,6 @@ contains
         build_g: do jE = 1, numbins
             gg(jE) = g_min * (g_max / g_min)**(dble(jE - 1) / dble(numbins - 1))
             Ee(jE) = gg(jE) * mc2
-            !dotg(jE, 0) = -abs(TLosses(Bz0, zz(0), 1d0, 1d0, Ee(jE), particle)) / mc2             ! dotg'
             dotg(jE, 0) = -abs(TLosses_mod(Bz0, zz(0), Ee(jE), 0d0, particle)) / mc2
             dotg(jE, 0) = dotg(jE, 0) / (betaGamma(zz(0)) *c)                                                ! dotg' / (betaGamma c)
             if ( jE > 1 ) dg(jE) = gg(jE) - gg(jE - 1)
@@ -573,9 +567,7 @@ contains
             Ebr = min(Ebr, Ecut)
             tlossFF = Ebr/abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ebr, particle))
             dttFF = min(0.01*tlossFF, dz_aux/(betaGamma(zz(jz))*c))
-            !if ((1d0*tlossFF, 1d-2*zz(jz)/(betaGamma(zz(jz))*c))
             dzz = dttFF * betaGamma(zz(jz)) * c
-            !write(*,*) Ebr, Ecut, Bjz, sigma_B(zz(jz))
             jz = jz + 1
             zz(jz) = zz(jz-1) + dzz
 
@@ -587,29 +579,19 @@ contains
             &                   Qinj(:, jz - 1), &
             &                   1d200)
 
-            !write(*,*) nn(:,jz)
             !$OMP PARALLEL DO PRIVATE(jE)
             build_dotg: do jE = 1, numbins
-                dotg(jE, jz) = -abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ee(jE), particle))/mc2!, &
-                !write(*,*) jE, jz, nn(jE, jz), betaGamma(zz(jz)), r_fun_out(zz(jz))/R_g, zz(jz)/R_g
-                Naux = nn(jE, jz) / ((pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)) * betaGamma(zz(jz)) * c)
-                !dotg(jE, jz) = -abs(TLosses_mod(Bjz, zz(jz), Ee(jE), Naux, particle))/mc2
-                                     !nn(jE, jz) / (betaGamma(zz(jz)) * c * pi*r_fun(zz(jz))**2) )) / mec2
+                dotg(jE, jz) = -abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ee(jE), particle))/mc2
                 dotg(jE, jz) = dotg(jE, jz) / (betaGamma(zz(jz))*c)
             end do build_dotg
             !$OMP END PARALLEL DO
 
             const_zjz = mc2 * pi * (r_fun_out(zz(jz))**2-r_fun_in(zz(jz))**2)* exp(-(zz(jz)/zmax_inj))
-            !if (zz(jz) < zmax_inj) then
             !$OMP PARALLEL DO PRIVATE(jE)
             build_Qin: do jE = 1, numbins
               Qinj(jE, jz) = qp_E(Ee(jE), zz(jz), Bjz, particle) * const_zjz
             end do build_Qin
             !$OMP END PARALLEL DO
-            !else
-            !    Qinj(:, jz) = 0d0
-            !end if
-
         end do z_loop
         jlast = jz   ! last computed step (arrays are only filled up to here)
 
@@ -642,7 +624,6 @@ contains
                 N1 = N11 + slope1 * safeLog10(z(izz)/z1)
                 N2 = N21 + slope2 * safeLog10(z(izz)/z1)
                 slope = (N2-N1)/safeLog10(E2/E1)
-                !NEmatrix(i2, izz) = nn(m, jz)
                 NEmatrix(i2, izz) = N1 + slope * safeLog10(Evec(i2)/E1)
                 NEmatrix(i2, izz) = 10**NEmatrix(i2, izz) / ((pi * (rj_out(izz)**2-rj_in(izz)**2)) * betaGamma(z(izz)) * c * mc2)
             enddo
