@@ -25,8 +25,8 @@ module system_parameters
    real(dp) :: jo                                   !Observer's angle with the jet axis [rad] (derived)
    real(dp) :: L_Edd                                !Eddington luminosity (derived)
    real(dp) :: R_g                                  !Gravitational radius [cm] (derived)
-   real(dp), parameter :: EphM = kB*T_CMB           !Target photon energy in the obs frame
-   real(dp), parameter :: nf0 = u_CMB/EphM          !Target photon number density in the obs frame
+   real(dp), parameter :: EphM = kB*T_CMB           !CMB characteristic photon energy in the obs frame
+   real(dp), parameter :: nf0 = u_CMB/EphM          !CMB photon number density in the obs frame
 
    !===JET PROPERTIES============================================================================================
 

@@ -3,7 +3,7 @@ module numerical_utils
     implicit none
     private
 
-    public :: vector_log, integrate, versorresta
+    public :: vector_log, integrate
     public :: locate, Interpol1d
     public :: safeLog10, safeLog, tridag_ser, zeros1D
 
@@ -41,22 +41,6 @@ contains
         S = H*(S1 + 4.d0*S0 + S2)/3.d0
         if (mod(N, 2) == 0) S = S + H*(5.d0*FI(N) + 8.d0*FI(N-1) - FI(N-2))/12.d0
     end subroutine integrate
-
-
-    subroutine versorresta(V1, V2, N, versor)
-        integer, intent(in) :: N
-        real(dp), intent(in) :: V1(N), V2(N)
-        real(dp), intent(out) :: versor(N)
-        real(dp) :: difference(N), difference_norm
-
-        difference = V1 - V2
-        difference_norm = norm2(difference)
-        if (difference_norm > 0.d0) then
-            versor = difference/difference_norm
-        else
-            versor = 0.d0
-        end if
-    end subroutine versorresta
 
 
     integer function locate(xx, x)

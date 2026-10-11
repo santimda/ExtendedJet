@@ -48,12 +48,12 @@ MODULE evolution
          !Magnetic field
          BFF(i) = BFF_fun(z(i))
 
-         !Stellar photon density and energy 
-         nfFF(i) = nf0/delta_obs(i)  !!! CHECK!!!!!
+         !CMB photon density and characteristic energy in the FF
+         nfFF(i) = nf0/delta_obs(i)  ! Check frame transformation consistency with Khangulyan+2014
          EphMFF(i) = EphM/delta_obs(i)
 
-         !Dilution factor in the FF (Khangulyan 2014)
-         Kappa(i) = delta_obs(i)**2 ! CHECK, FOR CMB
+         !CMB energy-density transformation factor in the FF
+         Kappa(i) = delta_obs(i)**2  ! Check frame transformation consistency with Khangulyan+2014
 
          !Velocity perpendicular to the jet propagation
          vnorm(i) = v_lat(z(i))

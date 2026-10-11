@@ -147,19 +147,4 @@ MODULE globals
 
   !====================================================================================
 
-  !============================================================================
-  ! p-p cross section
-
-  Function sigma_pp(L1,Ep)
-    integer, parameter :: dp = kind(1.d0)
-    real(dp), intent(in) :: L1, Ep
-    real(dp) :: sigma_pp
-    if (Ep < E_th) then !E_th= 1.22 GeV
-      sigma_pp = 0.d0
-    else           
-      sigma_pp = (34.3d0 + 1.88d0*L1 + 0.25d0*L1**2)*1.d-27 ! cm^2
-      sigma_pp = sigma_pp*(1.d0-(E_th/Ep)**4)**2 ! Add factor for better fit at low energies 
-    endif
-    return
-  end Function sigma_pp
 END MODULE globals

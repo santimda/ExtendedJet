@@ -1,7 +1,7 @@
 program test_numerical_utilities
     use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
     use constants, only: dp
-    use numerical_utils, only: vector_log, integrate, versorresta, locate, Interpol1d, &
+    use numerical_utils, only: vector_log, integrate, locate, Interpol1d, &
                                safeLog10, safeLog, tridag_ser, zeros1D
     implicit none
 
@@ -12,7 +12,6 @@ program test_numerical_utilities
     real(dp) :: increasing(4), decreasing(4)
     real(dp) :: x_interp(2), v_interp(2)
     real(dp) :: lower(2), diagonal(3), upper(2), rhs(3), solution(3)
-    real(dp) :: vector1(3), vector2(3), unit_vector(3)
     real(dp) :: zero_values(4), small_values(4)
 
     call vector_log(1.d0, 1.d4, ratio, values)
@@ -65,13 +64,6 @@ program test_numerical_utilities
     rhs = (/ 1.d0, 0.d0, 1.d0 /)
     call tridag_ser(lower, diagonal, upper, rhs, solution)
     call assert_array_close('tridiagonal solver', solution, (/ 1.d0, 1.d0, 1.d0 /), tolerance)
-
-    vector1 = (/ 3.d0, 4.d0, 0.d0 /)
-    vector2 = 0.d0
-    call versorresta(vector1, vector2, 3, unit_vector)
-    call assert_array_close('unit vector difference', unit_vector, (/ 0.6d0, 0.8d0, 0.d0 /), tolerance)
-    call versorresta(vector1, vector1, 3, unit_vector)
-    call assert_array_close('coincident vector difference', unit_vector, (/ 0.d0, 0.d0, 0.d0 /), tolerance)
 
     zero_values = zeros1D(4, .false.)
     small_values = zeros1D(4, .true.)

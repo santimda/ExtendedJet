@@ -77,7 +77,7 @@ contains
     real(dp), intent(in) :: Eph_MFF, Kapp, EFF
     real(dp) :: TFF, t_iso, Eiso_ct
 
-    TFF = Eph_MFF/(2.7d0*mec2)   !Dimensionless stellar temperature in the FF (EphMFF = 2.7*kB*TFF)
+    TFF = Eph_MFF/(2.7d0*mec2)   !Dimensionless CMB temperature in the FF (EphMFF = 2.7*kB*TFF)
     t_iso = 4d0*TFF*(EFF/mec2)
     Eiso_ct = cte_IC_K*Kapp*TFF**2
     ICLoss = - Eiso_ct*F_iso(t_iso)*mec2    ![erg/s]
