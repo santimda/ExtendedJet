@@ -60,6 +60,11 @@ The reduced run writes to `tests/output/`; the reference run writes to
 Gnuplot scripts are run from `diagnostics/`, and post-processing utilities are
 run from `postprocessing/`.
 
+The current model uses only the cosmic microwave background (CMB) as its
+external photon field. The generic IC kernel remains capable of receiving
+other black-body-like fields, but no stellar or other external photon field is
+configured in this version.
+
 ## Important files
 
 **Makefile**: production, f2py, and unit-test build orchestration.
