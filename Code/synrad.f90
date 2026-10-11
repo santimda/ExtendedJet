@@ -1,7 +1,7 @@
 MODULE synrad
     use globals
     use constants
-    use mathematics
+    use numerical_utils, only: integrate, Interpol1d, safeLog
     use losses
     implicit none
 

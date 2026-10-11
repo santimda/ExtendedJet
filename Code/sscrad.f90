@@ -1,6 +1,7 @@
 module sscrad
    use constants
    use globals
+   use numerical_utils, only: vector_log
    implicit none
    public :: SEDssc
 

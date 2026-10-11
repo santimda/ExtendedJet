@@ -1,6 +1,6 @@
 MODULE edistribution
     use constants
-    use mathematics
+    use numerical_utils, only: vector_log, safeLog10, tridag_ser, zeros1D
     use globals
     use losses
     implicit none

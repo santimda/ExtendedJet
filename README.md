@@ -1,6 +1,6 @@
 # ExtendedJet
 
-Non-thermal multi-zone emission model for relativistic jets. The model is partly based on Molina, del Palacio & Bosch Ramon 2019 (ADS link: https://ui.adsabs.harvard.edu/abs/2019A%26A...629A.129M/abstract). The code is written as modules of Fortran90, articulated by a *Main* program, compiled using *Make* (simply run `make` in the terminal), and ran as `./run.x`. The compilation with *make* by default makes use of the *blas* and *lapack* libraries. Files can be safely removed using *make clean*.
+Non-thermal multi-zone emission model for relativistic jets. The model is partly based on Molina, del Palacio & Bosch Ramon 2019 (ADS link: https://ui.adsabs.harvard.edu/abs/2019A%26A...629A.129M/abstract). The code is written as Fortran 90 modules, compiled with Make, and run as `./run.x params.nml`. Build products can be safely removed using `make clean` from `Code/`.
 
 Some further details of each code are given below.
 
@@ -30,8 +30,8 @@ default. If LaTeX is unavailable, set `text.usetex` to `False` in
 Astropy, pandas, `agnpy`, `naima`, Gnuplot, and `smplotlib`. `agnpy` is used by
 `emisividad1.ipynb` for synchrotron/absorption comparisons; `naima` is used by
 `Syn_SSC_sed.ipynb` for synchrotron and SSC comparisons. Neither is required
-by the Fortran model or its f2py wrapper. The `constants_cgs` module and
-external RIAF data used by some legacy notebooks are not included here.
+by the Fortran model or its f2py wrapper. External RIAF data used by some
+legacy notebooks are not included here.
 
 ## Layout
 
@@ -42,6 +42,7 @@ external RIAF data used by some legacy notebooks are not included here.
 - `figures/`: repository figures and diagrams.
 - `postprocessing/`: synthetic-map notebooks, Python utilities, and data.
 - `tests/`: regression and f2py checks.
+- `validation/`: optional physics-validation notebooks.
 - `output/`: generated reference-model outputs.
 - `tests/output/`: disposable outputs from the reduced test configuration.
 
@@ -49,6 +50,7 @@ Run the model from the repository root with a configuration file:
 
 ```text
 make -C Code
+make -C Code test-unit
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/test.nml)
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
@@ -60,17 +62,19 @@ run from `postprocessing/`.
 
 ## Important files
 
-**Makefile**: instructions for compiling using *make*
+**Makefile**: production, f2py, and unit-test build orchestration.
 
 **Makefile.depend**: details which modules depend on which other modules (needed for compilation)
 
 **constants.f90**: useful physical and numerical constants. It is imported by **global.f90** to be used by all other modules as well.
 
+**numerical_utils.f90**: reusable grids, integration, interpolation, safe logarithms, and linear-algebra utilities.
+
 **system_parameters.f90**: parameters of the specific system being studied. It is imported by **globals.f90** to be used by all other modules as well.
 
-**globals.f90**: constants, variables and number of points in the simulation to be used by all other modules.
+**globals.f90**: simulation grid sizes, shared state arrays, and common radiation functions.
 
-**controles.f90**: this sets which modules are going to run in the simulation by setting variables to *.True.* or *.False.*.
+**controls.f90**: compile-time and namelist-controlled calculation switches.
 
 **trajectory.f90**: calculates the jet or counter-jet trajectory (trivial for a vertical jet).
 

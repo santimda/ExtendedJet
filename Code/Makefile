@@ -2,49 +2,73 @@
 # Makefile for JetCode (Fortran + f2py)
 # ===============================
 
-DEBUG   = N
-FC      = gfortran -fopenmp
+DEBUG     = N
+FC        = gfortran -fopenmp
+BUILD_DIR = build
+CONFIG   ?= ../configs/test.nml
 
-# Compiler flags
-FFLAGS  = -ffree-line-length-none -fbackslash
+FFLAGS = -ffree-line-length-none -fbackslash
 ifeq ($(DEBUG), Y)
   FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow
 else
   FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
 endif
 
-# Sources
-SOURCES = $(wildcard *.f90)
-OBJECTS = $(SOURCES:.f90=.o)
+# Production sources, ordered from low-level modules to the program entry point.
+SOURCES = constants.f90 \
+          controls.f90 \
+          system_parameters.f90 \
+          numerical_utils.f90 \
+          globals.f90 \
+          losses.f90 \
+          initialize.f90 \
+          trajectory.f90 \
+          evolution.f90 \
+          edistribution.f90 \
+          synrad.f90 \
+          icrad.f90 \
+          sscrad.f90 \
+          main.f90
+OBJECTS = $(SOURCES:%.f90=$(BUILD_DIR)/%.o)
 
-.PHONY: all clean run f2py depend
+F2PY_SOURCES = constants.f90 controls.f90 system_parameters.f90 \
+               numerical_utils.f90 globals.f90 losses.f90 initialize.f90 \
+               trajectory.f90 evolution.f90 edistribution.f90 synrad.f90 \
+               icrad.f90 sscrad.f90 main.f90
 
-# Default target: compile executable
+.PHONY: all clean run f2py depend test test-unit
+
 all: run.x
 
-# Compile executable
 run.x: $(OBJECTS)
 	$(FC) $(FFLAGS) $(OBJECTS) -o $@
 
-# Compile each object file and generate .mod files in $(MODDIR)
-%.o: %.f90
-	$(FC) $(FFLAGS) -c $< -o $@
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-# Run the executable with timing
+.SUFFIXES:
+$(BUILD_DIR)/%.o: %.f90 | $(BUILD_DIR)
+	$(FC) $(FFLAGS) -J$(BUILD_DIR) -I$(BUILD_DIR) -c $< -o $@
+
 run: run.x
-	@echo "Running program..."
+	@echo "Running program with $(CONFIG)..."
 	@start_time=$$(date +%s); \
-	./run.x; \
+	./run.x $(CONFIG); \
+	status=$$?; \
 	end_time=$$(date +%s); \
 	elapsed=$$((end_time - start_time)); \
-	echo "Execution time: $${elapsed} s"
+	echo "Execution time: $${elapsed} s"; \
+	exit $$status
 
-# --------------------------
-# Python module via f2py (meson backend, numpy >= 1.26 / py3.12)
-# --------------------------
-F2PY_SOURCES = constants.f90 system_parameters.f90 globals.f90 controls.f90 \
-	mathematics.f90 losses.f90 initialize.f90 trajectory.f90 evolution.f90 \
-	edistribution.f90 synrad.f90 icrad.f90 sscrad.f90 main.f90
+test: test-unit
+
+test-unit: $(BUILD_DIR)/test_numerical_utilities
+	./$(BUILD_DIR)/test_numerical_utilities
+
+$(BUILD_DIR)/test_numerical_utilities: ../tests/test_numerical_utilities.f90 \
+                                      $(BUILD_DIR)/constants.o \
+                                      $(BUILD_DIR)/numerical_utils.o | $(BUILD_DIR)
+	$(FC) $(FFLAGS) -J$(BUILD_DIR) -I$(BUILD_DIR) $^ -o $@
 
 f2py:
 	@echo "Building Python module JetCode..."
@@ -55,14 +79,11 @@ f2py:
 	  --f90flags="$(FFLAGS) -fopenmp" \
 	  -lgomp
 
-# Clean everything (build products only)
 clean:
 	$(RM) *.x *.o *.mod *.bin *.log *.so *~
-	$(RM) -rf build
+	$(RM) -rf $(BUILD_DIR)
 
-# Generate dependencies
 depend:
 	python3 gen_depend.py
 
-# Include dependencies
 -include Makefile.depend

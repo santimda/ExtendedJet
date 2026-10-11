@@ -43,6 +43,7 @@ out_regression/
 !tests/reference/*.dat
 
 # Dirs
+Code/build/
 Code/.vscode
 .ipynb_checkpoints/
 Code/.ipynb_checkpoints/

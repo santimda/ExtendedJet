@@ -60,58 +60,6 @@ MODULE globals
   contains
 
   !=============================================================================================================
-  ! Energy vector
-  !=============================================================================================================
-
-  SUBROUTINE vector_log(Emin,Emax,Eint,E_vec)
-    implicit none
-    integer, parameter :: dp = kind(1.d0)
-    real(dp), intent(in) :: Emin,Emax
-    integer :: N_puntos, i_vec
-    real(dp), intent(out) :: Eint
-    real(dp), intent(out) :: E_vec(:)
-
-    N_puntos = SIZE(E_vec)
-    Eint = (Emax/Emin)**(1.d0/dfloat(N_puntos-1))
-    E_vec(1) = Emin
-    do i_vec = 2, N_puntos
-      E_vec(i_vec) = E_vec(i_vec-1)*Eint    
-    enddo
-    RETURN
-
-  END SUBROUTINE vector_log
-
-  !=============================================================================================================
-  ! Integration
-  !=============================================================================================================
-
-  SUBROUTINE integrate(N,H,FI,S)
-    ! Subroutine for integration over f(x) with the Simpson rule.
-    ! FI: integrand f(x); H: interval; S: integral.
-    integer, parameter :: dp = kind(1.d0)
-    integer, intent(in) :: N
-    real(dp), intent(in) :: H,FI(N)
-    real(dp), intent(out) :: S
-    real(dp) :: S0,S1,S2
-    integer :: I
-
-    S  = 0.d0
-    S0 = 0.d0
-    S1 = 0.d0
-    S2 = 0.d0
-    DO I = 2, N-1, 2
-      S1 = S1 + FI(I-1)
-      S0 = S0 + FI(I)
-      S2 = S2 + FI(I+1)
-    END DO
-    S = H*(S1 + 4.*S0 + S2)/3.
-    !If N is even, add the last slice separately
-    IF(MOD(N,2).eq.0) S = S + H*(5.d0*FI(N) + 8.d0*FI(N-1) - FI(N-2))/12.d0
-    RETURN
-
-  End SUBROUTINE integrate
-
-  !=============================================================================================================
   ! IC radiation (Khangulyan 2014)
   !=============================================================================================================
   !----------------------------------------------------------------------------
@@ -199,29 +147,6 @@ MODULE globals
 
   !====================================================================================
 
-  SUBROUTINE versorresta(V1,V2,N,versor)
-    ! subroutine to calculate the versor: (V1-V2)/|V1-V2|
-    integer, parameter :: dp = kind(1.d0)
-    integer, intent(in) :: N
-    integer :: i,j
-    real(dp), intent(in) :: V1,V2
-    real(dp), intent(out) :: versor
-    real(dp) :: resta,suma
-    DIMENSION V1(N),V2(N),versor(N),resta(N)
-
-    suma = 0.d0
-    do i = 1, N
-      resta(i) = V1(i) - V2(i)
-      suma = suma + resta(i)**2
-    enddo
-    suma = sqrt(suma)          ! suma = || versor_resta ||
-    do j = 1,N
-      versor(j) = resta(j)/suma
-    enddo
-
-    RETURN
-  END SUBROUTINE versorresta
-
   !============================================================================
   ! p-p cross section
 
@@ -232,75 +157,9 @@ MODULE globals
     if (Ep < E_th) then !E_th= 1.22 GeV
       sigma_pp = 0.d0
     else           
-      sigma_pp = (34.3d0 + 1.88d0*L1 + 0.25d0*L1**2)*1.d-27 !cm²
+      sigma_pp = (34.3d0 + 1.88d0*L1 + 0.25d0*L1**2)*1.d-27 ! cm^2
       sigma_pp = sigma_pp*(1.d0-(E_th/Ep)**4)**2 ! Add factor for better fit at low energies 
     endif
     return
   end Function sigma_pp
-
-
-  !============================================================================
-  ! Logarithmic interpolation
-  integer function locate(xx, x)
-    integer, parameter :: dp = kind(1.d0)
-    real(dp), intent(in) :: x, xx(:)
-    ! Given an array xx(1:n) , and given a value x , returns a value j such that x is between
-    ! xx(j) and xx(j+1) . xx(1:n) must be monotonic, either increasing or decreasing. j=0
-    ! or j=n is returned to indicate that x is out of range.
-    integer :: jl, jm, ju
-    integer :: j, n
-
-    n = SIZE(xx) ! x and v have to have the same size
-    jl = 0                            ! Initialize lower
-    ju = n+1                          ! and upper limits.
-    
-    do while (ju-jl > 1)
-      jm = (ju + jl)/2
-      if ((xx(n) >= xx(1)) .eqv. (x >= xx(jm))) then
-        jl = jm
-      else
-        ju = jm
-      endif
-    enddo
-    
-    if (x == xx(1)) then
-      j = 1
-    else if (x == xx(n)) then
-      j = n-1
-    else
-      j = jl
-    endif
-    locate = j
-    end function locate
-
-  !============================================================================
-  ! Logarithmic interpolation
-  real(dp) function Interpol1d(xp, x, v)
-  integer, parameter :: dp = kind(1.d0)
-  real(dp), intent(in) :: xp, v(:), x(:)
-  integer :: j_x, n
-  real(dp) :: slope
-  n = SIZE(v) ! x and v have to have the same size
-  j_x = locate(x, xp)
-  if (j_x == 0) then
-    slope = (v(2) - v(1)) / (x(2) - x(1))
-    Interpol1d = max(v(1) + slope * (xp - x(1)), 0d0)
-  else if (j_x == n) then
-    slope = (v(n) - v(n-1)) / (x(n) - x(n-1))
-    Interpol1d = max(v(n) + slope * (xp - x(n)), 0d0)
-  else
-    if (v(j_x) > 0d0 .and. v(j_x + 1) > 0d0) then
-      slope = log(v(j_x+1)/v(j_x))/log(x(j_x+1)/x(j_x))
-      Interpol1d = v(j_x) * (xp/x(j_x))**slope
-    else
-      slope = (v(j_x+1) - v(j_x)) / (x(j_x+1) - x(j_x))
-      Interpol1d = v(j_x) + slope * (xp - x(j_x))
-    endif
-  endif
-
-  return
-  end function Interpol1d
-
-  !============================================================================
-  
 END MODULE globals
