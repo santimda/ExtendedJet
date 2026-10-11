@@ -15,7 +15,7 @@ contains
    ! This subroutine calculates the electron energy distribution at each segment
    !============================================================================
     character(1), intent(in) :: particle
-    real(dp) :: Ecut, Ein, NEtot, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
+    real(dp) :: Ecut, Ein, EmaxFF2, EminFF2, restEnergy, Lsy, dEdt
     real(dp) :: NEmatrix(nIn, Ns), Evec(nIn)
     real(dp) :: Nparticles, flux, Eparticles, energyFlux, vol, fluxp, eFluxp, Ljett, magnetization
     real(dp) :: sqrt_factor, dEdt_factor
@@ -231,7 +231,7 @@ contains
     !************************************************************************************
     real(dp) function qp_E(E, zz, BB, particle)
     real(dp), intent(in) :: E, zz, BB
-    real(dp) :: Ecut, EEcut, EminFF2, EmaxFF2, q0p, fact
+    real(dp) :: Ecut, EEcut, EminFF2, EmaxFF2, q0p
     character(1), intent(in) :: particle
 
         ! Compute cutoff energy for Q(E) in the FF and normalisation constant
@@ -269,7 +269,7 @@ contains
 
     real(dp) function dLe_dz2(zz)
     real(dp), intent(in) :: zz
-    real(dp) :: EminFF2, EmaxFF2, dE, Einc
+    real(dp) :: dE, Einc
     real(dp), allocatable :: Egrid(:), f(:)
     integer, parameter :: N = 120
     integer :: i
@@ -331,8 +331,8 @@ contains
     ! along the jet at a given height zz (in the FF).
     !============================================================================
     real(dp), intent(in) :: zz_, NE_(:)
-    integer :: j, i
-    real(dp) :: B_FF_, dE, Eint, aux, Evec(nIn)
+    integer :: i
+    real(dp) :: dE, Eint, Evec(nIn)
 
     ! Fill the output arrays using the system_parameters functions
     Eint = (EmaxFF/EminFF)**(1d0/(nIn-1d0))

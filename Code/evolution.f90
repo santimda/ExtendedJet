@@ -15,7 +15,7 @@ MODULE evolution
    ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-      real(dp) :: dir, cjo
+      real(dp) :: dir, cjo, rj_in_norm
       integer :: i
       allocate( joFF(Ns) )
 
@@ -69,7 +69,13 @@ MODULE evolution
          boost(i) = delta_obs(i)**2 
 
          write(30,*) z(i), BFF(i), rj_out(i), rj_in(i), gj(i), delta_obs(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i), sigma_B(z(i)), Le_z(z(i))
-         write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj_out(i)/rj_out(1), rj_in(i)/rj_in(1), VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
+         if (abs(rj_in(1)) <= tiny(rj_in(1))) then
+            rj_in_norm = 1d0
+         else
+            rj_in_norm = rj_in(i)/rj_in(1)
+         endif
+         write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj_out(i)/rj_out(1), &
+                     rj_in_norm, VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
 
       end do
       close(30)
@@ -78,6 +84,7 @@ MODULE evolution
       deallocate( joFF )
 
    end subroutine Quantities
+
    !============================================================================
    ! Quantities (END)
    !============================================================================
