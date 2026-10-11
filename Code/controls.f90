@@ -1,20 +1,20 @@
 MODULE controls
     implicit none
 
-    logical, parameter :: no = .FALSE.
-    logical, parameter :: yes = .TRUE.
+    logical, parameter :: off = .FALSE.
+    logical, parameter :: on = .TRUE.
 
     !===================================================
     ! Programs to run (compile-time; not part of the namelist)
 
-    logical, parameter :: run_jet_calc = yes
+    logical, parameter :: run_jet_calc = on
 
-    logical, parameter :: jet_calc = yes
-    logical, parameter :: inner_radius_calc = yes
+    logical, parameter :: jet_calc = on
+    logical, parameter :: inner_radius_calc = on
 
     ! SSC is not supported in this version: kept as a compile-time parameter
     ! (not part of the &run namelist) so it can never be switched on at runtime.
-    logical, parameter :: radssc_calc = no
+    logical, parameter :: radssc_calc = off
 
     !===================================================
     ! Runtime switches (defaults here; overridden by the &run namelist group
