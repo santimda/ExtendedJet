@@ -61,6 +61,19 @@ The reduced run writes to `tests/output/`; the reference run writes to
 Gnuplot scripts are run from `diagnostics/`, and post-processing utilities are
 run from `postprocessing/`.
 
+The notebook parameter exploration is also available as a script. Build the f2py module and run all configured
+sweeps with:
+
+```bash
+make -C Code f2py
+OMP_NUM_THREADS=1 python diagnostics/explore_parameters.py
+```
+
+Plots are written to `diagnostics/parameter_exploration/` by default. Use `--sweep NAME` to run one SED sweep or
+`--sweep power` for the injection power-components plot; `--output-dir PATH` changes the destination. Intermediate
+Fortran files are written to a temporary directory and removed automatically. The script uses the notebook reference
+dictionary and runs calls sequentially because the Fortran modules retain mutable state.
+
 `make -C Code test` runs the numerical unit tests and a reduced Fortran
 regression. The regression runs `run.x` with `configs/test.nml` in a temporary
 output directory and compares the jet and counter-jet fluxes with the frozen
