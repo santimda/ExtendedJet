@@ -17,11 +17,9 @@ contains
     !============================================================================
     character(LEN=*), intent(in) :: jet ! 'CJ' or 'jet'
     character(1), intent(in) :: particle
-    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, dEph, EphFF, dEphFF(Ns), dFdz
-    real(dp) :: Lumcut(Ns), LumcutFF(Ns), L1, L2, L3, L4, L5, L6, Lum, LumFF, LBolFF
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, EphFF, dFdz
     real(dp) :: Total_flux, FT(max_apertures)
-    real(dp) :: LumcutA(Ns), LumcutAFF(Ns), LumA, LumAFF, LBolAFF, z_proj, sjo, dil
-    logical, parameter :: bin_SEDsyn = .False.
+    real(dp) :: z_proj, sjo, dil
     integer :: k, i, j, l
 
     !N(E) of each cut
@@ -63,9 +61,6 @@ contains
     close(40)
     close(122)
 
-    ! Calculate the integrated SED for different z-ranges and for the total jet
-    if (bin_SEDsyn .and. jet=='') call SEDsyn_bin(jet,particle)
-    
     end subroutine SEDsyn
     !============================================================================
     ! SEDsyn (END)
@@ -206,7 +201,7 @@ contains
     real(dp), intent(in) :: B, E_ph
     character(1), intent(in) :: particle
     real(dp) :: alpha
-    real(dp) :: df, Eaux, Ng_, eps, gamma, alpha2
+    real(dp) :: df, Eaux, Ng_, eps, gamma
     real(dp), dimension(:), allocatable :: integ
     integer(dp) :: nsize, i
 
@@ -270,17 +265,15 @@ contains
         real(dp), dimension(:), intent(in) :: N_e, E
         real(dp), intent (in) :: BFF, E_ph, delta_obs
         character(1), intent(in) :: particle
-        real(dp) :: jem, alpha, S, R_out, R_in, R_avg
-        real(dp) :: x, Step, tau, tau_avg, tau_max, variable_nan
-        integer :: n, i, j
+        real(dp) :: jem, alpha, R_out, R_in
+        real(dp) :: x, Step, tau, tau_max
+        integer :: n, i
         real(dp), dimension(:), allocatable :: FI
 
         alpha = alpha_sync(E_ph, BFF, N_e, E, particle)
         jem = jsync(E_ph, BFF, N_e, E, particle)
-        R_avg = 0.5*(R_in+R_out)
         !We consider the opt. thin case
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
-        tau_avg = crossed_length(R_avg, R_in, R_out)*alpha/(sin(jo)*delta_obs)
 
         if (tau_max < 1e-15) THEN
             dFlux_dz=delta_obs**2/(dist**2)*jem*pi*(R_out**2-R_in**2)
@@ -363,7 +356,7 @@ contains
     real(dp), intent(in) :: B, Eph, E(:), NE(:)
     character(1), intent(in) :: particle
     real(dp) :: dE, Ec, x, F, E_step, factor
-    real(dp) :: f1, f2, sum
+    real(dp) :: f1, f2
     real(dp), parameter :: cte_Ec = sqrt(3d0/2d0)*(qe*h)/(2d0*pi*me**3*c**5)
     integer :: i
     !Initialization
@@ -407,7 +400,7 @@ contains
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
         character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet 
-        real(dp) :: L_tot(Ns), L_abs(Ns), Lun(NSED_sy, Ns), Lsy(NSED_sy, Ns)
+        real(dp) :: L_tot(Ns), Lsy(NSED_sy, Ns)
         real(dp) :: Esy(NSED_sy), Esy_step, dEsy
         real(dp) :: U_sy_FF
         integer :: i, l
@@ -425,6 +418,7 @@ contains
         close(27)
 
         ! Integrate the luminosity of each segment
+        L_tot = 0d0
         Esy_step = Esy(2)/Esy(1)
         open(28,file=trim(opath('U_FF'//jet//'.dat')))
         open(29,file=trim(opath('L_inj'//jet//'.dat')))
@@ -462,7 +456,6 @@ contains
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
     real(dp), allocatable :: Eph(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF
-    real(dp) :: LumcutFF(Ns), LumcutAFF(Ns), LumcutA(Ns)
     real(dp) :: dFdz
     integer :: m_data
     integer :: i, j, l
@@ -514,9 +507,8 @@ contains
     ! The input is the '' (jet) or 'CJ' (counter-jet). 
     !============================================================================
     real(dp), intent(in) :: z_current, NE_(:), Evec(:)
-    real(dp) :: dFdz, Ein, EphFF
-    real(dp) :: Eph
-    integer :: i, j, l
+    real(dp) :: Ein, Eph
+    integer :: l
 
     Ein = (Emax_sy/Emin_sy)**(1d0/(NSED_sy-1))  !Energy increase factor
     dL_syn_dz2 = 0d0                               !Initialization

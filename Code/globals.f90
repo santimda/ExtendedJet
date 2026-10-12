@@ -10,8 +10,6 @@ MODULE globals
   ! It also has defined some subroutines that many modules call.
   !====================================================================
 
-  integer, parameter :: nth = 4   ! number of threads (parallelization)
-
   !===========================================================
   ! Simulation grid/vectors size
   ! Ns, numbins and dttFF_min are now runtime variables set by the &run
