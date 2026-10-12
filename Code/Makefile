@@ -2,7 +2,8 @@
 # Makefile for JetCode (Fortran + f2py)
 # ===============================
 
-DEBUG     = N
+DEBUG    ?= N
+PROFILE  ?= N
 FC        = gfortran -fopenmp
 BUILD_DIR = build
 CONFIG   ?= ../configs/test.nml
@@ -12,6 +13,9 @@ ifeq ($(DEBUG), Y)
   FFLAGS += -Wall -Wextra -Wimplicit-interface -fPIC -fmax-errors=1 -g -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow
 else
   FFLAGS += -Wno-tabs -fPIC -fmax-errors=1 -O3 -march=native -ffast-math -funroll-loops
+  ifeq ($(PROFILE), Y)
+    FFLAGS += -g -fno-omit-frame-pointer
+  endif
 endif
 
 # Production sources, ordered from low-level modules to the program entry point.
