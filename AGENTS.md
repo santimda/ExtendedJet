@@ -5,8 +5,9 @@
 ## Build and run
 - `cd Code && make` builds `run.x` (`make depend` regenerates `Makefile.depend`; `make f2py` builds the Python module `JetCode`).
 - Set `OMP_NUM_THREADS` explicitly when benchmarking or calling through f2py. On the current machine,
-  `configs/m87_reference.nml` took 21.77 s, 12.18 s, and 9.14 s with 1, 2, and 4 threads respectively.
-  These timings are machine-specific; use this full configuration rather than `configs/test.nml` for profiling.
+  `configs/m87_reference.nml` takes roughly 1.4-1.6 s after hoisting the injection normalization out of the
+  energy loop; 2-4 threads do not currently improve on one thread. These timings are machine-specific; use
+  this full configuration rather than `configs/test.nml` for profiling.
 - Namelist groups `&model` (physics; lengths in R_g, energies in eV) and `&run` (grid, apertures, switches, `outdir`,
   `sync_approx='full'|'delta'`, `fix_norm_taper`, `fix_inj_emin`). Defaults live in `Code/system_parameters.f90`.
   Local configs: `configs/m87_reference.nml`, `configs/test.nml`.
