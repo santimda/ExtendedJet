@@ -120,12 +120,9 @@ contains
     do while (abs(lE2-lE1) > error_tolerance)
         lEmid = (lE1+lE2)/2d0
         check =  Eacc - abs(TLosses(BFF1,z1,Eph1,Kappa1,10d0**lEmid, particle))
-        if (check == 0d0) then
+        if (check <= 0d0) then
             lE2 = lEmid
-            exit
-        else if (check < 0d0) then
-            lE2 = lEmid
-        else if (check > 0d0) then
+        else
             lE1 = lEmid
         endif
     enddo
