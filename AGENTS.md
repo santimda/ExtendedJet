@@ -27,3 +27,5 @@ the frozen references in `tests/reference/test/`.
 For runtime checks and compiler warnings, run `make -C Code clean && make -C Code DEBUG=Y test`.
 For profiling symbols with production optimization, run `make -C Code clean && make -C Code PROFILE=Y`.
 `tests/f2py_check.py` currently requires an external Jet+RIAF namelist whose location is pending confirmation.
+Full M87 grid convergence selected `Ns=700`, `numbins=1100`, and the existing compile-time `nIn=150`, using a mixed criterion of less than 3% per aperture and less than 1% for total flux. High-resolution reference runs used an isolated `numdt=300000` build; the selected `Ns=700` grid completes within the production `numdt=100000` ceiling. Finer `Ns` runs can hit that ceiling and are not valid references without revisiting it.
+The reduced regression uses `Ns=100` and `numbins=250` to remain fast while retaining a resolved spatial and particle-energy grid; its frozen flux references live in `tests/reference/test/`.

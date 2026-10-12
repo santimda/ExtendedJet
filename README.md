@@ -61,6 +61,9 @@ The reduced run writes to `tests/output/`; the reference run writes to
 Gnuplot scripts are run from `diagnostics/`, and post-processing utilities are
 run from `postprocessing/`.
 
+The reduced regression configuration uses `Ns=100` and `numbins=250`, a deliberately lighter but still resolved grid
+for fast test execution. The production M87 configuration uses the converged resolution described below.
+
 The notebook parameter exploration is also available as a script. Build the f2py module and run all configured
 sweeps with:
 
@@ -83,6 +86,13 @@ The current model uses only the cosmic microwave background (CMB) as its
 external photon field. The generic IC kernel remains capable of receiving
 other black-body-like fields, but no stellar or other external photon field is
 configured in this version.
+
+The production M87 grid uses `Ns=700` jet segments and `numbins=1100` particle-transport energy bins. These were
+selected from finer full-model convergence tests using a mixed tolerance of 3% for each aperture flux and 1% for total
+flux. The compile-time electron output grid remains `nIn=150`; increasing it to 300 changed the fluxes by less than
+1%. High-resolution reference runs used an isolated `numdt=300000` build. The selected `Ns=700` grid remains within
+the production `numdt=100000` transport-history limit; still finer runs can exceed it and should not be used as
+convergence references without also revisiting that limit.
 
 ## Important files
 

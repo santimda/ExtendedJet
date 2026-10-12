@@ -98,8 +98,8 @@ module system_parameters
 
    !===RUN-TIME CONTROLS (namelist &run)==========================================================================
 
-   integer :: Ns = 200                               !Number of jet segments, log-spaced from z0 to zmax
-   integer :: numbins = 500                          !Number of integration bins for the energy distribution
+   integer :: Ns = 700                               !Number of jet segments, log-spaced from z0 to zmax
+   integer :: numbins = 1100                         !Number of integration bins for the energy distribution
    real(dp) :: dttFF_min = 1.d-6                     !Precision in timestep for N(E)
 
    integer, parameter :: max_apertures = 10
