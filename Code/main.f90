@@ -69,10 +69,10 @@ subroutine run_jet(verbose)
     implicit none
     logical, intent(in) :: verbose
     
-    character(3) :: numNE, numSED
+    character(16) :: numNE, numSED
 
-    write(numNE,'(I3)') nIn         !Number of points for the N(E) distribution
-    write(numSED,'(I3)') NSED_sy    !Number of points for the synchrotron SED
+    write(numNE,'(I0)') nIn         !Number of points for the N(E) distribution
+    write(numSED,'(I0)') NSED_sy    !Number of points for the synchrotron SED
 
     ! Calculate everything for the jet first
     if (JET_) then
@@ -88,7 +88,7 @@ subroutine run_jet(verbose)
 
         !Particle distribution
         if (NE_calc) then 
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
+            if (verbose) write(*,'(1X,A,I0,A)') '\n Computing the particle energy distribution (',nIn,' points)'
             call Edist('e')        ! Calculate the particle energy distribution
             if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
 
@@ -109,7 +109,7 @@ subroutine run_jet(verbose)
 
         !Synchrotron SED
         if (radsyn_calc) then
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
+            if (verbose) write(*,'(1X,A,I0,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
             call SEDsyn('', 'e')      ! Calculate synchrotron SED
             if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             !call Calc_Usyn('')   ! Calculate the energy density of synchrotron photons
@@ -144,24 +144,13 @@ subroutine run_jet(verbose)
 
         !Particle distribution
         if (NE_calc .and. (.not. JET_)) then
-            print*, 'ERROR: current version cannot calculate the electron distribution for the CJ, run with jet!' 
-            stop
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
-            call Edist('e')        ! Calculate the particle energy distribution
-            !call Edist('p')
-            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
-            call Calc_Ue()      ! Calculate energy densities
-            if (print_tlosses) then
-                if (verbose) print *, '\n Creating the tloss files for plots'
-                call Print_tloss(1, 'e')
-                call Print_tloss(Ns/3, 'e')
-                call Print_tloss(Ns, 'e')
-            endif
+            print *, 'ERROR: electron distributions require JET_=.true.'
+            error stop 1
         endif
 
         !Synchrotron SED
         if (radsyn_calc) then
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
+            if (verbose) write(*,'(1X,A,I0,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
             call SEDsyn('CJ', 'e')      ! Calculate synchrotron SED
             if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             !call Calc_Usyn('CJ')   ! Calculate the energy density of synchrotron photons
@@ -262,7 +251,7 @@ subroutine power_model(sigma0_value, zmax_value, Lj_value, a_inj_value, z_data, 
   !===================================================================
   ! Subroutine to calculate the power components (magnetic, kinetic, electron)
   ! as a function of jet height for the given input parameters.
-  ! Returns arrays of size Ns (defined in globals.f90, default 200)
+  ! Returns fixed-size compatibility arrays; only the requested prefix is populated.
   !===================================================================
     use controls
     use constants
@@ -281,6 +270,7 @@ subroutine power_model(sigma0_value, zmax_value, Lj_value, a_inj_value, z_data, 
     integer :: j
     logical, parameter :: verbose = .False.
         
+    if (size(z_data) > m_data_max) error stop 'power_model: too many z points'
     ! Calculate everything for the jet
     call initialize_allocate(sigma0_value, zmax_value, Lj_value, a_inj_value)
     call trajectory_calc('')  

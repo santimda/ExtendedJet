@@ -11,7 +11,7 @@ MODULE initialize
     !============================================================================
     subroutine initialize_allocate(sigma_value, zmax_value, Lj_value, a_inj_value) !,z0_value
     !============================================================================
-    ! allocate and initialize vectors 
+    ! allocate and initialize vectors
     !============================================================================
         real(dp), intent(in) :: sigma_value, zmax_value, Lj_value, a_inj_value !,z0_value
         integer :: i
@@ -37,8 +37,8 @@ MODULE initialize
             ! Initialize using the values from a previous run (if the file exists)
             inquire(file=trim(opath('quant_FF.dat')),exist=fexist)
             if (.not. fexist) then
-                print *,'You first have to run trajectory and evolution modules at least once!'
-                stop
+                print *,'ERROR: trajectory/evolution output is missing for jet_calc=.false.'
+                error stop 1
             else
                 open(30,file=trim(opath('quant_FF.dat')))
                 do i = 1, Ns
@@ -53,25 +53,34 @@ MODULE initialize
     !============================================================================
     ! initialize_allocate (END)
     !============================================================================
-    
+
 
     !============================================================================
     ! initialize_deallocate (START)
     !============================================================================
     subroutine initialize_deallocate
     !============================================================================
-    ! deallocate vectors 
+    ! deallocate vectors
     !============================================================================
-
-        deallocate( z, rj_out, rj_in, gj, bj )
-        deallocate( BFF, vnorm, VFF, EphMFF, nfFF, Kappa, sjoFF )
-        deallocate( deltaZ, deltatFF )
-        deallocate( delta_obs, boost )
+        if (allocated(z)) deallocate(z)
+        if (allocated(rj_out)) deallocate(rj_out)
+        if (allocated(rj_in)) deallocate(rj_in)
+        if (allocated(gj)) deallocate(gj)
+        if (allocated(bj)) deallocate(bj)
+        if (allocated(BFF)) deallocate(BFF)
+        if (allocated(vnorm)) deallocate(vnorm)
+        if (allocated(VFF)) deallocate(VFF)
+        if (allocated(EphMFF)) deallocate(EphMFF)
+        if (allocated(nfFF)) deallocate(nfFF)
+        if (allocated(Kappa)) deallocate(Kappa)
+        if (allocated(sjoFF)) deallocate(sjoFF)
+        if (allocated(deltaZ)) deallocate(deltaZ)
+        if (allocated(deltatFF)) deallocate(deltatFF)
+        if (allocated(delta_obs)) deallocate(delta_obs)
+        if (allocated(boost)) deallocate(boost)
 
     end subroutine initialize_deallocate
     !============================================================================
     ! initialize_deallocate (END)
     !============================================================================
-
-
 END MODULE initialize

@@ -82,13 +82,13 @@ contains
             eFluxp = energyFlux
             flux = Nparticles / vol * lorentzFactor(z(izz)) * betaJet(z(izz)) * c * pi*(rj_out(izz)**2-rj_in(izz)**2)
             energyFlux = Eparticles / vol * betaJet(z(izz)) * c * pi*(rj_out(izz)**2-rj_in(izz)**2)
-            print *, "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", & 
+            print *, "z = ", z(izz)/R_g, "Flux = ", flux, "EnergyFlux = ", energyFlux + Lsy, "RatioPart = ", &
                                fluxp/flux, "RatioE = ", eFluxp/energyFlux
         enddo
         close(50)
     endif
 
-    ! Save the particle energy distribution (JUST MAKE THIS A SHARED OBJECT?)
+    ! Save the particle energy distribution for the radiation routines.
     do i2 = 1, nIn
         do izz = 1, Ns
             write(20,*) Evec(i2), NEmatrix(i2, izz), izz     !E and N(E) for each jet cut
@@ -176,8 +176,8 @@ contains
         real(dp), intent(in) :: Ecut, zz
         character(1), intent(in) :: particle
         real(dp) :: EminFF2, EmaxFF2, Einc, QInt, dE
-        real(dp), allocatable :: Egrid(:), f(:)
         integer, parameter :: N = 300   !Number of subintervals for the integral (A's value)
+        real(dp) :: Egrid(N), f(N)
         integer :: i
 
         ! choose ranges depending on particle
@@ -188,10 +188,6 @@ contains
             EminFF2 = EpminFF
             EmaxFF2 = EpmaxFF
         endif
-
-        ! allocate
-        allocate(Egrid(N))
-        allocate(f(N))
 
         ! geometric grid
         Einc = (EmaxFF2/EminFF2)**(1d0/(N-1d0))  !Increase factor of the energy
@@ -218,8 +214,6 @@ contains
         ! taper_norm = 1 unless fix_norm_taper (see system_parameters::taper_correction)
         Norm_q0p = Norm_q0p * taper_norm
 
-        deallocate(Egrid)
-        deallocate(f)
     end function Norm_q0p
 
 
@@ -256,13 +250,9 @@ contains
     real(dp) function dLe_dz2(zz)
     real(dp), intent(in) :: zz
     real(dp) :: Ecut, q0p, Emin_q, dE, Einc
-    real(dp), allocatable :: Egrid(:), f(:)
     integer, parameter :: N = 120
+    real(dp) :: Egrid(N), f(N)
     integer :: i
-
-    ! allocate
-    allocate(Egrid(N))
-    allocate(f(N))
 
     ! geometric grid
     Einc = (EmaxFF/EminFF)**(1d0/(N-1d0))  !Increase factor of the energy
@@ -271,23 +261,25 @@ contains
         Egrid(i) = Egrid(i-1) * Einc
     end do
 
-    Ecut = CutE(BFF_fun(zz), zz, 1d0, 1d0, 'e')
-    q0p = Norm_q0p(Ecut, zz, 'e')
-    Emin_q = EminFF
-    if (.not. fix_inj_emin) Emin_q = 1.1d0*mec2
-    do i = 1, N
-        f(i) = Egrid(i) * Q_E(q0p, Ecut, Egrid(i), Emin_q, EmaxFF)
-    end do
-
-    ! trapezoidal integration
-    dLe_dz2 = 0d0
     if (zz < zmax_inj) then
-      do i = 1, N-1
-          dE = Egrid(i) * (Einc - 1d0)
-          dLe_dz2 = dLe_dz2 + 0.5d0*(f(i) + f(i+1)) * dE
-      end do
+        Ecut = CutE(BFF_fun(zz), zz, 1d0, 1d0, 'e')
+        q0p = Norm_q0p(Ecut, zz, 'e')
+        Emin_q = EminFF
+        if (.not. fix_inj_emin) Emin_q = 1.1d0*mec2
+        do i = 1, N
+            f(i) = Egrid(i) * Q_E(q0p, Ecut, Egrid(i), Emin_q, EmaxFF)
+        end do
 
-      dLe_dz2 = dLe_dz2 * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) * lorentzFactor(zz)
+        ! trapezoidal integration
+        dLe_dz2 = 0d0
+        do i = 1, N-1
+            dE = Egrid(i) * (Einc - 1d0)
+            dLe_dz2 = dLe_dz2 + 0.5d0*(f(i) + f(i+1)) * dE
+        end do
+
+        dLe_dz2 = dLe_dz2 * pi * ( r_fun_out(zz)**2 - r_fun_in(zz)**2 ) * lorentzFactor(zz)
+    else
+        dLe_dz2 = 0d0
     endif
 
     end function dLe_dz2

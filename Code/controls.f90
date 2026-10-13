@@ -17,9 +17,7 @@ MODULE controls
     logical, parameter :: radssc_calc = off
 
     !===================================================
-    ! Runtime switches (defaults here; overridden by the &run namelist group
-    ! read by system_parameters::read_namelist). All default to "do nothing"
-    ! so that running without a namelist file is a safe no-op.
+     ! Runtime switches, overridden by the &run namelist group.
 
     logical :: JET_ = off
     logical :: CJ_ = off
@@ -32,8 +30,7 @@ MODULE controls
     logical :: print_tlosses = on
     logical :: sort_outputs = off
 
-    ! Physics-fix flags (awaiting author's decision). Reading them does not
-    ! change any behaviour yet; see the TODO comments at their call sites.
+     ! Physics compatibility flags for taper and injection normalization.
     logical :: fix_norm_taper = off
     logical :: fix_inj_emin = off
 
