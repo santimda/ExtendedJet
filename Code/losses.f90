@@ -89,11 +89,13 @@ contains
     !============================================================================
     real(dp) function AdLoss(z_, EFF)
     real(dp), intent(in) :: z_, EFF
-    real(dp) :: gg,zabs
+    real(dp) :: gg,zabs,g,beta
 
     gg = EFF - mec2**2/EFF
     zabs = abs(z_)
-    AdLoss = - 2d0/3d0 * geomIndex_out * lorentzFactor(zabs) * c * betaJet(zabs) / zabs * gg
+    g = lorentzFactor(zabs)
+    beta = sqrt(1d0 - 1d0/g**2)
+    AdLoss = - 2d0/3d0 * geomIndex_out * g * c * beta / zabs * gg
     
     end function AdLoss
         
