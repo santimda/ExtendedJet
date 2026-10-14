@@ -27,10 +27,10 @@ MODULE evolution
          dir = 1.d0
       elseif (jet == 'CJ') then
          dir = -1.d0
-      else
-         print *, 'Invalid jet type'
-         stop
-      endif
+       else
+          print *, 'Invalid jet type'
+          error stop 1
+       endif
 
       cjo = cos(jo)
       do i = 1, Ns
