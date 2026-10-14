@@ -32,7 +32,7 @@ contains
         restEnergy = mpc2
     else
         print *, "FATAL ERROR: WRONG PARTICLE CLASS!!!"
-        stop
+        error stop 1
     endif
         
     open(11,file=trim(opath('E'//particle//'_max_FF.dat')))
@@ -578,6 +578,11 @@ contains
             end do build_Qin
             !$OMP END PARALLEL DO
         end do z_loop
+        if (jz >= numdt) then
+            if (zz(jz) < zmax*1.01) then
+                error stop 'calcNE_paramo: numdt exhausted before reaching zmax'
+            endif
+        endif
         jlast = jz   ! last computed step (arrays are only filled up to here)
 
         ! INTERPOLATION
