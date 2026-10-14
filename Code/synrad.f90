@@ -153,11 +153,10 @@ contains
     real(dp), dimension(:), intent(in) :: E
     real(dp), dimension(:), intent(in) :: N
     real(dp) :: integral, dE, eps, gamma, Eaux, Ng_
-    real(dp) , dimension(:), allocatable :: integ
+    real(dp) :: integ(size(E))
     integer :: i
 
     nsize = size(E)
-    allocate(integ(nsize))
     ! The values inside the integral
     do i=1, nsize
         integ(i) = PSynchrotron(E_ph, E(i), B, particle)
@@ -171,8 +170,6 @@ contains
         integral = integral + 0.5d0 * (integ(i) + integ(i+1)) * dE
     end do
     integral = integral/(4d0*pi)
-    deallocate(integ)
-
     if (sync_approx == 'delta') then
     eps = E_ph / (mec2)
     gamma = sqrt(eps * 4.4e13 / B)
@@ -197,17 +194,14 @@ contains
     function alpha_sync(E_ph, B, Ne, E, particle) result(alpha)
     implicit none
     real(dp), dimension(:), intent(in) :: E, Ne
-    real(dp), dimension(:), ALLOCATABLE :: log_eVec, log_neVec
+    real(dp) :: log_eVec(size(E)), log_neVec(size(E)), integ(size(E))
     real(dp), intent(in) :: B, E_ph
     character(1), intent(in) :: particle
     real(dp) :: alpha
     real(dp) :: df, Eaux, Ng_, eps, gamma
-    real(dp), dimension(:), allocatable :: integ
     integer(dp) :: nsize, i
 
     nsize = size(E)
-    allocate(log_eVec(nsize), log_neVec(nsize), integ(nsize))
-    
     do i=1, nsize
       log_eVec(i) = safeLog(E(i))
       log_neVec(i) = safeLog(Ne(i))
@@ -234,8 +228,6 @@ contains
       alpha = alpha + 0.5d0 * (integ(i+1) + integ(i)) * (log_eVec(i+1) - log_eVec(i))
     end do
     alpha = -h**3*c**2/ (8.*pi*E_ph*E_ph)*alpha
-    deallocate(log_eVec, log_neVec, integ)
-
     if (sync_approx == 'delta') then
     eps = E_ph / (mec2)
     gamma = sqrt(eps * 4.4e13 / B)
@@ -268,7 +260,7 @@ contains
         real(dp) :: jem, alpha, R_out, R_in
         real(dp) :: x, Step, tau, tau_max
         integer :: n, i
-        real(dp), dimension(:), allocatable :: FI
+        real(dp) :: FI(50)
 
         alpha = alpha_sync(E_ph, BFF, N_e, E, particle)
         jem = jsync(E_ph, BFF, N_e, E, particle)
@@ -279,7 +271,6 @@ contains
             dFlux_dz=delta_obs**2/(dist**2)*jem*pi*(R_out**2-R_in**2)
         else
             n=50
-            allocate(FI(n))
             Step=1d0/n !Step
             do i=1,n
                 x=0d0+Step*(i-1)
@@ -288,7 +279,6 @@ contains
             enddo
             call integrate(n,Step,FI,dFlux_dz) !We call a function for Simpson integration
             dFlux_dz = sin(jo) * delta_obs**3/(dist**2) * (jem/alpha) * R_out * (2*dFlux_dz) !Add constants
-            deallocate(FI)
         endif
     end function dFlux_dz
 
@@ -454,7 +444,6 @@ contains
     real(dp), intent(in) :: E_data(:)
     real(dp), intent(out) :: S_data(:)  ! size m_data_max
     character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-    real(dp), allocatable :: Eph(:)
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF
     real(dp) :: dFdz
     integer :: m_data
@@ -474,21 +463,15 @@ contains
       print*, 'Too many points to fit, make m_data_max larger in global.f90!'
       error stop 1
     endif
-    allocate( Eph(m_data) )
-    Eph = E_data ! Here we can change units if needed          
-
-
     S_data = 0.d0
     do l = 1, m_data
         do j = 2, Ns                        !Loop for the jet segments
             NEcut = NE(:,j)                 !N(E) for the segment j
-            EphFF = Eph(l)/delta_obs(j)  !Photon energy in the FF
+            EphFF = E_data(l)/delta_obs(j)  !Photon energy in the FF
             dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
             S_data(l) = S_data(l) + dFdz
         enddo
     enddo
-    
-    deallocate( Eph )
     
     end subroutine SEDsyn_data
     !============================================================================
