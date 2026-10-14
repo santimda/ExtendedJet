@@ -136,29 +136,41 @@ module system_parameters
                          print_tlosses, sort_outputs, fix_norm_taper, fix_inj_emin
 
          open(newunit=lun, file=trim(path), status='old', action='read', iostat=ios, iomsg=iomsg_)
-         if (ios /= 0) then
-            print '(A,A,A,A)', 'FATAL ERROR: cannot open namelist file "', trim(path), '": ', trim(iomsg_)
-            stop 1
+          if (ios /= 0) then
+             print '(A,A,A,A)', 'FATAL ERROR: cannot open namelist file "', trim(path), '": ', trim(iomsg_)
+             error stop 1
          end if
 
          read(lun, nml=model, iostat=ios, iomsg=iomsg_)
-         if (ios /= 0) then
-            print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &model of "', trim(path), '": ', trim(iomsg_)
-            stop 1
+          if (ios /= 0) then
+             print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &model of "', trim(path), '": ', trim(iomsg_)
+             error stop 1
          end if
 
          rewind(lun)
          read(lun, nml=run, iostat=ios, iomsg=iomsg_)
-         if (ios /= 0) then
-            print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &run of "', trim(path), '": ', trim(iomsg_)
-            stop 1
+          if (ios /= 0) then
+             print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &run of "', trim(path), '": ', trim(iomsg_)
+             error stop 1
          end if
          close(lun)
 
-         if (n_ap > max_apertures) then
-            print '(A,I0)', 'FATAL ERROR: n_ap exceeds max_apertures = ', max_apertures
-            stop 1
-         end if
+          if (Ns < 2) then
+             print '(A,I0)', 'FATAL ERROR: Ns must be at least 2, got ', Ns
+             error stop 1
+          end if
+          if (numbins < 2) then
+             print '(A,I0)', 'FATAL ERROR: numbins must be at least 2, got ', numbins
+             error stop 1
+          end if
+          if (n_ap < 0 .or. n_ap > max_apertures) then
+             print '(A,I0,A,I0)', 'FATAL ERROR: n_ap must be between 0 and ', max_apertures, ', got ', n_ap
+             error stop 1
+          end if
+          if (trim(sync_approx) /= 'full' .and. trim(sync_approx) /= 'delta') then
+             print '(A,A,A)', 'FATAL ERROR: sync_approx must be ''full'' or ''delta'', got ''', trim(sync_approx), ''''
+             error stop 1
+          end if
 
          call execute_command_line('mkdir -p '//trim(outdir))
 

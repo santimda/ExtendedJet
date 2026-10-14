@@ -472,7 +472,7 @@ contains
     m_data = SIZE(E_data)
     if (m_data > m_data_max) then
       print*, 'Too many points to fit, make m_data_max larger in global.f90!'
-      stop
+      error stop 1
     endif
     allocate( Eph(m_data) )
     Eph = E_data ! Here we can change units if needed          
