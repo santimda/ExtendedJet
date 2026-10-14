@@ -312,10 +312,13 @@ module system_parameters
       !*************************************************************************************
       !   Jet Beta times Lorentz factor as a function of z
       !*************************************************************************************
-      real(dp) function betaGamma(zz)
-         real(dp), intent(in) :: zz
-         betaGamma = betaJet(abs(zz)) * lorentzFactor(abs(zz))
-      end function
+       real(dp) function betaGamma(zz)
+          real(dp), intent(in) :: zz
+          real(dp) :: g
+
+          g = lorentzFactor(abs(zz))
+          betaGamma = sqrt(1d0 - 1d0/g**2) * g
+       end function
 
       !*************************************************************************************
       ! Power injected in electrons per unit zz
