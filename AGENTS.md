@@ -5,9 +5,9 @@
 ## Build and run
 - `cd Code && make` builds `run.x` (`make depend` regenerates `Makefile.depend`; `make f2py` builds the Python module `JetCode`).
 - Set `OMP_NUM_THREADS` explicitly when benchmarking or calling through f2py. On the current machine,
-  `configs/m87_reference.nml` takes roughly 1.4-1.6 s after hoisting the injection normalization out of the
-  energy loop; 2-4 threads do not currently improve on one thread. These timings are machine-specific; use
-  this full configuration rather than `configs/test.nml` for profiling.
+  `configs/m87_reference.nml` takes roughly 6.3 s with one thread, including its configured output sorting and
+  loss-file generation; 2-4 threads do not currently improve on one thread. These timings are machine-, compiler-,
+  and configuration-specific; use this full configuration rather than `configs/test.nml` for profiling.
 - Namelist groups `&model` (physics; lengths in R_g, energies in eV) and `&run` (grid, apertures, switches, `outdir`,
   `sync_approx='full'|'delta'`, `fix_norm_taper`, `fix_inj_emin`). Defaults live in `Code/system_parameters.f90`.
   Local configs: `configs/m87_reference.nml`, `configs/test.nml`.
@@ -25,7 +25,10 @@
 `make -C Code test` runs the numerical unit tests and the reduced `run.x` regression against
 the frozen references in `tests/reference/test/`.
 For runtime checks and compiler warnings, run `make -C Code clean && make -C Code DEBUG=Y test`.
-For profiling symbols with production optimization, run `make -C Code clean && make -C Code PROFILE=Y`.
+For profiling symbols with production optimization, run `make -C Code clean && make -C Code PROFILE=Y`. This adds
+optimized debug symbols but does not generate a `gprof` profile by itself; use an external profiler such as `perf`.
 `tests/f2py_check.py` currently requires an external Jet+RIAF namelist whose location is pending confirmation.
 Full M87 grid convergence selected `Ns=700`, `numbins=1100`, and the existing compile-time `nIn=150`, using a mixed criterion of less than 3% per aperture and less than 1% for total flux. High-resolution reference runs used an isolated `numdt=300000` build; the selected `Ns=700` grid completes within the production `numdt=100000` ceiling. Finer `Ns` runs can hit that ceiling and are not valid references without revisiting it.
 The reduced regression uses `Ns=100` and `numbins=250` to remain fast while retaining a resolved spatial and particle-energy grid; its frozen flux references live in `tests/reference/test/`.
+The current full M87 flux hashes are `Flux_e.dat=cbe67602fd6beddc4c12fb4a5855e0bfd75d78e99627641ab529b5cd75063624` and
+`FluxCJ_e.dat=fb17bbeb24fc8a87eab1741d90c95685bee36cf3ab9d870ae99a03937bbe279d`.

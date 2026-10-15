@@ -94,13 +94,46 @@ flux. The compile-time electron output grid remains `nIn=150`; increasing it to 
 the production `numdt=100000` transport-history limit; still finer runs can exceed it and should not be used as
 convergence references without also revisiting that limit.
 
+## Validation and Performance
+
+The standard validation commands are:
+
+```bash
+make -C Code test
+make -C Code clean && make -C Code DEBUG=Y test
+(cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
+```
+
+The reduced regression compares the jet and counter-jet fluxes with the frozen
+references in `tests/reference/test/`. The current full M87 run reproduces the
+following flux-file hashes:
+
+```text
+Flux_e.dat:   cbe67602fd6beddc4c12fb4a5855e0bfd75d78e99627641ab529b5cd75063624
+FluxCJ_e.dat: fb17bbeb24fc8a87eab1741d90c95685bee36cf3ab9d870ae99a03937bbe279d
+```
+
+On the current machine, the full reference command takes approximately 6.3 s
+with `OMP_NUM_THREADS=1`. This is machine-, compiler-, and configuration-
+dependent; the reference configuration enables output sorting and loss-file
+generation. Set the thread count explicitly when benchmarking.
+
+For profiling symbols, use `make -C Code clean && make -C Code PROFILE=Y`.
+This enables optimized debug symbols but does not itself generate a `gprof`
+profile; use an external profiler such as `perf` if needed.
+
+The optional `tests/f2py_check.py` validation remains blocked until the
+external Jet+RIAF namelist location is available. The SSC routine
+`SEDssc_data` is intentionally retained as an incomplete future path, and its
+unused-argument warnings are expected.
+
 ## Important files
 
 **Makefile**: production, f2py, and unit-test build orchestration.
 
 **Makefile.depend**: details which modules depend on which other modules (needed for compilation)
 
-**constants.f90**: useful physical and numerical constants. It is imported by **global.f90** to be used by all other modules as well.
+**constants.f90**: useful physical and numerical constants. It is imported by **globals.f90** to be used by all other modules as well.
 
 **numerical_utils.f90**: reusable grids, integration, interpolation, safe logarithms, and linear-algebra utilities.
 
