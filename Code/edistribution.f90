@@ -1,6 +1,6 @@
 MODULE edistribution
     use constants
-    use numerical_utils, only: vector_log, safeLog10, tridag_ser, zeros1D
+    use numerical_utils, only: vector_log, safeLog10, tridag_ser
     use globals
     use losses
     implicit none
@@ -476,7 +476,7 @@ contains
         BBm2(1) = -0.5d0 * (gdot(2) + gdot(1))
   
         r = n_in + dt * QQ
-        a = zeros1D(Ng,.true.)
+        a = 1d-180
         c = -dt * BBp2 / dx
         b = 1d0 + BBm2 * dt / dx + dt / tesc
         call tridag_ser(a(2:), b, c(:Ng1), r, n_out)

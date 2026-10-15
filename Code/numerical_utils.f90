@@ -140,7 +140,10 @@ contains
         real(dp) :: gam(size(b)), bet
         integer :: n, j
 
-        n = assert_eq((/ size(a)+1, size(b), size(c)+1, size(r), size(u) /), 'tridag_ser')
+        n = size(b)
+        if (size(a) /= n-1 .or. size(c) /= n-1 .or. size(r) /= n .or. size(u) /= n) then
+            call an_error('tridag_ser: inconsistent array sizes')
+        end if
         bet = b(1)
         if (bet == 0.d0) call an_error('tridag_ser: error at code stage 1')
         u(1) = r(1)/bet
