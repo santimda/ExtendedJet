@@ -117,9 +117,9 @@ contains
     !****************************************************************************
     real(dp) function PSynchrotron(E_ph, E, B, particle)
     implicit none
-        real(dp), intent(in) :: E_ph, B, E
-        character(1), intent(in) :: particle
-        real(dp) :: K, x, R, Ec, g, m
+    real(dp), intent(in) :: E_ph, B, E
+    character(1), intent(in) :: particle
+    real(dp) :: K, x, R, Ec, g, m, x13, x23, x43
     
     ! Define constants
     if (particle == 'e') then
@@ -131,11 +131,14 @@ contains
     K = sqrt(3.0d0) * qe**3 / (h * m * c**2)
     
     Ec =  (3d0 * qe * h * B) / (4d0 * pi * m * c) * g**2
-        ! Calculate x and R for each element of E
-        x = E_ph / Ec
-        R = (1.808 * x**(1.0d0 / 3.0d0) / sqrt(1.0d0 + 3.4 * x**(2.0d0 / 3.0d0))) * &
-                ((1.0d0 + 2.21 * x**(2.0d0 / 3.0d0) + 0.347 * x**(4.0d0 / 3.0d0)) / &
-                (1.0d0 + 1.353 * x**(2.0d0 / 3.0d0) + 0.217 * x**(4.0d0 / 3.0d0))) * exp(-x)
+    ! Calculate x and R for each element of E
+    x = E_ph / Ec
+    x13 = x**(1.0d0 / 3.0d0)
+    x23 = x13*x13
+    x43 = x23*x23
+    R = (1.808 * x13 / sqrt(1.0d0 + 3.4 * x23)) * &
+        ((1.0d0 + 2.21 * x23 + 0.347 * x43) / &
+        (1.0d0 + 1.353 * x23 + 0.217 * x43)) * exp(-x)
 
     ! Compute the emitted power for each element of E
     PSynchrotron = K * B * R
