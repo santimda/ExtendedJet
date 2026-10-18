@@ -82,6 +82,13 @@ regression. The regression runs `run.x` with `configs/test.nml` in a temporary
 output directory and compares the jet and counter-jet fluxes with the frozen
 references in `tests/reference/test/` over the radio band.
 
+`make -C Code test-ne` (also part of `make test`; needs `make -C Code f2py`) validates the electron-distribution
+solver (`tests/ne_validation.py`): the transport kernel against closed-form solutions (impulsive injection with pure
+synchrotron or pure adiabatic cooling, steady state with injection, particle-number conservation, first-order
+convergence in `numbins`), and `Ne_cuts.dat` of a full run against the exact solution by characteristics built from
+the code's own losses and injection, with the one-zone fast-cooling limit for reference. Plots go to
+`tests/output/ne_validation/`. Use `--nml` to test another namelist.
+
 The current model uses only the cosmic microwave background (CMB) as its
 external photon field. The generic IC kernel remains capable of receiving
 other black-body-like fields, but no stellar or other external photon field is
