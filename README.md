@@ -106,8 +106,8 @@ convergence references without also revisiting that limit.
 The standard validation commands are:
 
 ```bash
-make -C Code test
-make -C Code clean && make -C Code DEBUG=Y test
+make -C Code f2py && make -C Code test
+make -C Code clean && make -C Code DEBUG=Y f2py && make -C Code DEBUG=Y test
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
 

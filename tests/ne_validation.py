@@ -42,7 +42,10 @@ from scipy.integrate import solve_ivp
 HERE = Path(__file__).resolve().parent
 CODE = HERE.parent / "Code"
 sys.path.insert(0, str(CODE))
-import JetCode as J  # noqa: E402
+try:
+    import JetCode as J  # noqa: E402
+except ImportError as err:
+    sys.exit(f"ne_validation: cannot import the f2py module JetCode ({err}); build it first with `make -C Code f2py`")
 
 C_LIGHT = float(J.constants.c)
 MEC2 = float(J.constants.mec2)
