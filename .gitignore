@@ -37,6 +37,7 @@ run.x
 runs/
 output/
 tests/output/
+validation/output/
 out_regression/
 *.ps
 *.png

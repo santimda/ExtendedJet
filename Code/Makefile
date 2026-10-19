@@ -40,7 +40,7 @@ F2PY_SOURCES = constants.f90 controls.f90 system_parameters.f90 \
                trajectory.f90 evolution.f90 edistribution.f90 synrad.f90 \
                icrad.f90 sscrad.f90 main.f90
 
-.PHONY: all clean run f2py depend test test-unit test-fortran test-ne test-f2py
+.PHONY: all clean run f2py depend test test-unit test-fortran test-f2py validate
 
 all: run.x
 
@@ -64,7 +64,7 @@ run: run.x
 	echo "Execution time: $${elapsed} s"; \
 	exit $$status
 
-test: test-unit test-fortran test-ne test-f2py
+test: test-unit test-fortran test-f2py
 
 test-unit: $(BUILD_DIR)/test_numerical_utilities
 	./$(BUILD_DIR)/test_numerical_utilities
@@ -72,9 +72,9 @@ test-unit: $(BUILD_DIR)/test_numerical_utilities
 test-fortran: run.x
 	python3 ../tests/fortran_regression.py
 
-# N(E) solver vs analytic/characteristics solutions (needs the f2py module: make f2py)
-test-ne: run.x
-	python3 ../tests/ne_validation.py
+# Physics validation: N(E) solver vs analytic/characteristics solutions (needs the f2py module: make f2py)
+validate: run.x
+	python3 ../validation/ne_validation.py
 
 # f2py syn_model wrapper vs run.x on the same namelist (needs the f2py module: make f2py)
 test-f2py: run.x

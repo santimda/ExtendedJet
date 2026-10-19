@@ -39,10 +39,11 @@ by the Fortran model or its f2py wrapper.
 - `diagnostics/`: diagnostic and validation notebooks and plotting scripts.
 - `figures/`: repository figures and diagrams.
 - `postprocessing/`: synthetic-map notebook and Python utilities.
-- `tests/`: regression and f2py checks.
-- `validation/`: optional physics-validation notebooks.
+- `tests/`: pass/fail tests (unit tests, frozen-output regression, f2py consistency).
+- `validation/`: physics validation against analytic or independent solutions (N(E) solver, emissivity,
+  characteristics), and the grid-convergence study.
 - `output/`: generated reference-model outputs.
-- `tests/output/`: disposable outputs from the reduced test configuration.
+- `tests/output/`, `validation/output/`: disposable outputs of the tests and the validation.
 
 Run the model from the repository root with a configuration file:
 
@@ -74,17 +75,17 @@ Plots are written to `diagnostics/parameter_exploration/` by default. Use `--swe
 Fortran files are written to a temporary directory and removed automatically. The script runs calls sequentially
 because the Fortran modules retain mutable state.
 
-`make -C Code test` runs the numerical unit tests and a reduced Fortran
-regression. The regression runs `run.x` with `configs/test.nml` in a temporary
+`make -C Code test` runs the pass/fail tests: the numerical unit tests, a reduced Fortran regression and the f2py
+consistency check. The regression runs `run.x` with `configs/test.nml` in a temporary
 output directory and compares the jet and counter-jet fluxes with the frozen
 references in `tests/reference/test/` over the radio band.
 
-`make -C Code test-ne` (also part of `make test`; needs `make -C Code f2py`) validates the electron-distribution
-solver (`tests/ne_validation.py`): the transport kernel against closed-form solutions (impulsive injection with pure
+`make -C Code validate` (needs `make -C Code f2py`) validates the electron-distribution solver
+(`validation/ne_validation.py`): the transport kernel against closed-form solutions (impulsive injection with pure
 synchrotron or pure adiabatic cooling, steady state with injection, particle-number conservation, first-order
 convergence in `numbins`), and `Ne_cuts.dat` of a full run against the exact solution by characteristics built from
 the code's own losses and injection, with the one-zone fast-cooling limit for reference. Plots go to
-`tests/output/ne_validation/`. Use `--nml` to test another namelist.
+`validation/output/ne_validation/`. Use `--nml` to test another namelist.
 
 `make -C Code test-f2py` (also part of `make test`; needs `make -C Code f2py`) checks that the f2py wrapper
 `syn_model` reproduces the total flux of `run.x` to better than 1% over 1e9-1e20 Hz on the same namelist
@@ -100,14 +101,16 @@ selected from finer full-model convergence tests using a mixed tolerance of 3% f
 flux. The compile-time electron output grid remains `nIn=150`; increasing it to 300 changed the fluxes by less than
 1%. High-resolution reference runs used an isolated `numdt=300000` build. The selected `Ns=700` grid remains within
 the production `numdt=100000` transport-history limit; still finer runs can exceed it and should not be used as
-convergence references without also revisiting that limit.
+convergence references without also revisiting that limit. The convergence runs are made with
+`validation/grid_convergence.py` (e.g. `python validation/grid_convergence.py --grid Ns --values 350 700 --reference 1400`;
+`--numdt` builds an isolated executable with a larger transport-history limit).
 
 ## Validation and Performance
 
 The standard validation commands are:
 
 ```bash
-make -C Code f2py && make -C Code test
+make -C Code f2py && make -C Code test && make -C Code validate
 make -C Code clean && make -C Code DEBUG=Y f2py && make -C Code DEBUG=Y test
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```

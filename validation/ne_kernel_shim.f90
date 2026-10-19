@@ -1,5 +1,5 @@
 ! Test-only f2py shim: explicit-size interface to edistribution::FP_FinDif_cool, whose assumed-shape
-! intent(out) argument f2py cannot size. Built by tests/ne_validation.py together with the production
+! intent(out) argument f2py cannot size. Built by validation/ne_validation.py together with the production
 ! sources, so the kernel under test is the one in Code/edistribution.f90 (not a copy).
 subroutine fp_steps(n, nsteps, dt, g, n_in, gdot, qq, tesc, n_out)
     use edistribution, only: FP_FinDif_cool
