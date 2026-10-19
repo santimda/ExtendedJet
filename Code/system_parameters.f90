@@ -5,14 +5,13 @@ module system_parameters
    public
 
    !====================================================================
-   ! This module contains every model parameter (jet + RIAF-adjacent
-   ! constants) as well as the run-time controls formerly hard-coded in
-   ! globals.f90/controls.f90. All physical parameters are plain module
-   ! variables (not PARAMETER) so that read_namelist() can override them;
-   ! their defaults below are the M87 Jet+RIAF values (A's
-   ! system_parameters_M87.f90). Quantities that are derived from other
-   ! parameters are recomputed by derive_parameters(), never read directly
-   ! from a namelist.
+   ! This module contains every model parameter as well as the run-time
+   ! controls formerly hard-coded in globals.f90/controls.f90. All physical
+   ! parameters are plain module variables (not PARAMETER) so that
+   ! read_namelist() can override them; their defaults below are the M87
+   ! reference values. Quantities that are derived from other parameters
+   ! are recomputed by derive_parameters(), never read directly from a
+   ! namelist.
    !====================================================================
 
    !===SYSTEM PARAMETERS=========================================================================================

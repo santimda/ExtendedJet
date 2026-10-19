@@ -30,17 +30,15 @@ default. If LaTeX is unavailable, set `text.usetex` to `False` in
 Astropy, pandas, `agnpy`, `naima`, Gnuplot, and `smplotlib`. `agnpy` is used by
 `emisividad1.ipynb` for synchrotron/absorption comparisons; `naima` is used by
 `Syn_SSC_sed.ipynb` for synchrotron and SSC comparisons. Neither is required
-by the Fortran model or its f2py wrapper. External RIAF data used by some
-legacy notebooks are not included here.
+by the Fortran model or its f2py wrapper.
 
 ## Layout
 
 - `Code/`: Fortran sources, Makefile, and generated build files.
 - `configs/`: runtime namelists.
-- `data/`: legacy and observational input data.
 - `diagnostics/`: diagnostic and validation notebooks and plotting scripts.
 - `figures/`: repository figures and diagrams.
-- `postprocessing/`: synthetic-map notebooks, Python utilities, and data.
+- `postprocessing/`: synthetic-map notebook and Python utilities.
 - `tests/`: regression and f2py checks.
 - `validation/`: optional physics-validation notebooks.
 - `output/`: generated reference-model outputs.
@@ -64,8 +62,7 @@ run from `postprocessing/`.
 The reduced regression configuration uses `Ns=100` and `numbins=250`, a deliberately lighter but still resolved grid
 for fast test execution. The production M87 configuration uses the converged resolution described below.
 
-The notebook parameter exploration is also available as a script. Build the f2py module and run all configured
-sweeps with:
+The parameter exploration is done with a script. Build the f2py module and run all configured sweeps with:
 
 ```bash
 make -C Code f2py
@@ -74,8 +71,8 @@ OMP_NUM_THREADS=1 python diagnostics/explore_parameters.py
 
 Plots are written to `diagnostics/parameter_exploration/` by default. Use `--sweep NAME` to run one SED sweep or
 `--sweep power` for the injection power-components plot; `--output-dir PATH` changes the destination. Intermediate
-Fortran files are written to a temporary directory and removed automatically. The script uses the notebook reference
-dictionary and runs calls sequentially because the Fortran modules retain mutable state.
+Fortran files are written to a temporary directory and removed automatically. The script runs calls sequentially
+because the Fortran modules retain mutable state.
 
 `make -C Code test` runs the numerical unit tests and a reduced Fortran
 regression. The regression runs `run.x` with `configs/test.nml` in a temporary
@@ -88,6 +85,10 @@ synchrotron or pure adiabatic cooling, steady state with injection, particle-num
 convergence in `numbins`), and `Ne_cuts.dat` of a full run against the exact solution by characteristics built from
 the code's own losses and injection, with the one-zone fast-cooling limit for reference. Plots go to
 `tests/output/ne_validation/`. Use `--nml` to test another namelist.
+
+`make -C Code test-f2py` (also part of `make test`; needs `make -C Code f2py`) checks that the f2py wrapper
+`syn_model` reproduces the total flux of `run.x` to better than 1% over 1e9-1e20 Hz on the same namelist
+(`tests/f2py_check.py`, default `configs/test.nml`; use `--nml` to test another namelist).
 
 The current model uses only the cosmic microwave background (CMB) as its
 external photon field. The generic IC kernel remains capable of receiving
@@ -129,8 +130,7 @@ For profiling symbols, use `make -C Code clean && make -C Code PROFILE=Y`.
 This enables optimized debug symbols but does not itself generate a `gprof`
 profile; use an external profiler such as `perf` if needed.
 
-The optional `tests/f2py_check.py` validation remains blocked until the
-external Jet+RIAF namelist location is available. The SSC routine
+The SSC routine
 `SEDssc_data` is intentionally retained as an incomplete future path, and its
 unused-argument warnings are expected.
 

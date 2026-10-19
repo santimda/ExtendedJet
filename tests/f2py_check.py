@@ -6,14 +6,14 @@ difference in flux, over 1e9-1e20 Hz?
 
 Procedure
 ---------
-1. Run the compiled binary `run.x` on the paper's Jet+RIAF namelist
-   (analysis/configs/jet_riaf.nml, only `outdir` redirected to a scratch dir)
-   and read the reference total flux (jet + counter-jet, no aperture cut) from
-   `Flux_e.dat` and `FluxCJ_e.dat` (last column of each, summed).
+1. Run the compiled binary `run.x` on a namelist (default configs/test.nml;
+   only `outdir` is redirected to a scratch dir) and read the reference total
+   flux (jet + counter-jet, no aperture cut) from `Flux_e.dat` and
+   `FluxCJ_e.dat` (last column of each, summed).
 2. Call `JetCode.system_parameters.read_namelist()` on the SAME namelist file,
    so every module-level parameter (including the `fix_norm_taper` /
-   `fix_inj_emin` controls in module `controls`, which default to `.false.`
-   and are NOT arguments of `syn_model`) matches exactly what `run.x` used.
+   `fix_inj_emin` controls in module `controls`, which are NOT arguments of
+   `syn_model`) matches exactly what `run.x` used.
 3. Call `JetCode.main.syn_model(...)` with the derived (cgs) values that
    `read_namelist` just computed, at photon energies E_data = h*nu on the
    run.x frequency grid restricted to [1e9, 1e20] Hz.
@@ -26,9 +26,10 @@ Procedure
    and the wall-clock time of a single syn_model call. Exit 1 if max relative
    difference > 1%.
 
-Run from anywhere with the m87 conda env active:
-    python codes/extended-jet/tests/f2py_check.py
+Usage (after `make -C Code && make -C Code f2py`):
+    python tests/f2py_check.py [--nml configs/m87_reference.nml]
 """
+import argparse
 import os
 import subprocess
 import sys
@@ -39,20 +40,19 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CODE_DIR = os.path.abspath(os.path.join(HERE, "..", "Code"))
-REPO_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
-NML_SRC = os.path.join(REPO_ROOT, "analysis", "configs", "jet_riaf.nml")
+DEFAULT_NML = os.path.abspath(os.path.join(HERE, "..", "configs", "test.nml"))
 
 FREQ_LO, FREQ_HI = 1e9, 1e20
 REL_TOL = 0.01
 
 
-def make_scratch_nml(scratch_dir):
-    """Copy the paper's Jet+RIAF namelist, redirecting outdir to scratch_dir/outdir."""
+def make_scratch_nml(nml_src, scratch_dir):
+    """Copy the namelist nml_src, redirecting outdir to scratch_dir/outdir."""
     outdir = os.path.join(scratch_dir, "outdir")
     os.makedirs(outdir, exist_ok=True)
-    with open(NML_SRC) as f:
+    with open(nml_src) as f:
         text = f.read()
-    nml_path = os.path.join(scratch_dir, "jet_riaf_ref.nml")
+    nml_path = os.path.join(scratch_dir, os.path.basename(nml_src))
     replaced = False
     lines = []
     for line in text.splitlines():
@@ -139,9 +139,12 @@ def run_f2py(nml_path, nu):
 
 
 def main():
+    ap = argparse.ArgumentParser(description="Compare the f2py syn_model wrapper with run.x.")
+    ap.add_argument("--nml", default=DEFAULT_NML, help="namelist to test (default: configs/test.nml)")
+    args = ap.parse_args()
     scratch_dir = os.environ.get("F2PY_CHECK_SCRATCH") or tempfile.mkdtemp(prefix="f2py_check_")
     os.makedirs(scratch_dir, exist_ok=True)
-    nml_path, _ = make_scratch_nml(scratch_dir)
+    nml_path, _ = make_scratch_nml(os.path.abspath(args.nml), scratch_dir)
 
     print(f"Reference run: ./run.x {nml_path}")
     nu_full, flux_ref_full = run_reference(nml_path)
