@@ -9,7 +9,7 @@ cross-section, F(g, z) = n'(g) * pi r^2 * betaGamma * c, along z:
 
 with the implicit upwind kernel FP_FinDif_cool. Two groups of tests:
 
-Kernel (FP_FinDif_cool called through the f2py shim tests/ne_kernel_shim.f90, idealised loss and injection terms):
+Kernel (FP_FinDif_cool called through the f2py shim validation/ne_kernel_shim.f90, idealised loss and injection terms):
   K1  impulsive injection, pure synchrotron cooling  gdot = -b g^2   (closed form along characteristics)
   K2  impulsive injection, pure adiabatic cooling    gdot = -a g     (closed form)
   K3  continuous injection, synchrotron + adiabatic, steady state    N = int_g^inf Q dg' / |gdot|
@@ -25,7 +25,7 @@ Full model (run.x on a namelist; N_e only; at the namelist's numbins and at twic
   M2  the one-zone (local fast-cooling) limit  N = int_E^inf Q dE' / |Edot|, which M1 must approach where the
       synchrotron cooling length is much shorter than z (reported where t_sync < t_adv/30; shown in the plot).
 
-usage:  python tests/ne_validation.py [--nml configs/m87_reference.nml] [--plots tests/output/ne_validation]
+usage:  python validation/ne_validation.py [--nml configs/m87_reference.nml] [--plots validation/output/ne_validation]
 Exit status 1 if any check exceeds its tolerance. Needs run.x and the f2py module (make -C Code; make -C Code f2py).
 """
 import argparse
@@ -68,7 +68,7 @@ _KERNEL = None
 
 
 def kernel():
-    """f2py module `ne_kernel` (tests/ne_kernel_shim.f90 + the production sources, the Makefile's FFLAGS).
+    """f2py module `ne_kernel` (validation/ne_kernel_shim.f90 + the production sources, the Makefile's FFLAGS).
 
     FP_FinDif_cool cannot be called through JetCode: f2py cannot size its assumed-shape intent(out) array.
     Rebuilt when the shim or any Code/*.f90 is newer than the module."""
