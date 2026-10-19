@@ -77,7 +77,7 @@ contains
     real(dp), intent(in) :: Eph_MFF, Kapp, EFF
     real(dp) :: TFF, t_iso, Eiso_ct
 
-    TFF = Eph_MFF/(2.7d0*mec2)   !Dimensionless stellar temperature in the FF (EphMFF = 2.7*kB*TFF)
+    TFF = Eph_MFF/(2.7d0*mec2)   !Dimensionless CMB temperature in the FF (EphMFF = 2.7*kB*TFF)
     t_iso = 4d0*TFF*(EFF/mec2)
     Eiso_ct = cte_IC_K*Kapp*TFF**2
     ICLoss = - Eiso_ct*F_iso(t_iso)*mec2    ![erg/s]
@@ -89,11 +89,13 @@ contains
     !============================================================================
     real(dp) function AdLoss(z_, EFF)
     real(dp), intent(in) :: z_, EFF
-    real(dp) :: gg,zabs
+    real(dp) :: gg,zabs,g,beta
 
     gg = EFF - mec2**2/EFF
     zabs = abs(z_)
-    AdLoss = - 2d0/3d0 * geomIndex_out * lorentzFactor(zabs) * c * betaJet(zabs) / zabs * gg
+    g = lorentzFactor(zabs)
+    beta = sqrt(1d0 - 1d0/g**2)
+    AdLoss = - 2d0/3d0 * geomIndex_out * g * c * beta / zabs * gg
     
     end function AdLoss
         

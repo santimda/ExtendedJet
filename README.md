@@ -1,6 +1,6 @@
 # ExtendedJet
 
-Non-thermal multi-zone emission model for relativistic jets. The model is partly based on Molina, del Palacio & Bosch Ramon 2019 (ADS link: https://ui.adsabs.harvard.edu/abs/2019A%26A...629A.129M/abstract). The code is written as modules of Fortran90, articulated by a *Main* program, compiled using *Make* (simply run `make` in the terminal), and ran as `./run.x`. The compilation with *make* by default makes use of the *blas* and *lapack* libraries. Files can be safely removed using *make clean*.
+Non-thermal multi-zone emission model for relativistic jets. The model is partly based on Molina, del Palacio & Bosch Ramon 2019 (ADS link: https://ui.adsabs.harvard.edu/abs/2019A%26A...629A.129M/abstract). The code is written as Fortran 90 modules, compiled with Make, and run as `./run.x params.nml`. Build products can be safely removed using `make clean` from `Code/`.
 
 Some further details of each code are given below.
 
@@ -30,18 +30,17 @@ default. If LaTeX is unavailable, set `text.usetex` to `False` in
 Astropy, pandas, `agnpy`, `naima`, Gnuplot, and `smplotlib`. `agnpy` is used by
 `emisividad1.ipynb` for synchrotron/absorption comparisons; `naima` is used by
 `Syn_SSC_sed.ipynb` for synchrotron and SSC comparisons. Neither is required
-by the Fortran model or its f2py wrapper. The `constants_cgs` module and
-external RIAF data used by some legacy notebooks are not included here.
+by the Fortran model or its f2py wrapper.
 
 ## Layout
 
 - `Code/`: Fortran sources, Makefile, and generated build files.
 - `configs/`: runtime namelists.
-- `data/`: legacy and observational input data.
 - `diagnostics/`: diagnostic and validation notebooks and plotting scripts.
 - `figures/`: repository figures and diagrams.
-- `postprocessing/`: synthetic-map notebooks, Python utilities, and data.
+- `postprocessing/`: synthetic-map notebook and Python utilities.
 - `tests/`: regression and f2py checks.
+- `validation/`: optional physics-validation notebooks.
 - `output/`: generated reference-model outputs.
 - `tests/output/`: disposable outputs from the reduced test configuration.
 
@@ -49,6 +48,8 @@ Run the model from the repository root with a configuration file:
 
 ```text
 make -C Code
+make -C Code test-unit
+(cd Code && make test)
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/test.nml)
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
@@ -58,19 +59,96 @@ The reduced run writes to `tests/output/`; the reference run writes to
 Gnuplot scripts are run from `diagnostics/`, and post-processing utilities are
 run from `postprocessing/`.
 
+The reduced regression configuration uses `Ns=100` and `numbins=250`, a deliberately lighter but still resolved grid
+for fast test execution. The production M87 configuration uses the converged resolution described below.
+
+The parameter exploration is done with a script. Build the f2py module and run all configured sweeps with:
+
+```bash
+make -C Code f2py
+OMP_NUM_THREADS=1 python diagnostics/explore_parameters.py
+```
+
+Plots are written to `diagnostics/parameter_exploration/` by default. Use `--sweep NAME` to run one SED sweep or
+`--sweep power` for the injection power-components plot; `--output-dir PATH` changes the destination. Intermediate
+Fortran files are written to a temporary directory and removed automatically. The script runs calls sequentially
+because the Fortran modules retain mutable state.
+
+`make -C Code test` runs the numerical unit tests and a reduced Fortran
+regression. The regression runs `run.x` with `configs/test.nml` in a temporary
+output directory and compares the jet and counter-jet fluxes with the frozen
+references in `tests/reference/test/` over the radio band.
+
+`make -C Code test-ne` (also part of `make test`; needs `make -C Code f2py`) validates the electron-distribution
+solver (`tests/ne_validation.py`): the transport kernel against closed-form solutions (impulsive injection with pure
+synchrotron or pure adiabatic cooling, steady state with injection, particle-number conservation, first-order
+convergence in `numbins`), and `Ne_cuts.dat` of a full run against the exact solution by characteristics built from
+the code's own losses and injection, with the one-zone fast-cooling limit for reference. Plots go to
+`tests/output/ne_validation/`. Use `--nml` to test another namelist.
+
+`make -C Code test-f2py` (also part of `make test`; needs `make -C Code f2py`) checks that the f2py wrapper
+`syn_model` reproduces the total flux of `run.x` to better than 1% over 1e9-1e20 Hz on the same namelist
+(`tests/f2py_check.py`, default `configs/test.nml`; use `--nml` to test another namelist).
+
+The current model uses only the cosmic microwave background (CMB) as its
+external photon field. The generic IC kernel remains capable of receiving
+other black-body-like fields, but no stellar or other external photon field is
+configured in this version.
+
+The production M87 grid uses `Ns=700` jet segments and `numbins=1100` particle-transport energy bins. These were
+selected from finer full-model convergence tests using a mixed tolerance of 3% for each aperture flux and 1% for total
+flux. The compile-time electron output grid remains `nIn=150`; increasing it to 300 changed the fluxes by less than
+1%. High-resolution reference runs used an isolated `numdt=300000` build. The selected `Ns=700` grid remains within
+the production `numdt=100000` transport-history limit; still finer runs can exceed it and should not be used as
+convergence references without also revisiting that limit.
+
+## Validation and Performance
+
+The standard validation commands are:
+
+```bash
+make -C Code f2py && make -C Code test
+make -C Code clean && make -C Code DEBUG=Y f2py && make -C Code DEBUG=Y test
+(cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
+```
+
+The reduced regression compares the jet and counter-jet fluxes with the frozen
+references in `tests/reference/test/`. The current full M87 run reproduces the
+following flux-file hashes:
+
+```text
+Flux_e.dat:   cbe67602fd6beddc4c12fb4a5855e0bfd75d78e99627641ab529b5cd75063624
+FluxCJ_e.dat: fb17bbeb24fc8a87eab1741d90c95685bee36cf3ab9d870ae99a03937bbe279d
+```
+
+On the current machine, the full reference command takes approximately 6.3 s
+with `OMP_NUM_THREADS=1`. This is machine-, compiler-, and configuration-
+dependent; the reference configuration enables output sorting and loss-file
+generation. Set the thread count explicitly when benchmarking.
+
+For profiling symbols, use `make -C Code clean && make -C Code PROFILE=Y`.
+This enables optimized debug symbols but does not itself generate a `gprof`
+profile; use an external profiler such as `perf` if needed.
+
+The SSC routine
+`SEDssc_data` is intentionally retained as an incomplete future path, and its
+unused-argument warnings are expected.
+
 ## Important files
 
-**Makefile**: instructions for compiling using *make*
+**Makefile**: production, f2py, and unit-test build orchestration.
 
 **Makefile.depend**: details which modules depend on which other modules (needed for compilation)
 
-**constants.f90**: useful physical and numerical constants. It is imported by **global.f90** to be used by all other modules as well.
+**constants.f90**: useful physical and numerical constants. It is imported by **globals.f90** to be used by all other modules as well.
+
+**numerical_utils.f90**: reusable grids, integration, interpolation, safe logarithms, and linear-algebra utilities.
 
 **system_parameters.f90**: parameters of the specific system being studied. It is imported by **globals.f90** to be used by all other modules as well.
 
-**globals.f90**: constants, variables and number of points in the simulation to be used by all other modules.
+**globals.f90**: simulation grid sizes, shared state arrays, and common radiation functions.
 
-**controles.f90**: this sets which modules are going to run in the simulation by setting variables to *.True.* or *.False.*.
+**controls.f90**: compile-time and namelist-controlled calculation switches.
 
 **trajectory.f90**: calculates the jet or counter-jet trajectory (trivial for a vertical jet).
 

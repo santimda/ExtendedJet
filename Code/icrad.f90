@@ -1,6 +1,7 @@
 MODULE icrad
   use constants
   use globals
+  use numerical_utils, only: vector_log
   implicit none
 
 contains
@@ -83,8 +84,6 @@ contains
        if (z(j_s) <= 0.1d0*zmax) LIC2 = LIC
        
     enddo
-    !write(*,'(3X,A,ES9.2E2,1X,A)') 'Jet unabsorbed IC luminosity (FF):',LIC_bol_FF,'erg/s'
-    
     do i = 1,NSED_ic
        write(50,*) Eg(i)/eV,Eg(i)*LIC1(i),Eg(i)*LIC2(i),Eg(i)*LIC(i)
     enddo

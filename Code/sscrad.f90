@@ -1,6 +1,7 @@
 module sscrad
    use constants
    use globals
+   use numerical_utils, only: vector_log
    implicit none
    public :: SEDssc
 
@@ -22,18 +23,6 @@ module sscrad
       real(dp) :: Lic_jet(NSED_IC), Lic2_jet(NSED_IC), Lic3_jet(NSED_IC)
       real(dp) :: cte_ic, dEph
       integer :: i, l, i2, j
-      !allocate ( delta_obs(Ns) )
-
-      !------------------------------------------------------------------------
-      !  Reading information here  
-
-      ! Read Doppler factor
-      !open(20, file='deltas'//jet//'.dat')
-      !do l = 1, Ns
-      !   read(20,*) delta_obs(l), boost(l)
-      !enddo
-      !sclose(20)
-
       ! Read from a file: Ee(i), Ne(i,l)
       ! N_e(i) = number of e- with energy Ee(i) per unit energy
       open(70,file='Ne_cuts.dat')
@@ -55,21 +44,7 @@ module sscrad
       ! Lsy(i) = luminosity emitted with energy Eph(i) per unit energy
       open(45,file='n_ph_syn_cuts_FF_'//jet//'.dat')
       
-      !do l = 1, Ns 
-      !   do i = 1, NSED_sy
-      !      !read(27,*) Eph(i), dummy, Lsy(i,l), dummy
-      !      Eph(i) = Eph(i)*eV ! Convert from eV to cgs
-      !      ! We need L_sy_FF, so we unboost
-      !      ! LA ENERGIA A LA QUE SE CALCULA ESTO TAMBIEN ES LA DEBOOSTEADA?
-      !      Lsy(i,l) = Lsy(i,l)/(Eph(i)*boost(l)) ! [erg/s/erg]
-      !      dotNsy = Lsy(i,l)/Eph(i)              ! [1/s/erg]
-      !      write(*,*) dotNsy
-      !      nph(i,l) = dotNsy/VFF(l) * (rj(l)/c) !!! MAKE SURE IT IS CONSISTENT WITH U_sy
-      !      !write(*,*) Eph(i)/eV, nph(i,l), boost(l), VFF(l), rj(l)
-      !   enddo
-      !enddo
-      !close(27)
-      do i = 1, NSED_sy 
+      do i = 1, NSED_sy
          do l = 1, Ns
             read(45,*) EphFF(i,l), nph(i,l)
          enddo
@@ -122,7 +97,6 @@ module sscrad
       enddo
       close(26)
 
-      !write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
       write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet SSC luminosity (FF):',Lic_tot,'erg/s'
 
       !Now save a total SED for the jet
@@ -133,14 +107,11 @@ module sscrad
       do i = 1, NSED_IC
          do l = 1, Ns
             Lic_jet(i) = Lic_jet(i) + Lic(i,l)            
-          !  if (z(l) <= 1.d1*z0) Lic2_jet(i) = Lic_jet(i)
-          !  if (z(l) <= 1.d2*z0) Lic3_jet(i) = Lic_jet(i)
          enddo
          write(27,*) Eg(i)/eV, Eg(i)*Lic_jet(i), Eg(i)*Lic2_jet(i), Eg(i)*Lic3_jet(i)
       enddo
       close(27)
 
-   !deallocate ( delta_obs )
       write(*,*) "FINISHED SSC"
    END subroutine SEDssc
    !============================================================================
@@ -168,11 +139,6 @@ module sscrad
       real(dp) :: Lic_jet(NSED_IC), Lic2_jet(NSED_IC), Lic3_jet(NSED_IC)
       real(dp) :: cte_ic, dEph
       integer :: i, l, i2, j
-      !allocate ( delta_obs(Ns) )
-
-      !------------------------------------------------------------------------
-      !  Reading information here  
-
       ! Read from a file: Ee(i), Ne(i,l)
       ! N_e(i) = number of e- with energy Ee(i) per unit energy
       open(70,file='Ne_cuts.dat')
@@ -246,7 +212,6 @@ module sscrad
       enddo
       close(26)
 
-      !write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet unabsorbed synchrotron luminosity (FF):',LBolFF,'erg/s'
       write(*,'(3X,A,ES10.3E2,1X,A)') 'Jet SSC luminosity (FF):',Lic_tot,'erg/s'
 
       !Now save a total SED for the jet
@@ -257,14 +222,11 @@ module sscrad
       do i = 1, NSED_IC
          do l = 1, Ns
             Lic_jet(i) = Lic_jet(i) + Lic(i,l)            
-          !  if (z(l) <= 1.d1*z0) Lic2_jet(i) = Lic_jet(i)
-          !  if (z(l) <= 1.d2*z0) Lic3_jet(i) = Lic_jet(i)
          enddo
          write(27,*) Eg(i)/eV, Eg(i)*Lic_jet(i), Eg(i)*Lic2_jet(i), Eg(i)*Lic3_jet(i)
       enddo
       close(27)
 
-   !deallocate ( delta_obs )
       write(*,*) "FINISHED SSC"
    END subroutine SEDssc_data
    !============================================================================

@@ -4,9 +4,6 @@ PROGRAM main
     use controls
     use system_parameters
     implicit none
-    real(dp) :: sigma0_value, Lj_value, z0_value, a_inj_value
-    real(dp), allocatable :: E_data(:)
-    real(dp) :: S_data(m_data_max)
     logical, parameter :: verbose = .True.
     character(len=512) :: nml_path
 
@@ -15,16 +12,6 @@ PROGRAM main
             logical, intent(in) :: verbose
         end subroutine run_jet
     end interface
-
-    interface
-        subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_vector, S_vector) 
-            use globals
-            use constants
-            real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
-            real(dp), intent(in) :: E_vector(:)
-            real(dp), intent(out) :: S_vector(m_data_max)
-        end subroutine sed_model
-    end interface 
 
     interface
         subroutine syn_model(sigma0_value, zmax_value, Lj_value, a_inj_value, &
@@ -61,23 +48,6 @@ PROGRAM main
 
     if (run_jet_calc) call run_jet(verbose)
 
-    !----------------------------------------------------------------
-    ! Short version to calculate specific fluxes integrated up to 
-    ! certain jet heights. Used for fitting SEDs.
-    
-    ! if (run_sed_calc) then
-    !     allocate( E_data(4) )
-    !     E_data = (/1d-6*eV, 1d-2*eV, 1.d2*eV, 1.d5*eV/)
-    !     sigma0_value = 1.d1
-    !     Lj_value = L_Edd*1d-4
-    !     a_inj_value = 0.5d0
-    !     zmax_value = 1d6*R_g
-    !     call syn_model(sigma0_value, zmax_value, Lj_value, a_inj_value, E_data, S_data) ! Energies in cgs
-    !     call sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data) ! Energies in cgs
-    !     deallocate( E_data )
-    ! endif
-
-
 END PROGRAM main
 
 
@@ -99,13 +69,10 @@ subroutine run_jet(verbose)
     implicit none
     logical, intent(in) :: verbose
     
-    !real(dp) :: EphSy(NSED_sy), Lsy(NSED_sy), Lsy_CJ(NSED_sy)
-    !real(dp) :: EphIC(NSED_IC), LIC(NSED_IC), LIC_CJ(NSED_IC)
-    !real(dp) :: Flux(N_bands)
-    character(3) :: numNE, numSED
+    character(16) :: numNE, numSED
 
-    write(numNE,'(I3)') nIn         !Number of points for the N(E) distribution
-    write(numSED,'(I3)') NSED_sy    !Number of points for the synchrotron SED
+    write(numNE,'(I0)') nIn         !Number of points for the N(E) distribution
+    write(numSED,'(I0)') NSED_sy    !Number of points for the synchrotron SED
 
     ! Calculate everything for the jet first
     if (JET_) then
@@ -121,7 +88,7 @@ subroutine run_jet(verbose)
 
         !Particle distribution
         if (NE_calc) then 
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
+            if (verbose) write(*,'(1X,A,I0,A)') '\n Computing the particle energy distribution (',nIn,' points)'
             call Edist('e')        ! Calculate the particle energy distribution
             if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
 
@@ -142,7 +109,7 @@ subroutine run_jet(verbose)
 
         !Synchrotron SED
         if (radsyn_calc) then
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
+            if (verbose) write(*,'(1X,A,I0,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the jet'
             call SEDsyn('', 'e')      ! Calculate synchrotron SED
             if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             !call Calc_Usyn('')   ! Calculate the energy density of synchrotron photons
@@ -177,24 +144,13 @@ subroutine run_jet(verbose)
 
         !Particle distribution
         if (NE_calc .and. (.not. JET_)) then
-            print*, 'ERROR: current version cannot calculate the electron distribution for the CJ, run with jet!' 
-            stop
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Computing the particle energy distribution (',nIn,' points)'
-            call Edist('e')        ! Calculate the particle energy distribution
-            !call Edist('p')
-            if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortNe.sh '//trim(adjustl(numNE)))   !Sort N(E) file
-            call Calc_Ue()      ! Calculate energy densities
-            if (print_tlosses) then
-                if (verbose) print *, '\n Creating the tloss files for plots'
-                call Print_tloss(1, 'e')
-                call Print_tloss(Ns/3, 'e')
-                call Print_tloss(Ns, 'e')
-            endif
+            print *, 'ERROR: electron distributions require JET_=.true.'
+            error stop 1
         endif
 
         !Synchrotron SED
         if (radsyn_calc) then
-            if (verbose) write(*,'(1X,A,I3,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
+            if (verbose) write(*,'(1X,A,I0,A)') '\n Calculating the synchrotron SED (',NSED_sy,' points) in the counter-jet'
             call SEDsyn('CJ', 'e')      ! Calculate synchrotron SED
             if (sort_outputs) call execute_command_line('cd '//trim(outdir)//' && '//trim(scriptdir)//'/SortSEDesyn.sh '//trim(adjustl(numSED))) !Sort SED file
             !call Calc_Usyn('CJ')   ! Calculate the energy density of synchrotron photons
@@ -222,100 +178,6 @@ end subroutine run_jet
 
 
 ! !============================================================================
-! ! sed_model(START)
-! !============================================================================
-! subroutine sed_model(sigma0_value, Lj_value, a_inj_value, E_data, S_data)
-!   !===================================================================
-!   ! Subroutine to calculate the synchrotron (+ SSC) SED at specific 
-!   ! energies for the given input parameters. Calculates both J and CJ
-!   ! TO DO: INCORPORATE SSC IN THE COMPUTATION!!!
-!   !===================================================================
-!     use controls
-!     use constants
-!     use globals
-!     use initialize
-!     use trajectory
-!     use evolution
-!     use losses
-!     use edistribution
-!     use synrad
-!     use sscrad
-
-!     implicit none
-!     real(dp), intent(in) :: sigma0_value, Lj_value, a_inj_value
-!     real(dp), intent(in) :: E_data(:)
-!     real(dp), intent(out) :: S_data(m_data_max)
-!     real(dp) :: S_data_J(m_data_max), S_data_CJ(m_data_max)
-!     logical, parameter :: verbose = .False.
-!     logical, parameter :: calc_SSC = .False.
-        
-!     S_data = 0.d0 ! Initialize
-!     ! Calculate everything for the jet first
-!     if (JET_) then  
-!         call initialize_allocate(sigma0_value, Lj_value, a_inj_value) !z0_value, 
-
-!         !Jet trajectory
-!         call trajectory_calc('')  ! jet 
-        
-!         !Evolution of different quantities
-!         call Quantities('')       ! jet 
-
-!         !Particle distribution
-!         call Edist('e')   
-
-!         !Synchrotron SED at the given values  
-!         call SEDsyn_data(E_data, S_data_J, '', 'e')  
-!         S_data = S_data_J
-
-!         if (calc_SSC) then
-!         !SSC SED at the given values  
-!             call SEDssc_data(E_data, S_data_J, '') 
-!             S_data = S_data + S_data_J
-!         endif   
-!         if (verbose) print *, 'S_data[cgs] =', S_data
-
-!         call initialize_deallocate 
-!     endif 
-
-
-!     ! Calculate everything for the counter-jet next
-!     if (CJ_) then
-!         call initialize_allocate(sigma0_value, Lj_value, a_inj_value) !z0_value, 
-
-!         !Jet trajectory
-!         call trajectory_calc('CJ')  ! counter-jet 
-        
-!         !Evolution of different quantities
-!         call Quantities('CJ')       ! counter-jet 
-
-!         !Particle distribution
-!         if (.not. JET_) call Edist('e')  ! Calculate the particle energy distribution
-
-!         !Synchrotron SED at the given values
-!         call SEDsyn_data(E_data, S_data_CJ, 'CJ', 'e')
-!         S_data = S_data + S_data_CJ
-
-!         !SSC SED at the given values  
-!         if (calc_SSC) then
-!             call SEDssc_data(E_data, S_data_CJ, '') 
-!             S_data = S_data + S_data_CJ  
-!         endif 
-!         if (verbose) print *, 'S_data[cgs] =', S_data
-        
-!         call initialize_deallocate 
-!     endif
-
-!     if (verbose) then
-!         print *, 'E_data[eV] =', E_data/eV
-!         print *, 'S_data[cgs] =', S_data
-!     endif
-
-! end subroutine sed_model
-
-!===================================================================
-
-
-
 !============================================================================
 ! syn_model(START)
 !============================================================================
@@ -363,8 +225,7 @@ subroutine syn_model(sigma0_value, zmax_value, Lj_value, a_inj_value, &
     call Quantities('')    
     call Edist('e')   
     !Synchrotron SED at the given values
-    call SEDsyn_data(E_data, S_data_J, '', 'e')   
-    !call SEDsyn_data(E_data, S_data_J, '', 'e')  
+    call SEDsyn_data(E_data, S_data_J, '', 'e')
 
     ! Calculate everything for the counter-jet next
     call trajectory_calc('CJ')  
@@ -372,7 +233,6 @@ subroutine syn_model(sigma0_value, zmax_value, Lj_value, a_inj_value, &
     call SEDsyn_data(E_data, S_data_CJ, 'CJ', 'e')
     call initialize_deallocate 
 
-    !write(*,*) Ns, dlogz
     S_data = S_data_J + S_data_CJ
 
     if (verbose) then
@@ -391,7 +251,7 @@ subroutine power_model(sigma0_value, zmax_value, Lj_value, a_inj_value, z_data, 
   !===================================================================
   ! Subroutine to calculate the power components (magnetic, kinetic, electron)
   ! as a function of jet height for the given input parameters.
-  ! Returns arrays of size Ns (defined in globals.f90, default 200)
+  ! Returns fixed-size compatibility arrays; only the requested prefix is populated.
   !===================================================================
     use controls
     use constants
@@ -410,6 +270,7 @@ subroutine power_model(sigma0_value, zmax_value, Lj_value, a_inj_value, z_data, 
     integer :: j
     logical, parameter :: verbose = .False.
         
+    if (size(z_data) > m_data_max) error stop 'power_model: too many z points'
     ! Calculate everything for the jet
     call initialize_allocate(sigma0_value, zmax_value, Lj_value, a_inj_value)
     call trajectory_calc('')  

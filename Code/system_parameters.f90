@@ -5,19 +5,18 @@ module system_parameters
    public
 
    !====================================================================
-   ! This module contains every model parameter (jet + RIAF-adjacent
-   ! constants) as well as the run-time controls formerly hard-coded in
-   ! globals.f90/controls.f90. All physical parameters are plain module
-   ! variables (not PARAMETER) so that read_namelist() can override them;
-   ! their defaults below are the M87 Jet+RIAF values (A's
-   ! system_parameters_M87.f90). Quantities that are derived from other
-   ! parameters are recomputed by derive_parameters(), never read directly
-   ! from a namelist.
+   ! This module contains every model parameter as well as the run-time
+   ! controls formerly hard-coded in globals.f90/controls.f90. All physical
+   ! parameters are plain module variables (not PARAMETER) so that
+   ! read_namelist() can override them; their defaults below are the M87
+   ! reference values. Quantities that are derived from other parameters
+   ! are recomputed by derive_parameters(), never read directly from a
+   ! namelist.
    !====================================================================
 
    !===SYSTEM PARAMETERS=========================================================================================
 
-   real(dp) :: dist_mpc = 16.8d0                   !Distance to the system [Mpc]
+   real(dp) :: dist_mpc = 16.8d0                    !Distance to the system [Mpc]
    real(dp) :: incl_deg = 17.d0                     !Observer's angle with the jet axis [deg]
    real(dp) :: M_BH = 6.5d9                         !Black hole mass [Msun]
 
@@ -25,8 +24,8 @@ module system_parameters
    real(dp) :: jo                                   !Observer's angle with the jet axis [rad] (derived)
    real(dp) :: L_Edd                                !Eddington luminosity (derived)
    real(dp) :: R_g                                  !Gravitational radius [cm] (derived)
-   real(dp), parameter :: EphM = kB*T_CMB           !Target photon energy in the obs frame
-   real(dp), parameter :: nf0 = u_CMB/EphM          !Target photon number density in the obs frame
+   real(dp), parameter :: EphM = kB*T_CMB           !CMB characteristic photon energy in the obs frame
+   real(dp), parameter :: nf0 = u_CMB/EphM          !CMB photon number density in the obs frame
 
    !===JET PROPERTIES============================================================================================
 
@@ -67,7 +66,7 @@ module system_parameters
    real(dp) :: EpminFF_eV = 1d9                     !Minimum proton energy in the FF [eV]
    real(dp) :: Epmin_injFF_eV = 2d9                 !Minimum proton energy of injected particles in the FF [eV]
    real(dp) :: EpmaxFF_eV = 1d18                    !Maximum proton energy in the FF [eV]
-   real(dp) :: p = 2.05d0                            !Power law exponent for Q(E) = cte * E**-p
+   real(dp) :: p = 2.05d0                           !Power law exponent for Q(E) = cte * E**-p
 
    real(dp) :: EminFF, Emin_injFF, EmaxFF           !Electron energy bounds in the FF [erg] (derived)
    real(dp) :: EpminFF, Epmin_injFF, EpmaxFF        !Proton energy bounds in the FF [erg] (derived)
@@ -75,32 +74,31 @@ module system_parameters
    !===FREE PARAMETERS=========================================================================================
 
    real(dp) :: Lj = 1.2d43                          !Jet luminosity (erg/s) (Algaba+2021? arbitrary)
-   real(dp) :: sigma_0 = 100d0                       !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
-   real(dp) :: mu                                    !Total energy flux per unit of rest-mass energy flux (derived)
-   real(dp) :: Mdot_j                                !Mass flux (derived)
-   real(dp) :: a_inj = 0.01d0                        !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj))
-                                                     !a_inj =/ 0 (else error!)
-   real(dp) :: gammaIndex = 0.16d0                   !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
+   real(dp) :: sigma_0 = 100d0                      !Initial Magnetization, sigma = B'^2/ (4pi rho' c^2 h')
+   real(dp) :: mu                                   !Total energy flux per unit of rest-mass energy flux (derived)
+   real(dp) :: Mdot_j                               !Mass flux (derived)
+   real(dp) :: a_inj = 0.01d0                       !Power law exponent for dLe_dz(z) ~ z**(-(1 + a_inj))
+                                                    !a_inj =/ 0 (else error!)
+   real(dp) :: gammaIndex = 0.16d0                  !Power law exponent for Gamma(z) = (z/z0)**gammaIndex
 
    !===GLOBAL VARIABLES (TIED TO FREE PARAMETERS)================================================================
-   ! All recomputed by derive_parameters(); never set directly.
+   ! Recomputed by derive_parameters(); never set directly.
 
-   real(dp) :: LnT                                   !Available nonthermal luminosity
-   real(dp) :: LnTFF                                 !Available nonthermal luminosity in the FF
+   real(dp) :: LnT                                  !Available nonthermal luminosity
+   real(dp) :: LnTFF                                !Available nonthermal luminosity in the FF
    real(dp) :: max_enthalpy
    real(dp) :: dlogz
    real(dp) :: cte_inj
-   real(dp) :: taper_norm = 1d0                    !Rescaling of the injection so that the exp(-z/zmax_inj)-tapered power integrates to LnT (fix_norm_taper)
+   real(dp) :: taper_norm = 1d0                     !Rescaling of the injection so that the exp(-z/zmax_inj)-tapered power integrates to LnT (fix_norm_taper)
    integer, parameter :: n_taper = 4000             !Log-z grid of the tapered cumulative injected power (fix_norm_taper)
    real(dp) :: Le_tab(0:n_taper)                    !Tapered power injected up to z0*(zmax/z0)**(i/n_taper) (fix_norm_taper)
    real(dp) :: dt
    real(dp) :: dtFF
 
    !===RUN-TIME CONTROLS (namelist &run)==========================================================================
-   ! These replace the old compile-time PARAMETERs in globals.f90.
 
-   integer :: Ns = 200                               !Number of jet segments, log-spaced from z0 to zmax
-   integer :: numbins = 500                          !Number of integration bins for the energy distribution
+   integer :: Ns = 700                               !Number of jet segments, log-spaced from z0 to zmax
+   integer :: numbins = 1100                         !Number of integration bins for the energy distribution
    real(dp) :: dttFF_min = 1.d-6                     !Precision in timestep for N(E)
 
    integer, parameter :: max_apertures = 10
@@ -137,29 +135,41 @@ module system_parameters
                          print_tlosses, sort_outputs, fix_norm_taper, fix_inj_emin
 
          open(newunit=lun, file=trim(path), status='old', action='read', iostat=ios, iomsg=iomsg_)
-         if (ios /= 0) then
-            print '(A,A,A,A)', 'FATAL ERROR: cannot open namelist file "', trim(path), '": ', trim(iomsg_)
-            stop 1
+          if (ios /= 0) then
+             print '(A,A,A,A)', 'FATAL ERROR: cannot open namelist file "', trim(path), '": ', trim(iomsg_)
+             error stop 1
          end if
 
          read(lun, nml=model, iostat=ios, iomsg=iomsg_)
-         if (ios /= 0) then
-            print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &model of "', trim(path), '": ', trim(iomsg_)
-            stop 1
+          if (ios /= 0) then
+             print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &model of "', trim(path), '": ', trim(iomsg_)
+             error stop 1
          end if
 
          rewind(lun)
          read(lun, nml=run, iostat=ios, iomsg=iomsg_)
-         if (ios /= 0) then
-            print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &run of "', trim(path), '": ', trim(iomsg_)
-            stop 1
+          if (ios /= 0) then
+             print '(A,A,A,A)', 'FATAL ERROR: malformed or unknown entry in &run of "', trim(path), '": ', trim(iomsg_)
+             error stop 1
          end if
          close(lun)
 
-         if (n_ap > max_apertures) then
-            print '(A,I0)', 'FATAL ERROR: n_ap exceeds max_apertures = ', max_apertures
-            stop 1
-         end if
+          if (Ns < 2) then
+             print '(A,I0)', 'FATAL ERROR: Ns must be at least 2, got ', Ns
+             error stop 1
+          end if
+          if (numbins < 2) then
+             print '(A,I0)', 'FATAL ERROR: numbins must be at least 2, got ', numbins
+             error stop 1
+          end if
+          if (n_ap < 0 .or. n_ap > max_apertures) then
+             print '(A,I0,A,I0)', 'FATAL ERROR: n_ap must be between 0 and ', max_apertures, ', got ', n_ap
+             error stop 1
+          end if
+          if (trim(sync_approx) /= 'full' .and. trim(sync_approx) /= 'delta') then
+             print '(A,A,A)', 'FATAL ERROR: sync_approx must be ''full'' or ''delta'', got ''', trim(sync_approx), ''''
+             error stop 1
+          end if
 
          call execute_command_line('mkdir -p '//trim(outdir))
 
@@ -301,10 +311,13 @@ module system_parameters
       !*************************************************************************************
       !   Jet Beta times Lorentz factor as a function of z
       !*************************************************************************************
-      real(dp) function betaGamma(zz)
-         real(dp), intent(in) :: zz
-         betaGamma = betaJet(abs(zz)) * lorentzFactor(abs(zz))
-      end function
+       real(dp) function betaGamma(zz)
+          real(dp), intent(in) :: zz
+          real(dp) :: g
+
+          g = lorentzFactor(abs(zz))
+          betaGamma = sqrt(1d0 - 1d0/g**2) * g
+       end function
 
       !*************************************************************************************
       ! Power injected in electrons per unit zz

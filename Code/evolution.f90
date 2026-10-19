@@ -15,7 +15,7 @@ MODULE evolution
    ! The input is the '' (jet) or 'CJ' (counter-jet). 
    !============================================================================
       character(LEN=*), intent(in) :: jet ! 'CJ' for counterjet or '' for jet
-      real(dp) :: dir, cjo
+      real(dp) :: dir, cjo, rj_in_norm
       integer :: i
       allocate( joFF(Ns) )
 
@@ -27,10 +27,10 @@ MODULE evolution
          dir = 1.d0
       elseif (jet == 'CJ') then
          dir = -1.d0
-      else
-         print *, 'Invalid jet type'
-         stop
-      endif
+       else
+          print *, 'Invalid jet type'
+          error stop 1
+       endif
 
       cjo = cos(jo)
       do i = 1, Ns
@@ -48,12 +48,12 @@ MODULE evolution
          !Magnetic field
          BFF(i) = BFF_fun(z(i))
 
-         !Stellar photon density and energy 
-         nfFF(i) = nf0/delta_obs(i)  !!! CHECK!!!!!
+         !CMB photon density and characteristic energy in the FF
+         nfFF(i) = nf0/delta_obs(i)  ! Check frame transformation consistency with Khangulyan+2014
          EphMFF(i) = EphM/delta_obs(i)
 
-         !Dilution factor in the FF (Khangulyan 2014)
-         Kappa(i) = delta_obs(i)**2 ! CHECK, FOR CMB
+         !CMB energy-density transformation factor in the FF
+         Kappa(i) = delta_obs(i)**2  ! Check frame transformation consistency with Khangulyan+2014
 
          !Velocity perpendicular to the jet propagation
          vnorm(i) = v_lat(z(i))
@@ -69,7 +69,13 @@ MODULE evolution
          boost(i) = delta_obs(i)**2 
 
          write(30,*) z(i), BFF(i), rj_out(i), rj_in(i), gj(i), delta_obs(i), sjoFF(i), VFF(i), EphMFF(i), nfFF(i), deltaZ(i), deltatFF(i), sigma_B(z(i)), Le_z(z(i))
-         write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj_out(i)/rj_out(1), rj_in(i)/rj_in(1), VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
+         if (abs(rj_in(1)) <= tiny(rj_in(1))) then
+            rj_in_norm = 1d0
+         else
+            rj_in_norm = rj_in(i)/rj_in(1)
+         endif
+         write(31,*) z(i)/z(1), BFF(i)/BFF(1), vnorm(i)/vnorm(1), rj_out(i)/rj_out(1), &
+                     rj_in_norm, VFF(i)/VFF(1), gj(i)/gj(1), delta_obs(i)/delta_obs(1)
 
       end do
       close(30)
@@ -78,6 +84,7 @@ MODULE evolution
       deallocate( joFF )
 
    end subroutine Quantities
+
    !============================================================================
    ! Quantities (END)
    !============================================================================

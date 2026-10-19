@@ -12,6 +12,6 @@ for f in sorted(glob.glob('*.f90')):
     for l in open(f):
         m = re.match(r'\s*use\s+(\w+)', l, re.I)
         if m and m.group(1).lower() in mods and mods[m.group(1).lower()] != f:
-            deps.add(mods[m.group(1).lower()][:-4] + '.o')
-    if deps: out.append(f"{f[:-4]}.o: {' '.join(sorted(deps))}")
+            deps.add('$(BUILD_DIR)/' + mods[m.group(1).lower()][:-4] + '.o')
+    if deps: out.append(f"$(BUILD_DIR)/{f[:-4]}.o: {' '.join(sorted(deps))}")
 open('Makefile.depend', 'w').write("\n".join(out) + "\n")

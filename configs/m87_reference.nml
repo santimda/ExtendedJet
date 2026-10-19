@@ -31,8 +31,8 @@
 &run
   outdir = '../output'
   scriptdir = '../Code'
-  Ns = 200
-  numbins = 500
+  Ns = 700
+  numbins = 1100
   dttFF_min = 1.d-6
   apertures_rg = 7.3d0, 26.d0, 65.d0, 195.d0, 650.d0, 3.5d5, 0.d0, 0.d0, 0.d0, 0.d0
   n_ap = 6

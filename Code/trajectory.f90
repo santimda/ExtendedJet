@@ -26,7 +26,7 @@ MODULE trajectory
       dir = -1.d0
     else
       print *, 'Invalid jet type'
-      stop
+      error stop 1
     endif
 
     z(1) = dir*z0               ! jet height
