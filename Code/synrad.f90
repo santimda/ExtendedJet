@@ -45,8 +45,12 @@ contains
         FT = 0d0
         do j = 2, Ns
             NEcut = NE(:,j)
-            EphFF = Eph/delta_obs(j)     !Photon energy in the FF
-            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            if (g_grav(j) > 0d0) then
+                EphFF = Eph/(delta_obs(j)*g_grav(j))     !Photon energy in the FF
+                dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j), g_grav(j), rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            else
+                dFdz = 0d0
+            endif
             Total_flux = Total_flux + dFdz*h
             !Jet and c-jet contribution of the segments up to given lengths
             z_proj = abs(z(j)) * sjo
@@ -252,26 +256,30 @@ contains
 
     
     !****************************************************************************
-    ! Flux for a given N_e(E,z),B(z),E_ph/delta(z)
+    ! Flux for a given N_e(E,z),B(z),E_ph/(g_red*delta(z))
+    ! The emission is transformed with D = g_red*delta_obs (gravitational redshift
+    ! times Doppler factor w.r.t. the local static observer); the SSA optical depth
+    ! uses delta_obs only (alpha*nu is invariant and the path through the jet is transverse).
     !****************************************************************************
 
-    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, R_out, R_in, particle)
+    real(dp) function dFlux_dz(N_e, BFF, E_ph, E, delta_obs, g_red, R_out, R_in, particle)
     implicit none
         real(dp), dimension(:), intent(in) :: N_e, E
-        real(dp), intent (in) :: BFF, E_ph, delta_obs
+        real(dp), intent (in) :: BFF, E_ph, delta_obs, g_red
         character(1), intent(in) :: particle
-        real(dp) :: jem, alpha, R_out, R_in
+        real(dp) :: jem, alpha, R_out, R_in, D
         real(dp) :: x, Step, tau, tau_max
         integer :: n, i
         real(dp) :: FI(50)
 
+        D = g_red*delta_obs
         alpha = alpha_sync(E_ph, BFF, N_e, E, particle)
         jem = jsync(E_ph, BFF, N_e, E, particle)
         !We consider the opt. thin case
         tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
 
         if (tau_max < 1e-15) THEN
-            dFlux_dz=delta_obs**2/(dist**2)*jem*pi*(R_out**2-R_in**2)
+            dFlux_dz=D**2/(dist**2)*jem*pi*(R_out**2-R_in**2)
         else
             n=50
             Step=1d0/n !Step
@@ -281,7 +289,7 @@ contains
                 FI(i)=1d0-exp(-tau) !The integrand vector
             enddo
             call integrate(n,Step,FI,dFlux_dz) !We call a function for Simpson integration
-            dFlux_dz = sin(jo) * delta_obs**3/(dist**2) * (jem/alpha) * R_out * (2*dFlux_dz) !Add constants
+            dFlux_dz = sin(jo) * D**3/(dist**2) * (jem/alpha) * R_out * (2*dFlux_dz) !Add constants
         endif
     end function dFlux_dz
 
@@ -469,9 +477,10 @@ contains
     S_data = 0.d0
     do l = 1, m_data
         do j = 2, Ns                        !Loop for the jet segments
+            if (g_grav(j) <= 0d0) cycle
             NEcut = NE(:,j)                 !N(E) for the segment j
-            EphFF = E_data(l)/delta_obs(j)  !Photon energy in the FF
-            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j),rj_out(j),rj_in(j), particle)*DeltaZ(j)
+            EphFF = E_data(l)/(delta_obs(j)*g_grav(j))  !Photon energy in the FF
+            dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j), g_grav(j), rj_out(j),rj_in(j), particle)*DeltaZ(j)
             S_data(l) = S_data(l) + dFdz
         enddo
     enddo

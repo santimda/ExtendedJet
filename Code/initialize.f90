@@ -30,7 +30,8 @@ MODULE initialize
         allocate( z(Ns), rj_out(Ns), rj_in(Ns), gj(Ns), bj(Ns) )
         allocate( BFF(Ns), vnorm(Ns), VFF(Ns), EphMFF(Ns), nfFF(Ns), Kappa(Ns), sjoFF(NS) )
         allocate( deltaZ(Ns), deltatFF(Ns) )
-        allocate( delta_obs(Ns), boost(Ns) )
+        allocate( delta_obs(Ns), boost(Ns), g_grav(Ns) )
+        g_grav = 1d0
 
         ! Initialize arrays
         if (.not.jet_calc) then 
@@ -78,6 +79,7 @@ MODULE initialize
         if (allocated(deltatFF)) deallocate(deltatFF)
         if (allocated(delta_obs)) deallocate(delta_obs)
         if (allocated(boost)) deallocate(boost)
+        if (allocated(g_grav)) deallocate(g_grav)
 
     end subroutine initialize_deallocate
     !============================================================================
