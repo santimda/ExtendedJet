@@ -276,7 +276,8 @@ contains
         alpha = alpha_sync(E_ph, BFF, N_e, E, particle)
         jem = jsync(E_ph, BFF, N_e, E, particle)
         !We consider the opt. thin case
-        tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+        !The path at angle jo runs mostly along the jet, so its proper length is stretched by 1/g_red (as dz/g in the thin case)
+        tau_max = crossed_length(R_in, R_in, R_out)*alpha/(sin(jo)*delta_obs*g_red)
 
         if (tau_max < 1e-15) THEN
             dFlux_dz=D**2/(dist**2)*jem*pi*(R_out**2-R_in**2)
@@ -285,7 +286,7 @@ contains
             Step=1d0/n !Step
             do i=1,n
                 x=0d0+Step*(i-1)
-                tau = crossed_length(x*R_out, R_in, R_out)*alpha/(sin(jo)*delta_obs)
+                tau = crossed_length(x*R_out, R_in, R_out)*alpha/(sin(jo)*delta_obs*g_red)
                 FI(i)=1d0-exp(-tau) !The integrand vector
             enddo
             call integrate(n,Step,FI,dFlux_dz) !We call a function for Simpson integration
