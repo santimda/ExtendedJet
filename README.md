@@ -151,7 +151,12 @@ unused-argument warnings are expected.
 
 **globals.f90**: simulation grid sizes, shared state arrays, and common radiation functions.
 
-**controls.f90**: compile-time and namelist-controlled calculation switches.
+**controls.f90**: compile-time and namelist-controlled calculation switches. `grav_redshift` (`&run`, default
+`.false.`) adds the Schwarzschild gravitational redshift to the synchrotron fluxes: each segment is transformed with
+D = g δ, where g = (1 − 2R_g/r)^{1/2} at the rms radius of the cross-section, r = [z² + (R_out² + R_in²)/2]^{1/2}, and δ is
+the Doppler factor w.r.t. the local static observer. Optically thin segments scale as D², thick ones as D³. The SSA
+optical depth uses δ and the proper path length, stretched by 1/g (the line of sight crosses the jet mostly along its axis),
+so the optically thin limit of the thick formula matches D²; dynamics and the electron transport are unchanged. Light bending and photon capture are not included.
 
 **trajectory.f90**: calculates the jet or counter-jet trajectory (trivial for a vertical jet).
 

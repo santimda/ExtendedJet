@@ -48,4 +48,5 @@
   sort_outputs = .true.
   fix_norm_taper = .false.
   fix_inj_emin = .false.
+  grav_redshift = .false.
 /

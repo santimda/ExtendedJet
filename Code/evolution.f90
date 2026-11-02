@@ -45,6 +45,14 @@ MODULE evolution
          !Doppler factor between the jet and the observer
          delta_obs(i) = 1d0 / ( gj(i) * (1d0 - dir*bj(i)*cjo) )
 
+         !Gravitational redshift (Schwarzschild) at the rms radius of the segment cross-section;
+         !delta_obs is then the Doppler factor w.r.t. the local static observer
+         if (grav_redshift) then
+            g_grav(i) = sqrt( max(0d0, 1d0 - 2d0*R_g/sqrt(z(i)**2 + 0.5d0*(rj_out(i)**2 + rj_in(i)**2))) )
+         else
+            g_grav(i) = 1d0
+         endif
+
          !Magnetic field
          BFF(i) = BFF_fun(z(i))
 

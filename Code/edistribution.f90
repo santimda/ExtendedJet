@@ -500,8 +500,9 @@ contains
         real(dp) :: g_min, g_max, Ebr, dz_aux
         
         allocate(dg(numbins), zz(0:numdt))
-        allocate(nn(numbins, 0:numdt), dotg(numbins, 0:numdt), gg(numbins), &
-                Qinj(numbins, 0:numdt), Ee(numbins))
+        ! dotg and Qinj are only needed at the previous step: two columns, indexed mod 2 (memory: 0:numdt was ~0.9 GB each)
+        allocate(nn(numbins, 0:numdt), dotg(numbins, 0:1), gg(numbins), &
+                Qinj(numbins, 0:1), Ee(numbins))
         
         if (particle == 'e') then
             EminFF2 = EminFF
@@ -558,14 +559,14 @@ contains
             &                   gg, &
             &                   nn(:, jz - 1), &
             &                   nn(:, jz), &
-            &                   dotg(:, jz - 1), &
-            &                   Qinj(:, jz - 1), &
+            &                   dotg(:, mod(jz - 1, 2)), &
+            &                   Qinj(:, mod(jz - 1, 2)), &
             &                   1d200)
 
             !$OMP PARALLEL DO PRIVATE(jE)
             build_dotg: do jE = 1, numbins
-                dotg(jE, jz) = -abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ee(jE), particle))/mc2
-                dotg(jE, jz) = dotg(jE, jz) / (betaGamma(zz(jz))*c)
+                dotg(jE, mod(jz, 2)) = -abs(TLosses(Bjz, zz(jz), 1d0, 1d0, Ee(jE), particle))/mc2
+                dotg(jE, mod(jz, 2)) = dotg(jE, mod(jz, 2)) / (betaGamma(zz(jz))*c)
             end do build_dotg
             !$OMP END PARALLEL DO
 
@@ -574,7 +575,7 @@ contains
             q0p = Norm_q0p(Ecut, zz(jz), particle)
             !$OMP PARALLEL DO PRIVATE(jE)
             build_Qin: do jE = 1, numbins
-              Qinj(jE, jz) = Q_E(q0p, Ecut, Ee(jE), Emin_q, EmaxFF2) * const_zjz
+              Qinj(jE, mod(jz, 2)) = Q_E(q0p, Ecut, Ee(jE), Emin_q, EmaxFF2) * const_zjz
             end do build_Qin
             !$OMP END PARALLEL DO
         end do z_loop

@@ -39,6 +39,7 @@ MODULE globals
 
   real(dp), dimension(:), allocatable :: delta_obs  !Doppler factor w.r.t. observer
   real(dp), dimension(:), allocatable :: boost      !Doppler boosting (FF -> OF)
+  real(dp), dimension(:), allocatable :: g_grav     !Gravitational redshift factor (1 if grav_redshift is off)
 
   real(dp), dimension(:), allocatable :: gj, bj     !Jet Lorentz factor and velocity (beta)
   real(dp), dimension(:), allocatable :: BFF, vnorm, VFF !Magnetic field, jet expansion velocity, segment volume

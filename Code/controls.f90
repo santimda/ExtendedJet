@@ -34,6 +34,9 @@ MODULE controls
     logical :: fix_norm_taper = off
     logical :: fix_inj_emin = off
 
+     ! Gravitational redshift (Schwarzschild, static emitter -> observer at infinity) in the synchrotron fluxes.
+    logical :: grav_redshift = off
+
     !===================================================
 
 END MODULE controls
