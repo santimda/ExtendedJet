@@ -37,6 +37,10 @@ MODULE controls
      ! Gravitational redshift (Schwarzschild, static emitter -> observer at infinity) in the synchrotron fluxes.
     logical :: grav_redshift = off
 
+     ! Aperture fluxes weighted by the fraction of each segment's projected cross-section inside the aperture circle
+     ! (off: a segment counts in full when its projected height |z| sin i is within the aperture radius).
+    logical :: aperture_area = off
+
     !===================================================
 
 END MODULE controls
