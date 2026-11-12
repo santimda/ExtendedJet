@@ -20,6 +20,7 @@ contains
     real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), Ein, Eph, EphFF, dFdz
     real(dp) :: Total_flux, FT(max_apertures)
     real(dp) :: z_proj, sjo, dil
+    real(dp), allocatable :: fap(:,:)
     integer :: k, i, j, l
 
     !N(E) of each cut
@@ -34,11 +35,26 @@ contains
     Eph = Emin_sy                               !Initialization
     sjo = sin(jo)
     dil = 4.d0 * pi * dist**2
+    if (aperture_area) then
+        !Fraction of each segment's projected cross-section inside each aperture (the same for the counter-jet)
+        allocate(fap(Ns, max(n_ap, 1)))
+        fap = 0d0
+        do j = 2, Ns
+            do k = 1, n_ap
+                fap(j,k) = aperture_fraction(abs(z(j))*sjo, rj_out(j), rj_in(j), cos(jo), apertures_rg(k)*R_g)
+            enddo
+        enddo
+    endif
 
     open(40,file=trim(opath('SED'//particle//'_syn_cuts'//jet//'.dat')))
     open(122,file=trim(opath('Flux'//jet//'_'//particle//'.dat')))
     write(40,'(3(A9, 8X))') '#E[eV]', 'L[erg/s]', 'segment'
-    write(122,'(A)') '# col 0: nu [Hz]; then flux integrated up to each aperture R* [R_g] (row 2); last col: total'
+    if (aperture_area) then
+        write(122,'(A)') '# col 0: nu [Hz]; then flux inside each aperture R* [R_g] (row 2), each segment weighted by '// &
+                         'the fraction of its projected cross-section inside R*; last col: total'
+    else
+        write(122,'(A)') '# col 0: nu [Hz]; then flux integrated up to each aperture R* [R_g] (row 2); last col: total'
+    endif
     write(122,'(A,*(ES10.3E2,1X))') '# R* [R_g]: ', (apertures_rg(k), k=1,n_ap)
     do l = 1, NSED_sy
         Total_flux = 0d0
@@ -52,11 +68,18 @@ contains
                 dFdz = 0d0
             endif
             Total_flux = Total_flux + dFdz*h
-            !Jet and c-jet contribution of the segments up to given lengths
-            z_proj = abs(z(j)) * sjo
-            do k = 1, n_ap
-                if (z_proj <= apertures_rg(k)*R_g) FT(k) = Total_flux
-            enddo
+            if (aperture_area) then
+                !Jet and c-jet contribution of the part of the segment inside each aperture
+                do k = 1, n_ap
+                    FT(k) = FT(k) + fap(j,k)*dFdz*h
+                enddo
+            else
+                !Jet and c-jet contribution of the segments up to given lengths
+                z_proj = abs(z(j)) * sjo
+                do k = 1, n_ap
+                    if (z_proj <= apertures_rg(k)*R_g) FT(k) = Total_flux
+                enddo
+            endif
             write(40,'(2(ES15.7E3, 2X), I3)') Eph/eV, Eph*dFdz*dil, j
         enddo
         write(122,'(*(ES15.7E3, 2X))') Eph/h, (FT(k), k=1,n_ap), Total_flux
@@ -64,11 +87,59 @@ contains
     enddo
     close(40)
     close(122)
+    if (allocated(fap)) deallocate(fap)
 
     end subroutine SEDsyn
     !============================================================================
     ! SEDsyn (END)
     !============================================================================
+
+
+    !************************************************************************************
+    !   Fraction of a segment's projected cross-section inside an aperture of radius rs
+    !************************************************************************************
+    real(dp) function aperture_fraction(xc, r_out, r_in, cosi, rs)
+    ! The cross-section (the annulus r_in < r < r_out, perpendicular to the jet axis) projects onto the sky as an
+    ! elliptical annulus centred at xc = |z| sin i from the core, with semi-axes r across the jet and r cos i along it.
+    ! The surface brightness is uniform over it (thin segment). A segment of zero width counts in full if xc <= rs.
+    real(dp), intent(in) :: xc, r_out, r_in, cosi, rs
+    real(dp) :: area
+
+    area = pi * cosi * (r_out**2 - r_in**2)
+    if (area <= 0d0) then
+        aperture_fraction = merge(1d0, 0d0, xc <= rs)
+    else
+        aperture_fraction = (ellipse_in_circle(xc, r_out, r_out*cosi, rs) - &
+                             ellipse_in_circle(xc, r_in, r_in*cosi, rs)) / area
+    endif
+    end function aperture_fraction
+
+
+    !************************************************************************************
+    !   Area of the ellipse ((x-xc)/b)^2 + (y/a)^2 <= 1 (b <= a) inside the circle x^2 + y^2 <= rs^2
+    !************************************************************************************
+    real(dp) function ellipse_in_circle(xc, a, b, rs)
+    real(dp), intent(in) :: xc, a, b, rs
+    integer, parameter :: nq = 2000      ! midpoint nodes in theta
+    real(dp) :: dth, th, x, s
+    integer :: m
+
+    if (a <= 0d0 .or. b <= 0d0 .or. xc - a >= rs) then
+        ellipse_in_circle = 0d0           ! every point is at least xc - a from the core
+    else if (xc + a <= rs) then
+        ellipse_in_circle = pi * a * b    ! every point is at most xc + a from the core
+    else
+        ! x = xc + b sin(th): the ellipse's chord at x is 2 a cos(th), the circle's 2 (rs^2 - x^2)^(1/2)
+        dth = pi / nq
+        s = 0d0
+        do m = 1, nq
+            th = -0.5d0*pi + (m - 0.5d0)*dth
+            x = xc + b*sin(th)
+            s = s + min(a*cos(th), sqrt(max(rs**2 - x**2, 0d0))) * cos(th)
+        enddo
+        ellipse_in_circle = 2d0 * b * s * dth
+    endif
+    end function ellipse_in_circle
     
 
     !************************************************************************************
