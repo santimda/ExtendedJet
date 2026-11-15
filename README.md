@@ -157,6 +157,11 @@ D = g δ, where g = (1 − 2R_g/r)^{1/2} at the rms radius of the cross-section,
 the Doppler factor w.r.t. the local static observer. Optically thin segments scale as D², thick ones as D³. The SSA
 optical depth uses δ and the proper path length, stretched by 1/g (the line of sight crosses the jet mostly along its axis),
 so the optically thin limit of the thick formula matches D²; dynamics and the electron transport are unchanged. Light bending and photon capture are not included.
+`aperture_area` (`&run`, default `.false.`) changes the aperture fluxes in `Flux*_e.dat`. By default a segment counts in
+full when its projected height |z| sin i is within the aperture radius R*. With the switch on, each segment counts with
+the fraction of its projected cross-section inside the circle of radius R* around the core: an ellipse (an elliptical
+annulus if R_in > 0) centred at |z| sin i, with semi-axes R across the jet and R cos i along it, uniformly bright. The
+total flux is unchanged.
 
 **trajectory.f90**: calculates the jet or counter-jet trajectory (trivial for a vertical jet).
 

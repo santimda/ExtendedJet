@@ -132,7 +132,7 @@ module system_parameters
 
          namelist /run/ outdir, scriptdir, Ns, numbins, dttFF_min, apertures_rg, n_ap, sync_approx, &
                          JET_, CJ_, NE_calc, Np_calc, radsyn_calc, radpsyn_calc, radic_calc, &
-                         print_tlosses, sort_outputs, fix_norm_taper, fix_inj_emin, grav_redshift
+                         print_tlosses, sort_outputs, fix_norm_taper, fix_inj_emin, grav_redshift, aperture_area
 
          open(newunit=lun, file=trim(path), status='old', action='read', iostat=ios, iomsg=iomsg_)
           if (ios /= 0) then
