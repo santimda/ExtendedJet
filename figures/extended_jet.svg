@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="146.48946mm"
-   height="163.3849mm"
-   viewBox="0 0 146.48946 163.3849"
+   width="147.81902mm"
+   height="164.78162mm"
+   viewBox="0 0 147.81902 164.78161"
    version="1.1"
    id="svg8"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="-242.85714"
-     inkscape:cy="501.42857"
+     inkscape:zoom="1.4"
+     inkscape:cx="-31.428571"
+     inkscape:cy="208.21429"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -49,8 +49,8 @@
     <inkscape:grid
        id="grid4747"
        type="xygrid"
-       originx="-4.4518549"
-       originy="-2.5697518" />
+       originx="-3.5348963"
+       originy="-2.1495693" />
   </sodipodi:namedview>
   <defs
      id="defs2">
@@ -182,10 +182,10 @@
     </marker>
     <inkscape:perspective
        id="perspective4872"
-       inkscape:persp3d-origin="105 : -34.615098 : 1"
-       inkscape:vp_z="210.00001 : 14.884898 : 1"
-       inkscape:vp_y="0 : 999.99992 : 0"
-       inkscape:vp_x="0 : 14.884898 : 1"
+       inkscape:persp3d-origin="105 : -33.218387 : 1"
+       inkscape:vp_z="210.00002 : 16.281612 : 1"
+       inkscape:vp_y="0 : 999.99998 : 0"
+       inkscape:vp_x="0 : 16.281612 : 1"
        sodipodi:type="inkscape:persp3d" />
     <marker
        inkscape:isstock="true"
@@ -452,7 +452,14 @@
      id="layer1"
      inkscape:groupmode="layer"
      inkscape:label="Capa 1"
-     transform="translate(-4.4518549,-2.569752)">
+     transform="translate(-3.5348959,-2.1495695)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+       id="rect352"
+       width="147.81902"
+       height="164.78162"
+       x="3.5348959"
+       y="2.1495695" />
     <path
        sodipodi:nodetypes="caaac"
        inkscape:connector-curvature="0"
