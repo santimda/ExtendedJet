@@ -85,14 +85,30 @@ Plots are written to `diagnostics/parameter_exploration/` by default. Use
 directory. The sweeps run sequentially because the Fortran modules retain
 mutable state.
 
-The current map utility creates a projected map at a selected frequency:
+The map utility creates jet-only, beam-convolved intensity maps at two
+frequencies and a spectral-index map. The default is 22 and 43 GHz with the
+1.2 and 0.31 mas circular beams used for M87:
 
 ```bash
-python postprocessing/Fmap.py --frequency 43
+make -C Code f2py
+python postprocessing/Fmap.py
 ```
 
-This writes `output/L_map_43GHz.pdf`. Beam-convolved map support will be
-updated separately to match the workflow used in the paper.
+The PDFs are written to `output/figures/`: `Map_I_22GHz.pdf`,
+`Map_I_43GHz.pdf`, and `Map_spix.pdf`. The output root is read from the
+selected namelist and can be overridden with `--outdir`. Frequencies and beams
+are positional:
+
+```bash
+python postprocessing/Fmap.py --frequencies 22 43 --beams 1.2 0.31
+python postprocessing/Fmap.py --beams 1.2,1.0 0.31,0.25
+```
+
+A scalar beam is circular; `major,minor` is an elliptical FWHM in mas. The
+spectral-index map uses both frequencies convolved to the lower-frequency
+beam. Use `--jet-pa` to change the sky position angle; the default is -72
+degrees. Intensity maps use a fixed plotting dynamic range from the map
+maximum down to `1e-5` of that maximum.
 
 ## Tests and Validation
 

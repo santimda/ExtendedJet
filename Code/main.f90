@@ -53,6 +53,21 @@ END PROGRAM main
 
 !==================================================================
 
+subroutine local_synchrotron(E_ph, BFF, N_e, E, j_nu, alpha)
+    use constants
+    use synrad, only: jsync, alpha_sync
+    implicit none
+    real(dp), intent(in) :: E_ph, BFF, N_e(:), E(:)
+    real(dp), intent(out) :: j_nu, alpha
+
+    ! jsync is expressed per photon energy; convert the emissivity to per Hz.
+    j_nu = h * jsync(E_ph, BFF, N_e, E, 'e')
+    alpha = alpha_sync(E_ph, BFF, N_e, E, 'e')
+end subroutine local_synchrotron
+
+
+!==================================================================
+
 subroutine run_jet(verbose)
     use controls
     use constants
