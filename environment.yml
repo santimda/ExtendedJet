@@ -6,9 +6,13 @@ dependencies:
   - numpy=1.26.*
   - matplotlib>=3.5,<3.9
   - scipy=1.11.*          # tests/ne_validation.py (make test-ne)
+  - pandas
+  - astropy
+  - jupyterlab
+  - ipykernel
+  - gnuplot
   - meson
   - ninja
   - make
   - gcc_linux-64
   - gfortran_linux-64
-  - pip

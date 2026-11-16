@@ -4,33 +4,21 @@ Non-thermal multi-zone emission model for relativistic jets. The model is partly
 
 Some further details of each code are given below.
 
-WARNING: The shell variable LC_NUMERIC="en_US.UTF-8" must be set. The scripts ".sh" are used to reorder some files and it is important that the bash decimal separator is a "." and not a ",". Do 'export LC_NUMERIC="en_US.UTF-8"' before running or the SED might be unsorted.
-
 ## Environment
 
-Create the minimal environment for building and running the model, f2py, tests,
-and standard post-processing with mamba:
+Create the full environment for building and running the model, f2py, tests,
+notebooks, and post-processing with mamba:
 
 ```bash
 mamba env create -f environment.yml
 mamba activate extendedjet
 ```
 
-For the optional notebook dependencies, use the extended environment instead:
-
-```bash
-mamba env create -f environment-notebooks.yml
-mamba activate extendedjet-notebooks
-```
-
-The Python plotting scripts use LaTeX by default through Matplotlib's
-`text.usetex`. Install the system package `texlive-latex-base` to use that
-default. If LaTeX is unavailable, set `text.usetex` to `False` in
-`postprocessing/plot_utils.py`. The extended environment adds Jupyter, SciPy,
-Astropy, pandas, `agnpy`, `naima`, Gnuplot, and `smplotlib`. `agnpy` is used by
-`emisividad1.ipynb` for synchrotron/absorption comparisons; `naima` is used by
-`Syn_SSC_sed.ipynb` for synchrotron and SSC comparisons. Neither is required
-by the Fortran model or its f2py wrapper.
+The environment includes JupyterLab, Astropy, pandas, and Gnuplot for the
+notebook and post-processing workflows. Plots use Matplotlib text by default,
+so a separate LaTeX installation is not required. Set `text.usetex` to `True`
+in `postprocessing/plot_utils.py` when a working LaTeX installation is
+available for publication-style plots.
 
 ## Layout
 
@@ -40,8 +28,8 @@ by the Fortran model or its f2py wrapper.
 - `figures/`: repository figures and diagrams.
 - `postprocessing/`: synthetic-map notebook and Python utilities.
 - `tests/`: pass/fail tests (unit tests, frozen-output regression, f2py consistency).
-- `validation/`: physics validation against analytic or independent solutions (N(E) solver, emissivity,
-  characteristics), and the grid-convergence study.
+- `validation/`: physics validation against analytic or independent solutions
+  (N(E) solver and characteristics), and the grid-convergence study.
 - `output/`: generated reference-model outputs.
 - `tests/output/`, `validation/output/`: disposable outputs of the tests and the validation.
 
@@ -49,8 +37,8 @@ Run the model from the repository root with a configuration file:
 
 ```text
 make -C Code
-make -C Code test-unit
-(cd Code && make test)
+make -C Code f2py
+make -C Code test
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/test.nml)
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
@@ -76,18 +64,21 @@ Fortran files are written to a temporary directory and removed automatically. Th
 because the Fortran modules retain mutable state.
 
 `make -C Code test` runs the pass/fail tests: the numerical unit tests, a reduced Fortran regression and the f2py
-consistency check. The regression runs `run.x` with `configs/test.nml` in a temporary
+consistency check. The explicit `make -C Code f2py` step above makes the
+Python wrapper build visible; `make -C Code test` and `make -C Code validate`
+also ensure that the wrapper is built when they are invoked independently.
+The regression runs `run.x` with `configs/test.nml` in a temporary
 output directory and compares the jet and counter-jet fluxes with the frozen
 references in `tests/reference/test/` over the radio band.
 
-`make -C Code validate` (needs `make -C Code f2py`) validates the electron-distribution solver
+The physics validation command `make -C Code validate` validates the electron-distribution solver
 (`validation/ne_validation.py`): the transport kernel against closed-form solutions (impulsive injection with pure
 synchrotron or pure adiabatic cooling, steady state with injection, particle-number conservation, first-order
 convergence in `numbins`), and `Ne_cuts.dat` of a full run against the exact solution by characteristics built from
 the code's own losses and injection, with the one-zone fast-cooling limit for reference. Plots go to
 `validation/output/ne_validation/`. Use `--nml` to test another namelist.
 
-`make -C Code test-f2py` (also part of `make test`; needs `make -C Code f2py`) checks that the f2py wrapper
+`make -C Code test-f2py` (also part of `make test`) builds the f2py module and checks that the wrapper
 `syn_model` reproduces the total flux of `run.x` to better than 1% over 1e9-1e20 Hz on the same namelist
 (`tests/f2py_check.py`, default `configs/test.nml`; use `--nml` to test another namelist).
 
@@ -110,8 +101,8 @@ convergence references without also revisiting that limit. The convergence runs 
 The standard validation commands are:
 
 ```bash
-make -C Code f2py && make -C Code test && make -C Code validate
-make -C Code clean && make -C Code DEBUG=Y f2py && make -C Code DEBUG=Y test
+make -C Code test validate
+make -C Code clean && make -C Code DEBUG=Y test
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
 

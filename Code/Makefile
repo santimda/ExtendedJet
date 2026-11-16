@@ -72,12 +72,12 @@ test-unit: $(BUILD_DIR)/test_numerical_utilities
 test-fortran: run.x
 	python3 ../tests/fortran_regression.py
 
-# Physics validation: N(E) solver vs analytic/characteristics solutions (needs the f2py module: make f2py)
-validate: run.x
+# Physics validation: N(E) solver vs analytic/characteristics solutions.
+validate: f2py run.x
 	python3 ../validation/ne_validation.py
 
-# f2py syn_model wrapper vs run.x on the same namelist (needs the f2py module: make f2py)
-test-f2py: run.x
+# f2py syn_model wrapper vs run.x on the same namelist.
+test-f2py: f2py run.x
 	python3 ../tests/f2py_check.py
 
 $(BUILD_DIR)/test_numerical_utilities: ../tests/test_numerical_utilities.f90 \

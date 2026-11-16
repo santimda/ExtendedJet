@@ -8,8 +8,8 @@ nice_colors = ['peru', 'maroon', 'darkgreen',
 
 # My plot config
 nice_fonts = {
-    # Use LaTeX to write all text
-    "text.usetex": True,
+    # Set to True for publication plots when a working LaTeX installation is available.
+    "text.usetex": False,
     "font.family": 'serif',
     # Use 10pt font in plots, to match 10pt font in the document
     "axes.labelsize": 18,

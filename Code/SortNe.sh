@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Keep decimal parsing and numeric sorting independent of the caller's locale.
+export LC_ALL=C
+
 #Number of energy steps for N(E)
 nNE=$1
 

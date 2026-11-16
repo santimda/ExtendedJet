@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Keep decimal parsing and numeric sorting independent of the caller's locale.
+export LC_ALL=C
+
 #Number of photon energy steps for the synchrotron SED
 NSED_sy=$1
 
