@@ -1,165 +1,219 @@
 # ExtendedJet
 
-Non-thermal multi-zone emission model for relativistic jets. The model is partly based on Molina, del Palacio & Bosch Ramon 2019 (ADS link: https://ui.adsabs.harvard.edu/abs/2019A%26A...629A.129M/abstract). The code is written as Fortran 90 modules, compiled with Make, and run as `./run.x params.nml`. Build products can be safely removed using `make clean` from `Code/`.
+ExtendedJet is a non-thermal, multi-zone emission model for relativistic jets.
+The details of the model are presented in [Gutierrez et al. (2026)](https://ui.adsabs.harvard.edu/abs/2026arXiv261026434G/abstract).
 
-Some further details of each code are given below.
+<img src="figures/extended_jet.svg" width="350"/>
+
+The model is implemented in modern Fortran, compiled with Make, and run as
+`./run.x params.nml`. Build products can be removed with `make clean` from
+`Code/`.
 
 ## Environment
 
-Create the full environment for building and running the model, f2py, tests,
-notebooks, and post-processing with mamba:
+The repository uses one full Mamba environment for the Fortran model, f2py,
+tests, notebooks, diagnostics, and post-processing:
 
 ```bash
 mamba env create -f environment.yml
 mamba activate extendedjet
 ```
 
-The environment includes JupyterLab, Astropy, pandas, and Gnuplot for the
-notebook and post-processing workflows. Plots use Matplotlib text by default,
-so a separate LaTeX installation is not required. Set `text.usetex` to `True`
-in `postprocessing/plot_utils.py` when a working LaTeX installation is
-available for publication-style plots.
+The environment includes JupyterLab, Astropy, pandas, and Gnuplot. Plots use
+Matplotlib text by default, so a separate LaTeX installation is not required.
+For publication-style plots, set `text.usetex` to `True` in
+`postprocessing/plot_utils.py` when a working LaTeX installation is available.
+
+The documented workflow is tested on Linux with GNU Fortran, OpenMP, Make,
+Python, and f2py.
 
 ## Layout
 
 - `Code/`: Fortran sources, Makefile, and generated build files.
 - `configs/`: runtime namelists.
-- `diagnostics/`: diagnostic and validation notebooks and plotting scripts.
+- `diagnostics/`: diagnostic notebooks and plotting scripts.
 - `figures/`: repository figures and diagrams.
-- `postprocessing/`: synthetic-map notebook and Python utilities.
-- `tests/`: pass/fail tests (unit tests, frozen-output regression, f2py consistency).
-- `validation/`: physics validation against analytic or independent solutions
-  (N(E) solver and characteristics), and the grid-convergence study.
+- `postprocessing/`: map notebook and Python post-processing utilities.
+- `tests/`: unit tests, frozen-output regression, and f2py consistency checks.
+- `validation/`: electron-distribution and characteristics validation, and grid convergence.
 - `output/`: generated reference-model outputs.
-- `tests/output/`, `validation/output/`: disposable outputs of the tests and the validation.
+- `tests/output/`, `validation/output/`: disposable test and validation outputs.
 
-Run the model from the repository root with a configuration file:
+## Quick Start
 
-```text
+From the repository root, build the executable and the Python wrapper, then
+run the pass/fail tests:
+
+```bash
 make -C Code
 make -C Code f2py
 make -C Code test
+```
+
+`make -C Code test` and `make -C Code validate` also build the f2py module
+when they are run independently.
+
+Run the reduced configuration with:
+
+```bash
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/test.nml)
+```
+
+The reduced run uses `Ns=100` and `numbins=250` and writes disposable output
+to `tests/output/`.
+
+Run the production M87 configuration with:
+
+```bash
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
 
-The reduced run writes to `tests/output/`; the reference run writes to
-`output/`. Both directories are disposable and ignored by Git. Diagnostic
-Gnuplot scripts are run from `diagnostics/`, and post-processing utilities are
-run from `postprocessing/`.
+The reference run uses `Ns=700` and `numbins=1100` and writes output to
+`output/`. Its configuration enables output sorting and loss-file generation.
 
-The reduced regression configuration uses `Ns=100` and `numbins=250`, a deliberately lighter but still resolved grid
-for fast test execution. The production M87 configuration uses the converged resolution described below.
+## Post-Processing
 
-The parameter exploration is done with a script. Build the f2py module and run all configured sweeps with:
+Parameter exploration uses the f2py wrapper:
 
 ```bash
 make -C Code f2py
 OMP_NUM_THREADS=1 python diagnostics/explore_parameters.py
 ```
 
-Plots are written to `diagnostics/parameter_exploration/` by default. Use `--sweep NAME` to run one SED sweep or
-`--sweep power` for the injection power-components plot; `--output-dir PATH` changes the destination. Intermediate
-Fortran files are written to a temporary directory and removed automatically. The script runs calls sequentially
-because the Fortran modules retain mutable state.
+Plots are written to `diagnostics/parameter_exploration/` by default. Use
+`--sweep NAME` to run one sweep or `--output-dir PATH` to change the output
+directory. The sweeps run sequentially because the Fortran modules retain
+mutable state.
 
-`make -C Code test` runs the pass/fail tests: the numerical unit tests, a reduced Fortran regression and the f2py
-consistency check. The explicit `make -C Code f2py` step above makes the
-Python wrapper build visible; `make -C Code test` and `make -C Code validate`
-also ensure that the wrapper is built when they are invoked independently.
-The regression runs `run.x` with `configs/test.nml` in a temporary
-output directory and compares the jet and counter-jet fluxes with the frozen
-references in `tests/reference/test/` over the radio band.
+The current map utility creates a projected map at a selected frequency:
 
-The physics validation command `make -C Code validate` validates the electron-distribution solver
-(`validation/ne_validation.py`): the transport kernel against closed-form solutions (impulsive injection with pure
-synchrotron or pure adiabatic cooling, steady state with injection, particle-number conservation, first-order
-convergence in `numbins`), and `Ne_cuts.dat` of a full run against the exact solution by characteristics built from
-the code's own losses and injection, with the one-zone fast-cooling limit for reference. Plots go to
-`validation/output/ne_validation/`. Use `--nml` to test another namelist.
+```bash
+python postprocessing/Fmap.py --frequency 43
+```
 
-`make -C Code test-f2py` (also part of `make test`) builds the f2py module and checks that the wrapper
-`syn_model` reproduces the total flux of `run.x` to better than 1% over 1e9-1e20 Hz on the same namelist
-(`tests/f2py_check.py`, default `configs/test.nml`; use `--nml` to test another namelist).
+This writes `output/L_map_43GHz.pdf`. Beam-convolved map support will be
+updated separately to match the workflow used in the paper.
 
-The current model uses only the cosmic microwave background (CMB) as its
-external photon field. The generic IC kernel remains capable of receiving
-other black-body-like fields, but no stellar or other external photon field is
-configured in this version.
+## Tests and Validation
 
-The production M87 grid uses `Ns=700` jet segments and `numbins=1100` particle-transport energy bins. These were
-selected from finer full-model convergence tests using a mixed tolerance of 3% for each aperture flux and 1% for total
-flux. The compile-time electron output grid remains `nIn=150`; increasing it to 300 changed the fluxes by less than
-1%. High-resolution reference runs used an isolated `numdt=300000` build. The selected `Ns=700` grid remains within
-the production `numdt=100000` transport-history limit; still finer runs can exceed it and should not be used as
-convergence references without also revisiting that limit. The convergence runs are made with
-`validation/grid_convergence.py` (e.g. `python validation/grid_convergence.py --grid Ns --values 350 700 --reference 1400`;
-`--numdt` builds an isolated executable with a larger transport-history limit).
+Run the pass/fail tests with:
 
-## Validation and Performance
+```bash
+make -C Code test
+```
+
+This runs numerical unit tests, a reduced Fortran regression, and the f2py
+consistency check. The regression runs `configs/test.nml` in a temporary output
+directory and compares jet and counter-jet fluxes with the frozen references in
+`tests/reference/test/` over the radio band.
+
+The f2py consistency check can also be run directly:
+
+```bash
+make -C Code test-f2py
+```
+
+It checks that `syn_model` reproduces the total flux from `run.x` to better
+than 1% over `1e9`--`1e20` Hz. Use the test script's `--nml` option to test a
+different namelist.
+
+The physics validation is run with:
+
+```bash
+make -C Code validate
+```
+
+This validates the electron-distribution transport kernel against analytic
+solutions, checks particle-number conservation and convergence in `numbins`,
+and compares a full run with a characteristics solution. Validation plots are
+written to `validation/output/ne_validation/`.
+
+For a debug build and test run:
+
+```bash
+make -C Code clean
+make -C Code DEBUG=Y test
+```
+
+For grid-convergence studies, see `validation/grid_convergence.py`. For
+profiling symbols, use `make -C Code clean && make -C Code PROFILE=Y`; this
+does not itself generate a `gprof` profile.
+
+## Model Scope and Configuration
+
+The current configuration uses only the cosmic microwave background as its
+external photon field. The generic inverse-Compton kernel can receive other
+black-body-like fields, but no stellar or other external field is configured.
+
+Important `&run` switches include:
+
+- `sort_outputs`: generate files ordered for post-processing.
+- `grav_redshift`: include Schwarzschild gravitational redshift in the synchrotron fluxes.
+- `aperture_area`: weight aperture fluxes by the projected cross-section of each segment.
+- `NE_calc`, `Np_calc`: calculate electron or proton distributions.
+- `radsyn_calc`, `radpsyn_calc`, `radic_calc`: enable the corresponding radiation calculations.
+- `JET_`, `CJ_`: calculate the jet and counter-jet contributions.
+
+The production grid was selected from full-model convergence tests using a
+mixed tolerance of 3% for aperture fluxes and 1% for total flux. The compile-
+time electron output grid is `nIn=150`. The selected `Ns=700` grid remains
+within the production `numdt=100000` transport-history limit; finer runs may
+exceed that limit and require an isolated build with a larger value.
 
 The standard validation commands are:
 
 ```bash
 make -C Code test validate
-make -C Code clean && make -C Code DEBUG=Y test
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
 
-The reduced regression compares the jet and counter-jet fluxes with the frozen
-references in `tests/reference/test/`. The current full M87 run reproduces the
-following flux-file hashes:
+The current reference run reproduces these flux-file hashes on the reference
+machine:
 
 ```text
 Flux_e.dat:   cbe67602fd6beddc4c12fb4a5855e0bfd75d78e99627641ab529b5cd75063624
 FluxCJ_e.dat: fb17bbeb24fc8a87eab1741d90c95685bee36cf3ab9d870ae99a03937bbe279d
 ```
 
-On the current machine, the full reference command takes approximately 6.3 s
-with `OMP_NUM_THREADS=1`. This is machine-, compiler-, and configuration-
-dependent; the reference configuration enables output sorting and loss-file
-generation. Set the thread count explicitly when benchmarking.
+Exact hashes and runtimes depend on the compiler, hardware, build flags, and
+thread count. Production builds use `-march=native` and `-ffast-math`, so they
+should not be treated as bitwise reproducible across different machines.
 
-For profiling symbols, use `make -C Code clean && make -C Code PROFILE=Y`.
-This enables optimized debug symbols but does not itself generate a `gprof`
-profile; use an external profiler such as `perf` if needed.
-
-The SSC routine
-`SEDssc_data` is intentionally retained as an incomplete future path, and its
+The `SEDssc_data` routine is retained as an incomplete future path; its
 unused-argument warnings are expected.
 
-## Important files
+## Fitting the Model
 
-**Makefile**: production, f2py, and unit-test build orchestration.
+This repository does not contain a built-in fitting routine. A fit runs
+`run.x` once per likelihood evaluation with trial parameters written to a
+namelist. The M87 paper fitting scripts, data, and execution instructions are
+maintained in the [M87 reproduction repository](https://github.com/eduardomgutierrez/m87-riaf-jet-repro).
 
-**Makefile.depend**: details which modules depend on which other modules (needed for compilation)
+## Citing
 
-**constants.f90**: useful physical and numerical constants. It is imported by **globals.f90** to be used by all other modules as well.
+If you use this code, please cite:
 
-**numerical_utils.f90**: reusable grids, integration, interpolation, safe logarithms, and linear-algebra utilities.
+Gutierrez, E. M., del Palacio, S., & Mazzei, T. T. (2026), *The accretion
+flow and jet of M87: broadband modelling across spatial scales*,
+[arXiv:2610.26434](https://arxiv.org/abs/2610.26434),
+[ADS](https://ui.adsabs.harvard.edu/abs/2026arXiv261026434G/abstract).
 
-**system_parameters.f90**: parameters of the specific system being studied. It is imported by **globals.f90** to be used by all other modules as well.
+```bibtex
+@ARTICLE{2026arXiv261026434G,
+       author = {{Gutierrez}, E.~M. and {del Palacio}, S. and {Mazzei}, T.~T.},
+        title = "{The accretion flow and jet of M87: broadband modelling across spatial scales}",
+      journal = {arXiv e-prints},
+         year = 2026,
+        month = oct,
+          eid = {arXiv:2610.26434},
+archivePrefix = {arXiv},
+       eprint = {2610.26434},
+ primaryClass = {astro-ph.HE},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2026arXiv261026434G}
+}
+```
 
-**globals.f90**: simulation grid sizes, shared state arrays, and common radiation functions.
+## License
 
-**controls.f90**: compile-time and namelist-controlled calculation switches. `grav_redshift` (`&run`, default
-`.false.`) adds the Schwarzschild gravitational redshift to the synchrotron fluxes: each segment is transformed with
-D = g δ, where g = (1 − 2R_g/r)^{1/2} at the rms radius of the cross-section, r = [z² + (R_out² + R_in²)/2]^{1/2}, and δ is
-the Doppler factor w.r.t. the local static observer. Optically thin segments scale as D², thick ones as D³. The SSA
-optical depth uses δ and the proper path length, stretched by 1/g (the line of sight crosses the jet mostly along its axis),
-so the optically thin limit of the thick formula matches D²; dynamics and the electron transport are unchanged. Light bending and photon capture are not included.
-`aperture_area` (`&run`, default `.false.`) changes the aperture fluxes in `Flux*_e.dat`. By default a segment counts in
-full when its projected height |z| sin i is within the aperture radius R*. With the switch on, each segment counts with
-the fraction of its projected cross-section inside the circle of radius R* around the core: an ellipse (an elliptical
-annulus if R_in > 0) centred at |z| sin i, with semi-axes R across the jet and R cos i along it, uniformly bright. The
-total flux is unchanged.
-
-**trajectory.f90**: calculates the jet or counter-jet trajectory (trivial for a vertical jet).
-
-**evolution.f90**: calculates the evolution of thermodynamical quantities along the jet.
-
-**losses.f90**: contains functions for calculating energy losses for electrons.
-
-**edistribution.f90**: calculates the non-thermal electron population along the jet and saves it in a plain text file.
-
-!**XXrad.f90**: calculates the SED by the respective process reading the corresponding non-thermal particle population from the file generated by **edistribution.f90**.
+This project is distributed under the GNU General Public License v3. See
+[LICENSE](LICENSE).
