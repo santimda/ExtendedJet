@@ -40,7 +40,7 @@ F2PY_SOURCES = constants.f90 controls.f90 system_parameters.f90 \
                trajectory.f90 evolution.f90 edistribution.f90 synrad.f90 \
                icrad.f90 sscrad.f90 main.f90
 
-.PHONY: all clean run f2py depend test test-unit test-fortran test-f2py validate
+.PHONY: all clean run f2py depend test test-unit test-fortran test-f2py test-map validate validate-map
 
 all: run.x
 
@@ -64,7 +64,7 @@ run: run.x
 	echo "Execution time: $${elapsed} s"; \
 	exit $$status
 
-test: test-unit test-fortran test-f2py
+test: test-unit test-fortran test-f2py test-map
 
 test-unit: $(BUILD_DIR)/test_numerical_utilities
 	./$(BUILD_DIR)/test_numerical_utilities
@@ -76,9 +76,15 @@ test-fortran: run.x
 validate: f2py run.x
 	python3 ../validation/ne_validation.py
 
+validate-map: f2py
+	python3 ../tests/map_validation.py
+
 # f2py syn_model wrapper vs run.x on the same namelist.
 test-f2py: f2py run.x
 	python3 ../tests/f2py_check.py
+
+test-map: f2py
+	python3 ../tests/test_map_postprocessing.py
 
 $(BUILD_DIR)/test_numerical_utilities: ../tests/test_numerical_utilities.f90 \
                                       $(BUILD_DIR)/constants.o \

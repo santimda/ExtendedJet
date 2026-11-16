@@ -107,8 +107,10 @@ python postprocessing/Fmap.py --beams 1.2,1.0 0.31,0.25
 A scalar beam is circular; `major,minor` is an elliptical FWHM in mas. The
 spectral-index map uses both frequencies convolved to the lower-frequency
 beam. Use `--jet-pa` to change the sky position angle; the default is -72
-degrees. Intensity maps use a fixed plotting dynamic range from the map
-maximum down to `1e-5` of that maximum.
+degrees. Intensity maps use a plotting dynamic range of `1e5` by default, from
+the map maximum down to `S_max / dynamic_range`. The same ratio controls the
+spectral-index mask; use `--dynamic-range VALUE` to change it, with values
+greater than 3.
 
 ## Tests and Validation
 
@@ -118,10 +120,21 @@ Run the pass/fail tests with:
 make -C Code test
 ```
 
-This runs numerical unit tests, a reduced Fortran regression, and the f2py
-consistency check. The regression runs `configs/test.nml` in a temporary output
-directory and compares jet and counter-jet fluxes with the frozen references in
-`tests/reference/test/` over the radio band.
+This runs numerical unit tests, a reduced Fortran regression, the f2py
+consistency check, and the mJy/beam map-convolution checks. The regression runs
+`configs/test.nml` in a temporary output directory and compares jet and
+counter-jet fluxes with the frozen references in `tests/reference/test/` over
+the radio band.
+
+The reference M87 map flux can be checked separately against the Fortran
+`dflux_dz` calculation with:
+
+```bash
+make -C Code validate-map
+```
+
+This requires the reference model outputs and accepts differences up to 1% at
+22 and 43 GHz. Normal `Fmap.py` execution does not perform this extra check.
 
 The f2py consistency check can also be run directly:
 

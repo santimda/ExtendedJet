@@ -68,6 +68,19 @@ end subroutine local_synchrotron
 
 !==================================================================
 
+subroutine local_dflux(N_e, BFF, E_ph, E, delta_obs, g_red, R_out, R_in, flux_per_energy)
+    use constants
+    use synrad, only: dFlux_dz
+    implicit none
+    real(dp), intent(in) :: N_e(:), BFF, E_ph, E(:), delta_obs, g_red, R_out, R_in
+    real(dp), intent(out) :: flux_per_energy
+
+    flux_per_energy = dFlux_dz(N_e, BFF, E_ph, E, delta_obs, g_red, R_out, R_in, 'e')
+end subroutine local_dflux
+
+
+!==================================================================
+
 subroutine run_jet(verbose)
     use controls
     use constants

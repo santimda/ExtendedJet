@@ -262,12 +262,12 @@ def _add_colorbar(fig, ax, plot, label):
     fig.colorbar(plot, cax=colorbar_axis, label=label)
 
 
-def _plot_intensity(x, y, image, frequency, beam, jet_pa, output):
+def _plot_intensity(x, y, image, frequency, beam, jet_pa, dynamic_range, output):
     ra, dec = _sky(x, y, jet_pa)
     maximum = float(np.max(image))
     if not np.isfinite(maximum) or maximum <= 0.0:
         raise ValueError(f"The {frequency:g} GHz map has no positive intensity")
-    lower = maximum * 1e-5
+    lower = maximum / dynamic_range
     fig, ax = plt.subplots(figsize=(6.5, 5.2))
     plot = ax.pcolormesh(ra, dec, np.maximum(image, lower), norm=LogNorm(lower, maximum), cmap="afmhot_r", shading="auto", rasterized=True)
     levels = []
@@ -285,11 +285,11 @@ def _plot_intensity(x, y, image, frequency, beam, jet_pa, output):
     plt.close(fig)
 
 
-def _plot_spectral_index(x, y, low_image, high_image, low, high, beam, jet_pa, output):
+def _plot_spectral_index(x, y, low_image, high_image, low, high, beam, jet_pa, dynamic_range, output):
     with np.errstate(divide="ignore", invalid="ignore"):
         spectral_index = np.log(high_image / low_image) / np.log(high / low)
-    low_threshold = float(np.max(low_image)) * 1e-5
-    high_threshold = float(np.max(high_image)) * 1e-5
+    low_threshold = float(np.max(low_image)) / dynamic_range
+    high_threshold = float(np.max(high_image)) / dynamic_range
     spectral_index = np.where((low_image >= low_threshold) & (high_image >= high_threshold), spectral_index, np.nan)
     ra, dec = _sky(x, y, jet_pa)
     fig, ax = plt.subplots(figsize=(6.5, 5.2))
@@ -309,11 +309,14 @@ def main():
     parser.add_argument("--frequencies", nargs=2, type=float, default=DEFAULT_FREQUENCIES, metavar=("LOW", "HIGH"))
     parser.add_argument("--beams", nargs=2, type=_parse_beam, default=DEFAULT_BEAMS, metavar=("LOW_BEAM", "HIGH_BEAM"), help="one scalar or major,minor FWHM in mas per frequency")
     parser.add_argument("--jet-pa", type=float, default=JET_PA_DEG, help="approaching-jet position angle in degrees")
+    parser.add_argument("--dynamic-range", type=float, default=1e5, help="maximum-to-minimum plotted intensity ratio (must be greater than 3)")
     parser.add_argument("--outdir", type=Path, help="override the namelist output directory")
     args = parser.parse_args()
     low, high = args.frequencies
     if not 0 < low < high:
         parser.error("frequencies must be positive and strictly increasing")
+    if args.dynamic_range <= 3.0:
+        parser.error("dynamic range must be greater than 3")
     nml_values = _read_namelist(args.nml)
     outdir = args.outdir.resolve() if args.outdir else _resolve_outdir(args.nml, nml_values["outdir"])
     figure_dir = outdir / "figures"
@@ -332,10 +335,10 @@ def main():
     low_output = figure_dir / f"Map_I_{low:g}GHz.pdf"
     high_output = figure_dir / f"Map_I_{high:g}GHz.pdf"
     spectral_output = figure_dir / "Map_spix.pdf"
-    _plot_intensity(x, y, low_map, low, args.beams[0], args.jet_pa, low_output)
-    _plot_intensity(x, y, high_map, high, args.beams[1], args.jet_pa, high_output)
-    _plot_spectral_index(x, y, low_map, high_low_beam, low, high, args.beams[0], args.jet_pa, spectral_output)
-    print(json.dumps({"outdir": str(figure_dir), "frequencies_GHz": [low, high], "beams_mas": args.beams, "jet_pa_deg": args.jet_pa}, indent=2))
+    _plot_intensity(x, y, low_map, low, args.beams[0], args.jet_pa, args.dynamic_range, low_output)
+    _plot_intensity(x, y, high_map, high, args.beams[1], args.jet_pa, args.dynamic_range, high_output)
+    _plot_spectral_index(x, y, low_map, high_low_beam, low, high, args.beams[0], args.jet_pa, args.dynamic_range, spectral_output)
+    print(json.dumps({"outdir": str(figure_dir), "frequencies_GHz": [low, high], "beams_mas": args.beams, "jet_pa_deg": args.jet_pa, "dynamic_range": args.dynamic_range}, indent=2))
 
 
 if __name__ == "__main__":
