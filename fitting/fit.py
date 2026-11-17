@@ -1,0 +1,128 @@
+"""Common priors, likelihood, sampling, and output generation."""
+
+from __future__ import annotations
+
+import shutil
+import time
+from pathlib import Path
+
+import bilby
+import matplotlib.pyplot as plt
+import numpy as np
+
+from .config import FluxData
+from .plotting import plot_sed
+
+ERROR_FRACTION = 0.15
+COMMON_PRIORS = {
+    "log_Lj": (40.0, 43.0, r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$"),
+    "geomIndex_out": (0.0, 1.0, r"$w$"),
+    "a_inj": (-0.5, 2.0, r"$a_e$"),
+}
+
+
+def build_priors(fit_parameters):
+    fit_parameters = tuple(fit_parameters)
+    if "Lj" in fit_parameters:
+        raise ValueError("fit log_Lj instead of Lj")
+    unknown = set(fit_parameters) - set(COMMON_PRIORS)
+    if unknown:
+        raise ValueError(f"No common prior is defined for: {sorted(unknown)}")
+    priors = bilby.core.prior.PriorDict()
+    for name in fit_parameters:
+        minimum, maximum, label = COMMON_PRIORS[name]
+        priors[name] = bilby.core.prior.Uniform(minimum, maximum, name=name, latex_label=label)
+    return priors
+
+
+class SEDLikelihood(bilby.Likelihood):
+    def __init__(self, model, data: FluxData, fixed_parameters=None):
+        super().__init__()
+        self.model = model
+        self.data = data
+        self.frequencies = data.frequencies_ghz
+        self.apertures = data.apertures_rg
+        self.fit_parameters = data.fit_parameters
+        self.fixed_parameters = dict(fixed_parameters or {})
+        self.observed = data.observed
+        self.sigma = data.errors_cgs
+        self._evaluation = 0
+        self.evaluation_seconds = 0.0
+
+    def evaluate_model(self, parameters, frequencies=None, apertures=None, output_dir=None):
+        model_parameters = self.fixed_parameters.copy()
+        model_parameters.update(parameters)
+        return self.model(
+            self.frequencies if frequencies is None else frequencies,
+            self.apertures if apertures is None else apertures,
+            model_parameters,
+            output_dir=output_dir,
+        )
+
+    def log_likelihood(self, parameters):
+        self._evaluation += 1
+        started = time.perf_counter()
+        try:
+            prediction = self.evaluate_model(parameters)
+        except (OSError, RuntimeError, ValueError):
+            return -1e30
+        finally:
+            self.evaluation_seconds += time.perf_counter() - started
+        residual = (self.data.fluxes_cgs - prediction)[self.observed] / self.sigma[self.observed]
+        sigma = self.sigma[self.observed]
+        return float(-0.5 * np.sum(residual**2 + np.log(2.0 * np.pi * sigma**2)))
+
+
+def fit_sed(model, data, output_dir, mode, fixed_parameters=None, truth=None,
+            nwalkers=8, nsteps=200, seed=1, posterior_samples=200):
+    if mode not in {"overwrite", "resume"}:
+        raise ValueError("mode must be 'overwrite' or 'resume'")
+    if nwalkers < 2 * len(data.fit_parameters) or nsteps < 2:
+        raise ValueError("use at least twice as many walkers as fitted parameters and two steps")
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    chain_dir = output_dir / "chain"
+    if mode == "overwrite":
+        shutil.rmtree(chain_dir, ignore_errors=True)
+    resume = mode == "resume" and (chain_dir / "emcee_mcmc" / "sampler.pickle").exists()
+    if mode == "resume" and not resume:
+        print("No existing emcee chain found; initializing a new chain.")
+    priors = build_priors(data.fit_parameters)
+    defaults = model.parameters.copy()
+    defaults.update(fixed_parameters or {})
+    likelihood = SEDLikelihood(model, data, fixed_parameters=defaults)
+    bilby.core.utils.random.seed(seed)
+    result = bilby.run_sampler(
+        likelihood=likelihood,
+        priors=priors,
+        sampler="emcee",
+        nwalkers=nwalkers,
+        nsteps=nsteps,
+        outdir=str(chain_dir),
+        label="mcmc",
+        npool=1,
+        plot=False,
+        resume=resume,
+    )
+    corner = result.plot_corner(
+        truth=None if truth is None else {
+            name: (np.log10(truth["Lj"]) if name == "log_Lj" else truth[name])
+            for name in data.fit_parameters
+        },
+        save=False,
+    )
+    source = model.source_name
+    corner.savefig(output_dir / f"corner_{source}.pdf", bbox_inches="tight")
+    plt.close(corner)
+    plotting_seconds = plot_sed(
+        likelihood,
+        result.posterior,
+        output_dir / f"SED_{source}.pdf",
+        truth=truth,
+        posterior_samples=posterior_samples,
+    )
+    sample_count = min(posterior_samples, len(result.posterior))
+    print(f"MCMC model evaluations: {likelihood._evaluation} in {likelihood.evaluation_seconds:.1f}s")
+    print(f"posterior plotting models: {sample_count + 2 + (truth is not None)} in {plotting_seconds:.1f}s")
+    print(f"wrote {output_dir / f'SED_{source}.pdf'} and {output_dir / f'corner_{source}.pdf'}")
+    return result

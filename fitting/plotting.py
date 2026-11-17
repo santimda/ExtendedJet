@@ -7,12 +7,12 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-CGS_PER_MJY = 1e-26
+from .config import Jy
 
 
 def plot_sed(likelihood, posterior, output, truth=None, posterior_samples=200):
     best = {name: float(posterior[name].median()) for name in likelihood.fit_parameters}
-    dense_frequencies = np.geomspace(1.0, 100.0, 200)
+    dense_frequencies = np.geomspace(1.0, 1000.0, 200)
     started = time.perf_counter()
     fitted = likelihood.evaluate_model(best, frequencies=dense_frequencies, output_dir=likelihood.model.output_dir)
     fitted_data = likelihood.evaluate_model(best, output_dir=likelihood.model.output_dir)
@@ -48,21 +48,21 @@ def plot_sed(likelihood, posterior, output, truth=None, posterior_samples=200):
         data = likelihood.data.fluxes_cgs[:, index]
         error = likelihood.sigma[:, index]
         model = fitted_data[:, index]
-        axes[0].plot(dense_frequencies, fitted[:, index] / CGS_PER_MJY, color=color)
+        axes[0].plot(dense_frequencies, fitted[:, index] / Jy, color=color)
         if truth_curve is not None:
-            axes[0].plot(dense_frequencies, truth_curve[:, index] / CGS_PER_MJY, color=color, ls="--")
+            axes[0].plot(dense_frequencies, truth_curve[:, index] / Jy, color=color, ls="--")
         axes[0].fill_between(
             dense_frequencies,
-            lower[:, index] / CGS_PER_MJY,
-            upper[:, index] / CGS_PER_MJY,
+            lower[:, index] / Jy,
+            upper[:, index] / Jy,
             color=color,
             alpha=0.25,
             edgecolor="none",
         )
         axes[0].errorbar(
             frequencies[observed],
-            data[observed] / CGS_PER_MJY,
-            yerr=error[observed] / CGS_PER_MJY,
+            data[observed] / Jy,
+            yerr=error[observed] / Jy,
             fmt="o",
             markerfacecolor="none",
             color=color,
@@ -73,7 +73,7 @@ def plot_sed(likelihood, posterior, output, truth=None, posterior_samples=200):
         )
         residual = np.divide(data - model, model, out=np.full_like(model, np.nan), where=model != 0)
         axes[1].plot(frequencies[observed], residual[observed], color=color, marker="o", ls="")
-    axes[0].set(xscale="log", yscale="log", ylabel=r"$S_\nu$ [mJy]")
+    axes[0].set(xscale="log", yscale="log", xlim=(1.0, 1000.0), ylim=(0.01, 10.0), ylabel=r"$S_\nu$ [Jy]")
     axes[1].set(xscale="log", xlabel="Frequency [GHz]", ylabel=r"$\Delta S/S$", ylim=(-1.0, 1.0))
     axes[0].legend(fontsize=10)
     axes[1].axhline(0.0, color="k", ls="--", lw=1)

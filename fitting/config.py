@@ -8,20 +8,24 @@ from pathlib import Path
 
 import numpy as np
 
+Jy = 1e-23
+mJy = 1e-26
+
 
 @dataclass(frozen=True)
 class FluxData:
     frequencies_ghz: np.ndarray
     apertures_rg: np.ndarray
     fluxes_cgs: np.ndarray
-    errors_cgs: np.ndarray | None = None
+    errors_cgs: np.ndarray
+    fit_parameters: tuple[str, ...] = ()
 
     @classmethod
-    def from_mjy(cls, frequencies_ghz, apertures_rg, fluxes_mjy, errors_mjy=None):
+    def from_mjy(cls, frequencies_ghz, apertures_rg, fluxes_mjy, errors_mjy, fit_parameters):
         frequencies = np.asarray(frequencies_ghz, dtype=float)
         apertures = np.asarray(apertures_rg, dtype=float)
         fluxes = _numeric_matrix(fluxes_mjy, "fluxes_mJy")
-        errors = None if errors_mjy is None else _numeric_matrix(errors_mjy, "errors_mJy")
+        errors = _numeric_matrix(errors_mjy, "errors_mJy")
         expected = (len(frequencies), len(apertures))
         if fluxes.shape != expected:
             raise ValueError(f"fluxes_mJy must have shape {expected}")
@@ -43,7 +47,9 @@ class FluxData:
                 raise ValueError("errors_mJy must use null in exactly the missing-flux cells")
             if np.any(errors[observed] <= 0):
                 raise ValueError("measured errors must be positive")
-        return cls(frequencies, apertures, fluxes * 1e-26, None if errors is None else errors * 1e-26)
+        if not fit_parameters:
+            raise ValueError("fit_parameters must contain at least one parameter")
+        return cls(frequencies, apertures, fluxes * mJy, errors * mJy, tuple(fit_parameters))
 
     @property
     def observed(self):
@@ -51,11 +57,11 @@ class FluxData:
 
     @property
     def fluxes_mjy(self):
-        return self.fluxes_cgs / 1e-26
+        return self.fluxes_cgs / mJy
 
     @property
     def errors_mjy(self):
-        return None if self.errors_cgs is None else self.errors_cgs / 1e-26
+        return self.errors_cgs / mJy
 
 
 def _numeric_matrix(values, name):
@@ -67,13 +73,15 @@ def _numeric_matrix(values, name):
                 result[index] = float(value)
             except (TypeError, ValueError) as error:
                 raise ValueError(f"{name} contains a non-numeric value at {index}") from error
+            if not np.isfinite(result[index]):
+                raise ValueError(f"{name} contains NaN or infinity at {index}; use null for missing values")
     return result
 
 
 def load_fluxes(path):
     with Path(path).open() as stream:
         content = json.load(stream)
-    required = ("frequencies_GHz", "apertures_Rg", "fluxes_mJy")
+    required = ("fit_parameters", "frequencies_GHz", "apertures_Rg", "fluxes_mJy", "errors_mJy")
     missing = [name for name in required if name not in content]
     if missing:
         raise ValueError(f"missing flux configuration keys: {missing}")
@@ -81,7 +89,8 @@ def load_fluxes(path):
         content["frequencies_GHz"],
         content["apertures_Rg"],
         content["fluxes_mJy"],
-        content.get("errors_mJy"),
+        content["errors_mJy"],
+        content["fit_parameters"],
     )
 
 
@@ -89,16 +98,18 @@ def save_fluxes(path, data):
     content = {
         "frequencies_GHz": data.frequencies_ghz.tolist(),
         "apertures_Rg": data.apertures_rg.tolist(),
-        "fluxes_mJy": _json_matrix(data.fluxes_mjy),
+        "fit_parameters": list(data.fit_parameters),
+        "fluxes_mJy": [
+            [None if not np.isfinite(value) else float(value) for value in row]
+            for row in data.fluxes_mjy
+        ],
     }
-    if data.errors_mjy is not None:
-        content["errors_mJy"] = _json_matrix(data.errors_mjy)
+    content["errors_mJy"] = [
+        [None if not np.isfinite(value) else float(value) for value in row]
+        for row in data.errors_mjy
+    ]
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as stream:
         json.dump(content, stream, indent=2)
         stream.write("\n")
-
-
-def _json_matrix(matrix):
-    return [[None if not np.isfinite(value) else float(value) for value in row] for row in matrix]

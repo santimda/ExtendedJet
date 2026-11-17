@@ -79,7 +79,7 @@ validate: f2py run.x
 validate-map: f2py
 	python3 ../tests/map_validation.py
 
-validate-mcmc: f2py run.x
+validate-mcmc: f2py
 	python3 ../validation/mcmc_sanity.py
 
 # f2py syn_model wrapper vs run.x on the same namelist.

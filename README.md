@@ -35,6 +35,7 @@ Python, and f2py.
 - `figures/`: repository figures and diagrams.
 - `postprocessing/`: map notebook and Python post-processing utilities.
 - `tests/`: unit tests, frozen-output regression, and f2py consistency checks.
+- `fitting/`: reusable source-fitting model, likelihood, sampler, plotting, and CLI.
 - `validation/`: electron-distribution and characteristics validation, and grid convergence.
 - `output/`: generated reference-model outputs.
 - `tests/output/`, `validation/output/`: disposable test and validation outputs.
@@ -142,18 +143,20 @@ A minimal Bilby/emcee sampling validation is available separately:
 make -C Code validate-mcmc
 ```
 
-It uses the default M87 parameters, fits `a_inj` (`a_e`) and
+It uses the M87 namelist with a deterministic synthetic truth, fits `a_inj` (`a_e`) and
 `geomIndex_out` (`w`), and generates deterministic synthetic fluxes at 3, 10,
 22, 43, and 86 GHz and at 30, 100, and 200 `R_g`. The default reduced run uses
 40 jet segments, 100 transport bins, 8 walkers, and 200 steps. It
-writes `validation/output/mcmc_validation/SED_MCMC.pdf` and `corner.pdf`.
-The SED figure uses a dense 1--100 GHz model grid, 68% posterior-predictive
-bands, and a separate `Delta S/S` residual panel. The script reports the time
+writes `validation/output/mcmc_validation/SED_m87_reference.pdf` and
+`corner_m87_reference.pdf`.
+The SED figure uses a dense 1--1000 GHz model grid, fixed y-limits of 0.01--10
+Jy, 68% posterior-predictive bands, and a separate `Delta S/S` residual panel. The script reports the time
 spent in sampler model evaluations and posterior-predictive plotting models.
 The fitting and plotting path evaluates the aperture SED directly at the
 requested frequencies; it does not interpolate the fixed-grid `run.x` tables.
-When luminosity is fitted, use `--fit-parameters log_Lj ...`; this samples
-`log10(Lj)` uniformly from 40 to 43 and converts it to physical `Lj` internally.
+When luminosity is fitted, add `log_Lj` to the flux JSON `fit_parameters` list;
+this samples `log10(Lj)` uniformly from 40 to 43 and converts it to physical
+`Lj` internally.
 The validation uses fixed reduced settings so implementation changes are
 compared under the same conditions.
 
@@ -164,21 +167,25 @@ plotting code:
 python fitting/fit_source.py \
   --nml configs/m87_reference.nml \
   --fluxes configs/m87_reference_fluxes.json \
-  --fit-parameters a_inj geomIndex_out \
-  --outdir output/m87_fit
+  --outdir output/m87_reference \
+  --mode overwrite
 ```
 
-The flux file contains top-level `frequencies_GHz`, `apertures_Rg`,
-`fluxes_mJy`, and `errors_mJy` arrays. The flux matrix is indexed as
+The flux file contains top-level `fit_parameters`, `frequencies_GHz`,
+`apertures_Rg`, `fluxes_mJy`, and `errors_mJy` arrays. The flux matrix is indexed as
 `[frequency][aperture]`. Use JSON `null` when no measurement exists at a
 frequency/aperture pair. Do not use zero or `NaN`: zero is not a valid measured
 flux for this likelihood, and `NaN` is not standard JSON. Missing fluxes must
 have corresponding `null` errors. Upper and lower limits are not supported yet.
 
-Parameters not listed in `--fit-parameters` remain fixed at their values from
+Parameters not listed in `fit_parameters` remain fixed at their values from
 the namelist. Universal prior ranges are defined by the fitting code, so they
-do not need to be repeated in the source files. To fit luminosity, use
-`log_Lj`; it represents `log10(Lj)` and has the common range 40--43.
+do not need to be repeated in the source files. The fitter requires
+`--mode overwrite` or `--mode resume`; this prevents accidental chain deletion.
+The fitting adapter always uses circular projected aperture weighting, regardless
+of the namelist `aperture_area` setting. The M87 example uses aperture assignments
+inferred from the supplied EHT multi-wavelength plotting workflow; these should
+be reviewed before treating the file as a final scientific data product.
 
 The f2py consistency check can also be run directly:
 
@@ -254,13 +261,6 @@ should not be treated as bitwise reproducible across different machines.
 
 The `SEDssc_data` routine is retained as an incomplete future path; its
 unused-argument warnings are expected.
-
-## Fitting the Model
-
-This repository does not contain a built-in fitting routine. A fit runs
-`run.x` once per likelihood evaluation with trial parameters written to a
-namelist. The M87 paper fitting scripts, data, and execution instructions are
-maintained in the [M87 reproduction repository](https://github.com/eduardomgutierrez/m87-riaf-jet-repro).
 
 ## Citing
 
