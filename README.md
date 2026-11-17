@@ -136,6 +136,23 @@ make -C Code validate-map
 This requires the reference model outputs and accepts differences up to 1% at
 22 and 43 GHz. Normal `Fmap.py` execution does not perform this extra check.
 
+A minimal Bilby/emcee sampling validation is available separately:
+
+```bash
+make -C Code validate-mcmc
+```
+
+It uses the default M87 parameters, fits `a_inj` (`a_e`) and
+`geomIndex_out` (`w`), and generates deterministic synthetic fluxes at 3, 10,
+22, 43, and 86 GHz and at 30, 100, and 200 `R_g`. The default reduced run uses
+40 jet segments, 100 transport bins, 10 walkers, and 200 steps. It
+writes `validation/output/mcmc_validation/SED_MCMC.pdf` and `corner.png`.
+The SED figure uses a dense 1--100 GHz model grid, 68% posterior-predictive
+bands, and a separate `Delta S/S` residual panel. The script reports the time
+spent in sampler model evaluations and posterior-predictive plotting models.
+The sampling grid, apertures, frequencies, walkers, and steps are configurable
+with `validation/mcmc_sanity.py --help`.
+
 The f2py consistency check can also be run directly:
 
 ```bash
