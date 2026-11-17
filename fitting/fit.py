@@ -52,6 +52,8 @@ class SEDLikelihood(bilby.Likelihood):
     def evaluate_model(self, parameters, frequencies=None, apertures=None, output_dir=None):
         model_parameters = self.fixed_parameters.copy()
         model_parameters.update(parameters)
+        if "log_Lj" in parameters:
+            model_parameters.pop("Lj", None)
         return self.model(
             self.frequencies if frequencies is None else frequencies,
             self.apertures if apertures is None else apertures,
