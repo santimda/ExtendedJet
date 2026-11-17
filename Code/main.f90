@@ -273,6 +273,58 @@ end subroutine syn_model
 !===================================================================
 
 !============================================================================
+! syn_model_apertures (START)
+!============================================================================
+subroutine syn_model_apertures(sigma0_value, zmax_value, Lj_value, a_inj_value, &
+                               zmax_inj_value, gammaIndex_value, geomIndex_out_value, &
+                               z0_value, fnT_value, facc_value, p_value, E_data, &
+                               apertures_data, S_data)
+  ! Calculate jet plus counter-jet aperture fluxes at exact requested energies.
+    use controls
+    use constants
+    use globals
+    use initialize
+    use trajectory
+    use evolution
+    use losses
+    use edistribution
+    use synrad
+    use sscrad
+    implicit none
+    real(dp), intent(in) :: sigma0_value, zmax_value, Lj_value, a_inj_value
+    real(dp), intent(in) :: zmax_inj_value, gammaIndex_value, geomIndex_out_value
+    real(dp), intent(in) :: z0_value, fnT_value, facc_value, p_value
+    real(dp), intent(in) :: E_data(:), apertures_data(:)
+    real(dp), intent(out) :: S_data(m_data_max,10)
+    real(dp) :: S_data_J(m_data_max,10), S_data_CJ(m_data_max,10)
+
+    call derive_parameters()
+    zmax_inj_rg = zmax_inj_value/R_g
+    gammaIndex = gammaIndex_value
+    geomIndex_out = geomIndex_out_value
+    z0_rg = z0_value/R_g
+    fnT = fnT_value
+    facc = facc_value
+    p = p_value
+
+    call initialize_allocate(sigma0_value, zmax_value, Lj_value, a_inj_value)
+    call trajectory_calc('')
+    call Quantities('')
+    call Edist('e')
+    call SEDsyn_apertures_data(E_data, apertures_data, S_data_J, '', 'e')
+
+    call trajectory_calc('CJ')
+    call Quantities('CJ')
+    call SEDsyn_apertures_data(E_data, apertures_data, S_data_CJ, 'CJ', 'e')
+    call initialize_deallocate
+
+    S_data = S_data_J + S_data_CJ
+end subroutine syn_model_apertures
+!============================================================================
+! syn_model_apertures (END)
+!============================================================================
+
+!============================================================================
 ! power_model(START)
 !============================================================================
 subroutine power_model(sigma0_value, zmax_value, Lj_value, a_inj_value, z_data, L_B_data, L_kin_data, L_e_data, L_e_2_data, L_sy_data, L_sy2_data)

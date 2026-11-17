@@ -145,13 +145,40 @@ make -C Code validate-mcmc
 It uses the default M87 parameters, fits `a_inj` (`a_e`) and
 `geomIndex_out` (`w`), and generates deterministic synthetic fluxes at 3, 10,
 22, 43, and 86 GHz and at 30, 100, and 200 `R_g`. The default reduced run uses
-40 jet segments, 100 transport bins, 10 walkers, and 200 steps. It
-writes `validation/output/mcmc_validation/SED_MCMC.pdf` and `corner.png`.
+40 jet segments, 100 transport bins, 8 walkers, and 200 steps. It
+writes `validation/output/mcmc_validation/SED_MCMC.pdf` and `corner.pdf`.
 The SED figure uses a dense 1--100 GHz model grid, 68% posterior-predictive
 bands, and a separate `Delta S/S` residual panel. The script reports the time
 spent in sampler model evaluations and posterior-predictive plotting models.
-The sampling grid, apertures, frequencies, walkers, and steps are configurable
-with `validation/mcmc_sanity.py --help`.
+The fitting and plotting path evaluates the aperture SED directly at the
+requested frequencies; it does not interpolate the fixed-grid `run.x` tables.
+When luminosity is fitted, use `--fit-parameters log_Lj ...`; this samples
+`log10(Lj)` uniformly from 40 to 43 and converts it to physical `Lj` internally.
+The validation uses fixed reduced settings so implementation changes are
+compared under the same conditions.
+
+The reusable source-fitting workflow uses the same likelihood, sampler, and
+plotting code:
+
+```bash
+python fitting/fit_source.py \
+  --nml configs/m87_reference.nml \
+  --fluxes configs/m87_reference_fluxes.json \
+  --fit-parameters a_inj geomIndex_out \
+  --outdir output/m87_fit
+```
+
+The flux file contains top-level `frequencies_GHz`, `apertures_Rg`,
+`fluxes_mJy`, and `errors_mJy` arrays. The flux matrix is indexed as
+`[frequency][aperture]`. Use JSON `null` when no measurement exists at a
+frequency/aperture pair. Do not use zero or `NaN`: zero is not a valid measured
+flux for this likelihood, and `NaN` is not standard JSON. Missing fluxes must
+have corresponding `null` errors. Upper and lower limits are not supported yet.
+
+Parameters not listed in `--fit-parameters` remain fixed at their values from
+the namelist. Universal prior ranges are defined by the fitting code, so they
+do not need to be repeated in the source files. To fit luminosity, use
+`log_Lj`; it represents `log10(Lj)` and has the common range 40--43.
 
 The f2py consistency check can also be run directly:
 

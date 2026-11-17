@@ -562,6 +562,81 @@ contains
     ! SEDsyn_data (END)
     !============================================================================
 
+
+    !============================================================================
+    ! SEDsyn_apertures_data (START)
+    !============================================================================
+    subroutine SEDsyn_apertures_data(E_data, apertures_data, S_data, jet, particle)
+    !============================================================================
+    ! Calculate aperture-integrated synchrotron flux at requested photon energies.
+    ! S_data is indexed as (energy, aperture), with unused trailing entries zero.
+    !============================================================================
+    character(1), intent(in) :: particle
+    real(dp), intent(in) :: E_data(:), apertures_data(:)
+    real(dp), intent(out) :: S_data(m_data_max, 10)
+    character(LEN=*), intent(in) :: jet
+    real(dp) :: E(nIn), NE(nIn,Ns), NEcut(nIn), EphFF
+    real(dp) :: dFdz, total_flux, ft(max_apertures), z_proj, sjo
+    real(dp), allocatable :: fap(:,:)
+    integer :: m_data, n_ap, i, j, k, l
+
+    m_data = size(E_data)
+    n_ap = size(apertures_data)
+    if (m_data > m_data_max) error stop 'Too many requested SED frequencies'
+    if (n_ap > max_apertures) error stop 'Too many requested SED apertures'
+
+    S_data = 0d0
+    open(30,file=trim(opath('N'//particle//'_cuts.dat')))
+    do i = 1, nIn
+        do j = 1, Ns
+            read(30,*) E(i), NE(i,j), dummy
+        enddo
+    enddo
+    close(30)
+
+    sjo = sin(jo)
+    if (aperture_area) then
+        allocate(fap(Ns, n_ap))
+        fap = 0d0
+        do j = 2, Ns
+            do k = 1, n_ap
+                fap(j,k) = aperture_fraction(abs(z(j))*sjo, rj_out(j), rj_in(j), cos(jo), apertures_data(k)*R_g)
+            enddo
+        enddo
+    endif
+
+    do l = 1, m_data
+        total_flux = 0d0
+        ft = 0d0
+        do j = 2, Ns
+            NEcut = NE(:,j)
+            if (g_grav(j) > 0d0) then
+                EphFF = E_data(l)/(delta_obs(j)*g_grav(j))
+                dFdz = dFlux_dz(NEcut, BFF(j), EphFF, E, delta_obs(j), g_grav(j), rj_out(j), rj_in(j), particle)*DeltaZ(j)
+            else
+                dFdz = 0d0
+            endif
+            total_flux = total_flux + dFdz*h
+            if (aperture_area) then
+                do k = 1, n_ap
+                    ft(k) = ft(k) + fap(j,k)*dFdz*h
+                enddo
+            else
+                z_proj = abs(z(j))*sjo
+                do k = 1, n_ap
+                    if (z_proj <= apertures_data(k)*R_g) ft(k) = total_flux
+                enddo
+            endif
+        enddo
+        S_data(l,1:n_ap) = ft(1:n_ap)
+    enddo
+
+    if (allocated(fap)) deallocate(fap)
+    end subroutine SEDsyn_apertures_data
+    !============================================================================
+    ! SEDsyn_apertures_data (END)
+    !============================================================================
+
     !============================================================================
     ! L_syn2 (START)
     !============================================================================
