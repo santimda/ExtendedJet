@@ -127,6 +127,9 @@ def fit_sed(model, data, output_dir, mode, fixed_parameters=None, truth=None,
     resume = mode == "resume" and (chain_dir / "emcee_mcmc" / "sampler.pickle").exists()
     if mode == "resume" and not resume:
         print("No existing emcee chain found; initializing a new chain.")
+    if resume:
+        for cached_result in chain_dir.glob("mcmc_result.*"):
+            cached_result.unlink()
     priors = build_priors(data.fit_parameters)
     likelihood = SEDLikelihood(model, data, fixed_parameters=fixed_parameters)
     bilby.core.utils.random.seed(seed)
