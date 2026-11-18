@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import time
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
+from postprocessing.plot_utils import nice_fonts
 
 from .config import Jy
 
 
 def plot_sed(likelihood, posterior, output, truth=None, posterior_samples=100):
+    matplotlib.rcParams.update(nice_fonts)
     best = {name: float(posterior[name].median()) for name in likelihood.fit_parameters}
     dense_frequencies = np.geomspace(1.0, 1000.0, 200)
     started = time.perf_counter()
@@ -75,6 +79,9 @@ def plot_sed(likelihood, posterior, output, truth=None, posterior_samples=100):
         axes[1].plot(frequencies[observed], residual[observed], color=color, marker="o", ls="")
     axes[0].set(xscale="log", yscale="log", xlim=(1.0, 1000.0), ylim=(0.01, 10.0), ylabel=r"$S_\nu$ [Jy]")
     axes[1].set(xscale="log", xlabel="Frequency [GHz]", ylabel=r"$\Delta S/S$", ylim=(-1.0, 1.0))
+    for axis in axes:
+        axis.minorticks_on()
+        axis.tick_params(which="both", direction="in", top=True, right=True)
     axes[0].legend(fontsize=10)
     axes[1].axhline(0.0, color="k", ls="--", lw=1)
     fig.savefig(output, dpi=200, bbox_inches="tight")

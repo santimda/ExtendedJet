@@ -142,6 +142,7 @@ def fit_sed(model, data, output_dir, mode, fixed_parameters=None, truth=None,
         plot=False,
         resume=resume,
     )
+    matplotlib.rcParams.update(nice_fonts)
     corner = result.plot_corner(
         truth=None if truth is None else {
             name: truth[name]
