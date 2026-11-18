@@ -19,10 +19,10 @@ mamba env create -f environment.yml
 mamba activate extendedjet
 ```
 
-The environment includes JupyterLab, Astropy, pandas, and Gnuplot. Plots use
-Matplotlib text by default, so a separate LaTeX installation is not required.
-For publication-style plots, set `text.usetex` to `True` in
-`postprocessing/plot_utils.py` when a working LaTeX installation is available.
+The environment includes JupyterLab, Astropy, pandas, and Gnuplot. Fitting and
+post-processing plots share the style in `postprocessing/plot_utils.py`, which
+uses LaTeX text when `text.usetex` is enabled and a working LaTeX installation
+is available.
 
 The documented workflow is tested on Linux with GNU Fortran, OpenMP, Make,
 Python, and f2py.
@@ -154,15 +154,10 @@ Jy, 68% posterior-predictive bands, and a separate `Delta S/S` residual panel. T
 spent in sampler model evaluations and posterior-predictive plotting models.
 The fitting and plotting path evaluates the aperture SED directly at the
 requested frequencies; it does not interpolate the fixed-grid `run.x` tables.
-When luminosity is fitted, add `log_Lj` to the flux JSON `fit_parameters` list.
-The sampler uses this coordinate directly, with a uniform prior from 39 to 45;
-the model boundary converts it to physical `Lj` using `10**log_Lj`.
-The other supported fit parameters are `log_epse` (`log10(fnT)`, -3 to -0.5),
-`p` (1.9 to 3.0), `log_z0` (`log10(z0_rg)`, 2 to 200 `R_g`), `log_zinj`
-(`log10(zmax_inj_rg)`, 2.5 to 5.5), `g` (0.1 to 0.5), `log_sig0`
-(`log10(sigma_0)`, `log10(2)` to 3), and `log_etaacc` (`log10(facc)`, -4 to -1).
-The adapter maps these names to the corresponding Fortran parameters and
-converts lengths from `R_g` to centimeters.
+Fit parameters use the sampled coordinate names defined in
+`fitting/fit.py`; log-scaled parameters are converted to physical model values
+by the adapter, including the conversion of jet lengths from `R_g` to centimeters.
+Corner plots use the scientific labels defined alongside the prior definitions.
 The validation uses fixed reduced settings so implementation changes are
 compared under the same conditions.
 
