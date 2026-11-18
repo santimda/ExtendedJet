@@ -143,8 +143,8 @@ A minimal Bilby/emcee sampling validation is available separately:
 make -C Code validate-mcmc
 ```
 
-It uses the M87 namelist with a deterministic synthetic truth, fits `a_inj` (`a_e`) and
-`geomIndex_out` (`w`), and generates deterministic synthetic fluxes at 3, 10,
+It uses the M87 namelist with a deterministic synthetic truth, fits `log_Lj`,
+`a_inj` (`a_e`), and `geomIndex_out` (`w`), and generates deterministic synthetic fluxes at 3, 10,
 22, 43, and 86 GHz and at 30, 100, and 200 `R_g`. The default reduced run uses
 40 jet segments, 100 transport bins, 8 walkers, and 200 steps. It
 writes `validation/output/mcmc_validation/SED_m87_reference.pdf` and

@@ -19,7 +19,7 @@ DEFAULT_NML = ROOT / "configs" / "m87_reference.nml"
 DEFAULT_OUTDIR = ROOT / "validation" / "output" / "mcmc_validation"
 FREQUENCIES_GHZ = np.array([3.0, 10.0, 22.0, 43.0, 86.0])
 APERTURES_RG = np.array([30.0, 100.0, 200.0])
-FIT_PARAMETERS = ("geomIndex_out", "a_inj")
+FIT_PARAMETERS = ("log_Lj", "geomIndex_out", "a_inj")
 ERROR_FRACTION = 0.15
 
 
@@ -27,6 +27,7 @@ def main():
     DEFAULT_OUTDIR.mkdir(parents=True, exist_ok=True)
     model = ExtendedJetModel(DEFAULT_NML, DEFAULT_OUTDIR / "exact_model", ns=40, numbins=100)
     truth = {"Lj": 1e42, "a_inj": 0.01, "geomIndex_out": 0.56}
+    fit_truth = {"log_Lj": np.log10(truth["Lj"]), "a_inj": truth["a_inj"], "geomIndex_out": truth["geomIndex_out"]}
     fluxes = model(FREQUENCIES_GHZ, APERTURES_RG, truth)
     errors = ERROR_FRACTION * fluxes
     data = FluxData.from_mjy(FREQUENCIES_GHZ, APERTURES_RG, fluxes / mJy, errors / mJy, FIT_PARAMETERS)
@@ -37,7 +38,7 @@ def main():
         output_dir=DEFAULT_OUTDIR,
         mode="overwrite",
         fixed_parameters=truth,
-        truth=truth,
+        truth=fit_truth,
         nwalkers=8,
         nsteps=200,
         seed=1,
@@ -47,7 +48,7 @@ def main():
         values = np.asarray(posterior[name], dtype=float)
         if not np.all(np.isfinite(values)):
             raise RuntimeError(f"non-finite posterior samples for {name}")
-        if not np.quantile(values, 0.05) <= truth[name] <= np.quantile(values, 0.95):
+        if not np.quantile(values, 0.05) <= fit_truth[name] <= np.quantile(values, 0.95):
             raise RuntimeError(f"injected value for {name} is outside the 90% posterior interval")
 
 

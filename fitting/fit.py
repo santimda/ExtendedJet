@@ -7,7 +7,6 @@ import time
 from pathlib import Path
 
 import bilby
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -18,37 +17,31 @@ PRIOR_DEFINITIONS = {
     "log_Lj": {
         "bounds": (39.0, 45.0),
         "latex_label": r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$",
-        "plain_label": "log10(Lj [erg s^-1])",
     },
     "log_epse": {
         "bounds": (-3.0, -0.5),
         "latex_label": r"$\log_{10}(\epsilon_e)$",
-        "plain_label": "log10(epsilon_e)",
     },
     "log_z0": {
         "bounds": (float(np.log10(2.0)), float(np.log10(200.0))),
         "latex_label": r"$\log_{10}(z_0/R_g)$",
-        "plain_label": "log10(z0/Rg)",
     },
     "log_zinj": {
         "bounds": (2.5, 5.5),
         "latex_label": r"$\log_{10}(z_{\rm inj}/R_g)$",
-        "plain_label": "log10(zinj/Rg)",
     },
-    "g": {"bounds": (0.1, 0.5), "latex_label": r"$g$", "plain_label": "g"},
+    "g": {"bounds": (0.1, 0.5), "latex_label": r"$g$"},
     "log_sig0": {
         "bounds": (float(np.log10(2.0)), 3.0),
         "latex_label": r"$\log_{10}(\sigma_0)$",
-        "plain_label": "log10(sigma0)",
     },
     "log_etaacc": {
         "bounds": (-4.0, -1.0),
         "latex_label": r"$\log_{10}(\eta_{\rm acc})$",
-        "plain_label": "log10(eta_acc)",
     },
-    "p": {"bounds": (1.9, 3.0), "latex_label": r"$p$", "plain_label": "p"},
-    "geomIndex_out": {"bounds": (0.0, 1.0), "latex_label": r"$w$", "plain_label": "geomIndex_out"},
-    "a_inj": {"bounds": (-0.5, 2.0), "latex_label": r"$a_e$", "plain_label": "a_inj"},
+    "p": {"bounds": (1.9, 3.0), "latex_label": r"$p$"},
+    "geomIndex_out": {"bounds": (0.0, 1.0), "latex_label": r"$w$"},
+    "a_inj": {"bounds": (-0.5, 2.0), "latex_label": r"$a_e$"},
 }
 
 
@@ -61,9 +54,12 @@ def build_priors(fit_parameters):
     for name in fit_parameters:
         definition = PRIOR_DEFINITIONS[name]
         minimum, maximum = definition["bounds"]
-        label_key = "latex_label" if matplotlib.rcParams.get("text.usetex", False) else "plain_label"
-        label = definition[label_key]
-        priors[name] = bilby.core.prior.Uniform(minimum, maximum, name=name, latex_label=label)
+        priors[name] = bilby.core.prior.Uniform(
+            minimum,
+            maximum,
+            name=name,
+            latex_label=definition["latex_label"],
+        )
     return priors
 
 
