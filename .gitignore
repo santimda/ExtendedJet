@@ -38,6 +38,7 @@ runs/
 output/
 tests/output/
 validation/output/
+diagnostics/parameter_exploration/
 out_regression/
 *.ps
 *.png
