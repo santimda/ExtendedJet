@@ -154,9 +154,9 @@ Jy, 68% posterior-predictive bands, and a separate `Delta S/S` residual panel. T
 spent in sampler model evaluations and posterior-predictive plotting models.
 The fitting and plotting path evaluates the aperture SED directly at the
 requested frequencies; it does not interpolate the fixed-grid `run.x` tables.
-When luminosity is fitted, add `log_Lj` to the flux JSON `fit_parameters` list;
-this samples `log10(Lj)` uniformly from 40 to 43 and converts it to physical
-`Lj` internally.
+When luminosity is fitted, add `log_Lj` to the flux JSON `fit_parameters` list.
+The sampler uses this coordinate directly, with a uniform prior from 39 to 45;
+the model boundary converts it to physical `Lj` using `10**log_Lj`.
 The validation uses fixed reduced settings so implementation changes are
 compared under the same conditions.
 

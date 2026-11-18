@@ -29,7 +29,7 @@ class FluxData:
         expected = (len(frequencies), len(apertures))
         if fluxes.shape != expected:
             raise ValueError(f"fluxes_mJy must have shape {expected}")
-        if errors is not None and errors.shape != expected:
+        if errors.shape != expected:
             raise ValueError(f"errors_mJy must have shape {expected}")
         if frequencies.ndim != 1 or np.any(frequencies <= 0):
             raise ValueError("frequencies_GHz must be one-dimensional and positive")
@@ -42,11 +42,10 @@ class FluxData:
             raise ValueError("at least one flux measurement is required")
         if np.any(fluxes[observed] <= 0):
             raise ValueError("measured fluxes must be positive; use null for missing values")
-        if errors is not None:
-            if np.any(np.isfinite(errors) != observed):
-                raise ValueError("errors_mJy must use null in exactly the missing-flux cells")
-            if np.any(errors[observed] <= 0):
-                raise ValueError("measured errors must be positive")
+        if np.any(np.isfinite(errors) != observed):
+            raise ValueError("errors_mJy must use null in exactly the missing-flux cells")
+        if np.any(errors[observed] <= 0):
+            raise ValueError("measured errors must be positive")
         if not fit_parameters:
             raise ValueError("fit_parameters must contain at least one parameter")
         return cls(frequencies, apertures, fluxes * mJy, errors * mJy, tuple(fit_parameters))

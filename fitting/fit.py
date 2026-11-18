@@ -13,9 +13,8 @@ import numpy as np
 from .config import FluxData
 from .plotting import plot_sed
 
-ERROR_FRACTION = 0.15
 COMMON_PRIORS = {
-    "log_Lj": (40.0, 43.0, r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$"),
+    "log_Lj": (39.0, 45.0, r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$"),
     "geomIndex_out": (0.0, 1.0, r"$w$"),
     "a_inj": (-0.5, 2.0, r"$a_e$"),
 }
@@ -23,8 +22,6 @@ COMMON_PRIORS = {
 
 def build_priors(fit_parameters):
     fit_parameters = tuple(fit_parameters)
-    if "Lj" in fit_parameters:
-        raise ValueError("fit log_Lj instead of Lj")
     unknown = set(fit_parameters) - set(COMMON_PRIORS)
     if unknown:
         raise ValueError(f"No common prior is defined for: {sorted(unknown)}")
@@ -43,7 +40,8 @@ class SEDLikelihood(bilby.Likelihood):
         self.frequencies = data.frequencies_ghz
         self.apertures = data.apertures_rg
         self.fit_parameters = data.fit_parameters
-        self.fixed_parameters = dict(fixed_parameters or {})
+        self.fixed_parameters = model.parameters.copy()
+        self.fixed_parameters.update(fixed_parameters or {})
         self.observed = data.observed
         self.sigma = data.errors_cgs
         self._evaluation = 0
@@ -52,8 +50,9 @@ class SEDLikelihood(bilby.Likelihood):
     def evaluate_model(self, parameters, frequencies=None, apertures=None, output_dir=None):
         model_parameters = self.fixed_parameters.copy()
         model_parameters.update(parameters)
-        if "log_Lj" in parameters:
-            model_parameters.pop("Lj", None)
+        for name in self.model.log_parameters:
+            if f"log_{name}" in model_parameters:
+                model_parameters.pop(name, None)
         return self.model(
             self.frequencies if frequencies is None else frequencies,
             self.apertures if apertures is None else apertures,
@@ -76,7 +75,7 @@ class SEDLikelihood(bilby.Likelihood):
 
 
 def fit_sed(model, data, output_dir, mode, fixed_parameters=None, truth=None,
-            nwalkers=8, nsteps=200, seed=1, posterior_samples=200):
+            nwalkers=8, nsteps=200, seed=1, posterior_samples=100):
     if mode not in {"overwrite", "resume"}:
         raise ValueError("mode must be 'overwrite' or 'resume'")
     if nwalkers < 2 * len(data.fit_parameters) or nsteps < 2:
@@ -90,9 +89,7 @@ def fit_sed(model, data, output_dir, mode, fixed_parameters=None, truth=None,
     if mode == "resume" and not resume:
         print("No existing emcee chain found; initializing a new chain.")
     priors = build_priors(data.fit_parameters)
-    defaults = model.parameters.copy()
-    defaults.update(fixed_parameters or {})
-    likelihood = SEDLikelihood(model, data, fixed_parameters=defaults)
+    likelihood = SEDLikelihood(model, data, fixed_parameters=fixed_parameters)
     bilby.core.utils.random.seed(seed)
     result = bilby.run_sampler(
         likelihood=likelihood,
@@ -108,7 +105,7 @@ def fit_sed(model, data, output_dir, mode, fixed_parameters=None, truth=None,
     )
     corner = result.plot_corner(
         truth=None if truth is None else {
-            name: (np.log10(truth["Lj"]) if name == "log_Lj" else truth[name])
+            name: truth[name]
             for name in data.fit_parameters
         },
         save=False,

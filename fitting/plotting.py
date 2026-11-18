@@ -10,7 +10,7 @@ import numpy as np
 from .config import Jy
 
 
-def plot_sed(likelihood, posterior, output, truth=None, posterior_samples=200):
+def plot_sed(likelihood, posterior, output, truth=None, posterior_samples=100):
     best = {name: float(posterior[name].median()) for name in likelihood.fit_parameters}
     dense_frequencies = np.geomspace(1.0, 1000.0, 200)
     started = time.perf_counter()

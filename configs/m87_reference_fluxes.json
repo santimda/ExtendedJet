@@ -1,5 +1,5 @@
 {
-  "fit_parameters": ["log_Lj"],
+  "fit_parameters": ["geomIndex_out", "a_inj"],
   "frequencies_GHz": [
     1.7,
     8.4,

@@ -15,6 +15,7 @@ CODE = ROOT / "Code"
 class ExtendedJetModel:
     """Evaluate circular-aperture synchrotron flux at requested frequencies."""
 
+    log_parameters = {"Lj"}
     parameter_names = {
         "sigma_0", "zmax", "Lj", "a_inj", "zmax_inj", "gammaIndex",
         "geomIndex_out", "z0", "fnT", "facc", "p",
@@ -54,15 +55,19 @@ class ExtendedJetModel:
 
     def __call__(self, frequencies_ghz, apertures_rg, parameters=None, output_dir=None):
         parameters = dict(parameters or {})
-        unknown = set(parameters) - self.parameter_names - {"log_Lj"}
+        log_parameter_names = {f"log_{name}" for name in self.log_parameters}
+        unknown = set(parameters) - self.parameter_names - log_parameter_names
         if unknown:
             raise ValueError(f"Unknown model parameters: {sorted(unknown)}")
-        if "Lj" in parameters and "log_Lj" in parameters:
-            raise ValueError("provide either Lj or log_Lj, not both")
+        for name in self.log_parameters:
+            if name in parameters and f"log_{name}" in parameters:
+                raise ValueError(f"provide either {name} or log_{name}, not both")
         values = self.parameters.copy()
         values.update(parameters)
-        if "log_Lj" in values:
-            values["Lj"] = 10.0 ** float(values.pop("log_Lj"))
+        for name in self.log_parameters:
+            log_name = f"log_{name}"
+            if log_name in values:
+                values[name] = 10.0 ** float(values.pop(log_name))
         frequencies_ghz = np.asarray(frequencies_ghz, dtype=float)
         apertures_rg = np.asarray(apertures_rg, dtype=float)
         if frequencies_ghz.ndim != 1 or np.any(frequencies_ghz <= 0):
