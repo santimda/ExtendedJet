@@ -82,9 +82,14 @@ def kernel():
         newest = max(p.stat().st_mtime for p in srcs + [SHIM])
         if not built or built[0].stat().st_mtime < newest:
             print("  building the ne_kernel f2py shim (once) ...")
-            subprocess.run(["f2py", "-c", *map(str, srcs), str(SHIM), "-m", "ne_kernel", "--backend", "meson",
-                            f"--f90flags={var['FFLAGS']} -fopenmp", "-lgomp", "only:", "fp_steps", ":"],
-                           cwd=KBUILD, check=True, capture_output=True)
+            try:
+                subprocess.run(["f2py", "-c", *map(str, srcs), str(SHIM), "-m", "ne_kernel", "--backend", "meson",
+                                f"--f90flags={var['FFLAGS']} -fopenmp", "-lgomp"],
+                               cwd=KBUILD, check=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError as error:
+                print(error.stdout or "")
+                print(error.stderr or "", file=sys.stderr)
+                raise
         sys.path.insert(0, str(KBUILD))
         import ne_kernel
         _KERNEL = ne_kernel
