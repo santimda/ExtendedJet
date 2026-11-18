@@ -15,6 +15,13 @@ from .plotting import plot_sed
 
 COMMON_PRIORS = {
     "log_Lj": (39.0, 45.0, r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$"),
+    "epsilon_e": (-3.0, -0.5, r"$\log_{10}(\epsilon_e)$"),
+    "z_0": (float(np.log10(2.0)), float(np.log10(200.0)), r"$\log_{10}(z_0/[R_g])$"),
+    "z_inj": (2.5, 5.5, r"$\log_{10}(z_{\rm inj}/[R_g])$"),
+    "g": (0.1, 0.5, r"$g$"),
+    "sigma_0": (float(np.log10(2.0)), 3.0, r"$\log_{10}(\sigma_0)$"),
+    "eta_acc": (-4.0, -1.0, r"$\log_{10}(\eta_{\rm acc})$"),
+    "p": (1.9, 3.0, r"$p$"),
     "geomIndex_out": (0.0, 1.0, r"$w$"),
     "a_inj": (-0.5, 2.0, r"$a_e$"),
 }
@@ -49,10 +56,16 @@ class SEDLikelihood(bilby.Likelihood):
 
     def evaluate_model(self, parameters, frequencies=None, apertures=None, output_dir=None):
         model_parameters = self.fixed_parameters.copy()
-        model_parameters.update(parameters)
-        for name in self.model.log_parameters:
-            if f"log_{name}" in model_parameters:
-                model_parameters.pop(name, None)
+        model_parameters.update({
+            self.model.sample_parameter_aliases.get(name, name): value
+            for name, value in parameters.items()
+        })
+        for public_name, internal_name in self.model.log_parameters.items():
+            if public_name in model_parameters:
+                model_parameters.pop(internal_name, None)
+        for public_name, internal_name in self.model.parameter_aliases.items():
+            if public_name in model_parameters:
+                model_parameters.pop(internal_name, None)
         return self.model(
             self.frequencies if frequencies is None else frequencies,
             self.apertures if apertures is None else apertures,
