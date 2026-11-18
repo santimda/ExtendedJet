@@ -7,15 +7,20 @@ import time
 from pathlib import Path
 
 import bilby
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
+from postprocessing.plot_utils import nice_fonts
 
 from .config import FluxData
 from .plotting import plot_sed
 
+matplotlib.rcParams.update(nice_fonts)
+
 PRIOR_DEFINITIONS = {
     "log_Lj": {
-        "bounds": (39.0, 45.0),
+        "bounds": (40.0, 45.0),
         "latex_label": r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$",
     },
     "log_epse": {
@@ -41,7 +46,7 @@ PRIOR_DEFINITIONS = {
     },
     "p": {"bounds": (1.9, 3.0), "latex_label": r"$p$"},
     "geomIndex_out": {"bounds": (0.0, 1.0), "latex_label": r"$w$"},
-    "a_inj": {"bounds": (-0.5, 2.0), "latex_label": r"$a_e$"},
+    "a_inj": {"bounds": (-0.5, 1.0), "latex_label": r"$a_e$"},
 }
 
 
