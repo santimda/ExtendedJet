@@ -157,10 +157,10 @@ requested frequencies; it does not interpolate the fixed-grid `run.x` tables.
 When luminosity is fitted, add `log_Lj` to the flux JSON `fit_parameters` list.
 The sampler uses this coordinate directly, with a uniform prior from 39 to 45;
 the model boundary converts it to physical `Lj` using `10**log_Lj`.
-The other supported fit parameters are `epsilon_e` (`log10(fnT)`, -3 to -0.5),
-`p` (1.9 to 3.0), `z_0` (`log10(z0_rg)`, 2 to 200 `R_g`), `z_inj`
-(`log10(zmax_inj_rg)`, 2.5 to 5.5), `g` (0.1 to 0.5), `sigma_0`
-(`log10(sigma_0)`, `log10(2)` to 3), and `eta_acc` (`log10(facc)`, -4 to -1).
+The other supported fit parameters are `log_epse` (`log10(fnT)`, -3 to -0.5),
+`p` (1.9 to 3.0), `log_z0` (`log10(z0_rg)`, 2 to 200 `R_g`), `log_zinj`
+(`log10(zmax_inj_rg)`, 2.5 to 5.5), `g` (0.1 to 0.5), `log_sig0`
+(`log10(sigma_0)`, `log10(2)` to 3), and `log_etaacc` (`log10(facc)`, -4 to -1).
 The adapter maps these names to the corresponding Fortran parameters and
 converts lengths from `R_g` to centimeters.
 The validation uses fixed reduced settings so implementation changes are

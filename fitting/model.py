@@ -17,17 +17,14 @@ class ExtendedJetModel:
 
     log_parameters = {
         "log_Lj": "Lj",
-        "epsilon_e": "fnT",
-        "z_0": "z0",
-        "z_inj": "zmax_inj",
-        "log_sigma_0": "sigma_0",
-        "eta_acc": "facc",
+        "log_epse": "fnT",
+        "log_z0": "z0",
+        "log_zinj": "zmax_inj",
+        "log_sig0": "sigma_0",
+        "log_etaacc": "facc",
     }
     parameter_aliases = {
         "g": "gammaIndex",
-    }
-    sample_parameter_aliases = {
-        "sigma_0": "log_sigma_0",
     }
     parameter_names = {
         "sigma_0", "zmax", "Lj", "a_inj", "zmax_inj", "gammaIndex",
@@ -73,17 +70,17 @@ class ExtendedJetModel:
         if unknown:
             raise ValueError(f"Unknown model parameters: {sorted(unknown)}")
         for public_name, internal_name in self.log_parameters.items():
-            if internal_name in parameters:
+            if public_name in parameters and internal_name in parameters:
                 raise ValueError(f"provide either {public_name} or {internal_name}, not both")
         for public_name, internal_name in self.parameter_aliases.items():
-            if internal_name in parameters:
+            if public_name in parameters and internal_name in parameters:
                 raise ValueError(f"provide either {public_name} or {internal_name}, not both")
         values = self.parameters.copy()
         for name, value in parameters.items():
             if name in self.log_parameters:
                 internal_name = self.log_parameters[name]
                 value = 10.0 ** float(value)
-                if name in {"z_0", "z_inj"}:
+                if name in {"log_z0", "log_zinj"}:
                     value *= float(self.system_parameters.r_g)
                 values[internal_name] = value
             elif name in self.parameter_aliases:

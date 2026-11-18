@@ -7,34 +7,62 @@ import time
 from pathlib import Path
 
 import bilby
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
 from .config import FluxData
 from .plotting import plot_sed
 
-COMMON_PRIORS = {
-    "log_Lj": (39.0, 45.0, r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$"),
-    "epsilon_e": (-3.0, -0.5, r"$\log_{10}(\epsilon_e)$"),
-    "z_0": (float(np.log10(2.0)), float(np.log10(200.0)), r"$\log_{10}(z_0/[R_g])$"),
-    "z_inj": (2.5, 5.5, r"$\log_{10}(z_{\rm inj}/[R_g])$"),
-    "g": (0.1, 0.5, r"$g$"),
-    "sigma_0": (float(np.log10(2.0)), 3.0, r"$\log_{10}(\sigma_0)$"),
-    "eta_acc": (-4.0, -1.0, r"$\log_{10}(\eta_{\rm acc})$"),
-    "p": (1.9, 3.0, r"$p$"),
-    "geomIndex_out": (0.0, 1.0, r"$w$"),
-    "a_inj": (-0.5, 2.0, r"$a_e$"),
+PRIOR_DEFINITIONS = {
+    "log_Lj": {
+        "bounds": (39.0, 45.0),
+        "latex_label": r"$\log_{10}(L_j/[\mathrm{erg\ s^{-1}}])$",
+        "plain_label": "log10(Lj [erg s^-1])",
+    },
+    "log_epse": {
+        "bounds": (-3.0, -0.5),
+        "latex_label": r"$\log_{10}(\epsilon_e)$",
+        "plain_label": "log10(epsilon_e)",
+    },
+    "log_z0": {
+        "bounds": (float(np.log10(2.0)), float(np.log10(200.0))),
+        "latex_label": r"$\log_{10}(z_0/R_g)$",
+        "plain_label": "log10(z0/Rg)",
+    },
+    "log_zinj": {
+        "bounds": (2.5, 5.5),
+        "latex_label": r"$\log_{10}(z_{\rm inj}/R_g)$",
+        "plain_label": "log10(zinj/Rg)",
+    },
+    "g": {"bounds": (0.1, 0.5), "latex_label": r"$g$", "plain_label": "g"},
+    "log_sig0": {
+        "bounds": (float(np.log10(2.0)), 3.0),
+        "latex_label": r"$\log_{10}(\sigma_0)$",
+        "plain_label": "log10(sigma0)",
+    },
+    "log_etaacc": {
+        "bounds": (-4.0, -1.0),
+        "latex_label": r"$\log_{10}(\eta_{\rm acc})$",
+        "plain_label": "log10(eta_acc)",
+    },
+    "p": {"bounds": (1.9, 3.0), "latex_label": r"$p$", "plain_label": "p"},
+    "geomIndex_out": {"bounds": (0.0, 1.0), "latex_label": r"$w$", "plain_label": "geomIndex_out"},
+    "a_inj": {"bounds": (-0.5, 2.0), "latex_label": r"$a_e$", "plain_label": "a_inj"},
 }
 
 
 def build_priors(fit_parameters):
     fit_parameters = tuple(fit_parameters)
-    unknown = set(fit_parameters) - set(COMMON_PRIORS)
+    unknown = set(fit_parameters) - set(PRIOR_DEFINITIONS)
     if unknown:
         raise ValueError(f"No common prior is defined for: {sorted(unknown)}")
     priors = bilby.core.prior.PriorDict()
     for name in fit_parameters:
-        minimum, maximum, label = COMMON_PRIORS[name]
+        definition = PRIOR_DEFINITIONS[name]
+        minimum, maximum = definition["bounds"]
+        label_key = "latex_label" if matplotlib.rcParams.get("text.usetex", False) else "plain_label"
+        label = definition[label_key]
         priors[name] = bilby.core.prior.Uniform(minimum, maximum, name=name, latex_label=label)
     return priors
 
@@ -56,10 +84,7 @@ class SEDLikelihood(bilby.Likelihood):
 
     def evaluate_model(self, parameters, frequencies=None, apertures=None, output_dir=None):
         model_parameters = self.fixed_parameters.copy()
-        model_parameters.update({
-            self.model.sample_parameter_aliases.get(name, name): value
-            for name, value in parameters.items()
-        })
+        model_parameters.update(parameters)
         for public_name, internal_name in self.model.log_parameters.items():
             if public_name in model_parameters:
                 model_parameters.pop(internal_name, None)
