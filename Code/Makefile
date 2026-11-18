@@ -40,7 +40,7 @@ F2PY_SOURCES = constants.f90 controls.f90 system_parameters.f90 \
                trajectory.f90 evolution.f90 edistribution.f90 synrad.f90 \
                icrad.f90 sscrad.f90 main.f90
 
-.PHONY: all clean run f2py depend test test-unit test-fortran test-f2py test-map validate validate-map validate-mcmc
+.PHONY: all clean run f2py depend test test-unit test-fortran test-f2py test-map validate validate-kernel validate-map validate-mcmc
 
 all: run.x
 
@@ -75,6 +75,9 @@ test-fortran: run.x
 # Physics validation: N(E) solver vs analytic/characteristics solutions.
 validate: f2py run.x
 	python3 ../validation/ne_validation.py
+
+validate-kernel: f2py
+	python3 ../validation/ne_validation.py --skip-model
 
 validate-map: f2py
 	python3 ../tests/map_validation.py

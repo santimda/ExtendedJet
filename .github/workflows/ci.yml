@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Micromamba
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-file: environment.yml
           environment-name: extendedjet
@@ -45,4 +45,4 @@ jobs:
       - name: Run physics validation
         env:
           OMP_NUM_THREADS: 1
-        run: make -C Code validate
+        run: make -C Code validate-kernel
