@@ -93,7 +93,13 @@ def run_reference(nml_path):
 def run_f2py(nml_path, nu):
     """Call JetCode.syn_model with parameters read from the same namelist."""
     sys.path.insert(0, CODE_DIR)
-    import JetCode  # noqa: E402  (built by `make f2py`)
+    try:
+        import JetCode  # noqa: E402  (built by `make f2py`)
+    except ImportError as error:
+        raise RuntimeError(
+            "The JetCode f2py module is unavailable. "
+            "Run `make -C Code f2py` before running this test."
+        ) from error
 
     sp = JetCode.system_parameters
     ct = JetCode.controls

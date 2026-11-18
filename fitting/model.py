@@ -33,7 +33,13 @@ class ExtendedJetModel:
 
     def __init__(self, namelist, output_dir, ns=None, numbins=None):
         sys.path.insert(0, str(CODE))
-        import JetCode
+        try:
+            import JetCode
+        except ImportError as error:
+            raise RuntimeError(
+                "The JetCode f2py module is unavailable. "
+                "Run `make -C Code f2py` before using the fitting workflow."
+            ) from error
 
         self.jetcode = JetCode
         self.system_parameters = JetCode.system_parameters

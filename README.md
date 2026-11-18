@@ -27,6 +27,11 @@ is available.
 The documented workflow is tested on Linux with GNU Fortran, OpenMP, Make,
 Python, and f2py.
 
+GitHub Actions runs the Python and shell checks, builds the f2py module with
+`make -C Code f2py`, and then runs `make -C Code test` and
+`make -C Code validate` on pull requests and pushes to `main`. The MCMC
+validation remains a manual test.
+
 ## Layout
 
 - `Code/`: Fortran sources, Makefile, and generated build files.
@@ -244,6 +249,7 @@ exceed that limit and require an isolated build with a larger value.
 The standard validation commands are:
 
 ```bash
+make -C Code f2py
 make -C Code test validate
 (cd Code && OMP_NUM_THREADS=1 ./run.x ../configs/m87_reference.nml)
 ```
